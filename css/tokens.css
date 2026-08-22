@@ -44,6 +44,10 @@
   --sample-tray:   #808080;
   --sample-tray-light: #BFBFBF;
 
+  /* photography well — the site's photos are shot on near-black; this constant
+     dark backdrop hosts them in BOTH themes so they composite seamlessly */
+  --photo-well:    #070A0F;
+
   /* status ramp — kept verbatim from the flooring-CRM spec.
      Values are specified against LIGHT surfaces; in dark theme the
      hue renders only in dots/icons (labels use --text/--text-muted). */
@@ -76,4 +80,5 @@
 
   --sample-tray:   #808080;  /* unchanged in both themes — measurement reference */
   --sample-tray-light: #BFBFBF;
+  --photo-well:    #070A0F;  /* unchanged in both themes — photo backdrop */
 }

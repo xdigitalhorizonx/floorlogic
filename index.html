@@ -149,6 +149,7 @@
     <!-- ============ HERO ============ -->
     <section class="hero" id="top">
       <div class="wrap">
+        <div class="hero__cols">
         <div class="hero__grid">
           <p class="kicker">The last flooring software you&rsquo;ll ever need</p>
           <h1>Quote it. They tap Approve. The&nbsp;work order and invoice write&nbsp;themselves.</h1>
@@ -196,6 +197,17 @@
           <p class="form-note">Don&rsquo;t demo it. Run one real job through it — quote, approval, invoice, payment — and decide.</p>
         </div>
 
+        <div class="hero__visual reveal">
+          <picture class="hero__photo">
+            <source srcset="assets/hero-oak.avif" type="image/avif">
+            <img src="assets/hero-oak.jpg" width="1920" height="1280" alt="Oak planks laid mid-install against a black ground" fetchpriority="high">
+          </picture>
+          <img class="shot shot--a" src="assets/frag-quotes.webp" width="1020" height="795" alt="FloorLogic quote list: totals moving through draft, sent, approved, and declined statuses">
+          <img class="shot shot--b" src="assets/frag-workorder.webp" width="780" height="670" alt="FloorLogic work-order schedule: paid, in progress, scheduled, and materials-ordered statuses">
+          <p class="hero__cred">The real product &middot; demo company data</p>
+        </div>
+        </div>
+
         <!-- ============ PRODUCT FRAME ============ -->
         <div class="product" id="product">
           <div class="frame reveal">
@@ -206,6 +218,9 @@
             <div class="frame__tabs" role="tablist" aria-label="Product views">
               <button class="frame__tab" role="tab" aria-selected="true" aria-controls="view-pipeline" id="tab-pipeline" type="button">Lead pipeline</button>
               <button class="frame__tab" role="tab" aria-selected="false" aria-controls="view-quotes" id="tab-quotes" type="button">Quotes</button>
+              <button class="frame__tab" role="tab" aria-selected="false" aria-controls="view-invoices" id="tab-invoices" type="button">Invoices</button>
+              <button class="frame__tab" role="tab" aria-selected="false" aria-controls="view-inventory" id="tab-inventory" type="button">Inventory</button>
+              <button class="frame__tab" role="tab" aria-selected="false" aria-controls="view-samples" id="tab-samples" type="button">Samples</button>
               <button class="frame__tab" role="tab" aria-selected="false" aria-controls="view-books" id="tab-books" type="button">Accounting</button>
             </div>
             <div class="frame__view is-active" id="view-pipeline" role="tabpanel" aria-labelledby="tab-pipeline">
@@ -213,6 +228,15 @@
             </div>
             <div class="frame__view" id="view-quotes" role="tabpanel" aria-labelledby="tab-quotes">
               <img src="assets/app-quotes.webp" width="1600" height="1067" alt="FloorLogic quotes list showing draft, sent, approved, and declined quotes with totals and $108,124 pending value" loading="lazy">
+            </div>
+            <div class="frame__view" id="view-invoices" role="tabpanel" aria-labelledby="tab-invoices">
+              <img src="assets/app-invoices.webp" width="1600" height="1067" alt="FloorLogic invoices list with totals, live balances, and unpaid, deposit, and paid statuses" loading="lazy">
+            </div>
+            <div class="frame__view" id="view-inventory" role="tabpanel" aria-labelledby="tab-inventory">
+              <img src="assets/app-inventory.webp" width="1600" height="1067" alt="FloorLogic inventory with on-hand, allocated, available, and shortage columns and low-stock alerts" loading="lazy">
+            </div>
+            <div class="frame__view" id="view-samples" role="tabpanel" aria-labelledby="tab-samples">
+              <img src="assets/app-samples.webp" width="1600" height="1067" alt="FloorLogic sample checkouts tracking which sample board went out, to whom, and when it is due back" loading="lazy">
             </div>
             <div class="frame__view" id="view-books" role="tabpanel" aria-labelledby="tab-books">
               <img src="assets/app-accounting.webp" width="1600" height="1067" alt="FloorLogic accounting overview with receivables and payables aging, monthly collected and spent totals, and spend by category" loading="lazy">
@@ -231,11 +255,17 @@
           <h2>It already runs a real flooring store.</h2>
           <p class="lead">FloorLogic isn&rsquo;t a pitch deck. It runs Landmark Flooring in Carson City, Nevada — every quote, every install, every reconciled dollar. These numbers are from that live database.</p>
         </div>
-        <div class="proof__grid">
-          <div class="stat reveal"><b>36,188</b><span>products in the live catalog — with roll width, cut cost, and roll cost per sq&nbsp;yd</span></div>
-          <div class="stat reveal"><b>992</b><span>bank transactions imported, reconciled, and auto-categorized</span></div>
-          <div class="stat reveal"><b>88 &rarr; 34</b><span>quotes sent, jobs created — approval to work order with nothing re-typed</span></div>
-          <div class="stat reveal"><b>1,249</b><span>activity records on the audit trail — every send, view, approval, and payment</span></div>
+        <div class="proof__cols">
+          <div class="proof__grid">
+            <div class="stat reveal"><b>36,188</b><span>products in the live catalog — with roll width, cut cost, and roll cost per sq&nbsp;yd</span></div>
+            <div class="stat reveal"><b>992</b><span>bank transactions imported, reconciled, and auto-categorized</span></div>
+            <div class="stat reveal"><b>88 &rarr; 34</b><span>quotes sent, jobs created — approval to work order with nothing re-typed</span></div>
+            <div class="stat reveal"><b>1,249</b><span>activity records on the audit trail — every send, view, approval, and payment</span></div>
+          </div>
+          <figure class="proof__catalog reveal">
+            <img src="assets/frag-catalog.webp" width="1700" height="713" alt="The live FloorLogic product catalog: Shaw, Karastan, Interface, Bruce, and Mohawk SKUs with purchase units and coverage" loading="lazy">
+            <figcaption>The catalog itself — vendor, SKU, purchase unit, and coverage on every one of its 36,188 rows.</figcaption>
+          </figure>
         </div>
         <p class="wedge-note">Figures from the Landmark Flooring production database, August 14, 2026. One store runs on FloorLogic today — ours. No customer counts, no testimonials, no logo walls: run one real job through it and judge for yourself.</p>
       </div>
@@ -281,9 +311,10 @@
             <div class="loop__num mono">03</div>
             <h3>The paperwork writes itself</h3>
             <p>The work order and the invoice are created automatically from the approved quote. The deposit follows your payment terms, and the customer can pay it by card right on the invoice link.</p>
-            <div class="loop__made" aria-hidden="true">
+            <div class="loop__made">
               <div class="loop__doc"><span class="loop__chip">Created</span><b>Work order WO-321</b><span>Ready to schedule</span></div>
-              <div class="loop__doc"><span class="loop__chip">Created</span><b>Invoice INV-321</b><span class="mono">Deposit due &middot; $22,289.20</span></div>
+              <span class="loop__chip">Created</span>
+              <img class="loop__frag" src="assets/frag-invoice.webp" width="840" height="671" alt="FloorLogic invoice list with live balances: unpaid, deposit, and paid statuses" loading="lazy">
             </div>
           </article>
         </div>
@@ -300,16 +331,24 @@
         </div>
 
         <div class="grid">
-          <article class="feature feature--wide reveal">
-            <div class="feature__icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M3 8h18M3 8v8a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2V8M3 8l2-4h14l2 4"/><path d="M8 12h4"/></svg></div>
-            <h3>Stop giving away yardage</h3>
-            <p>Quotes that price cut cost and roll cost per square yard, per product — so the waste is in the quote, not out of your margin.</p>
-            <ul>
-              <li>Materials and labor priced separately on every line</li>
-              <li>Good / better / best options the customer picks from</li>
-              <li>Tax by county, terms, deposit %, dual sales reps</li>
-              <li>A 36,188-product catalog with vendor, style, and colour</li>
-            </ul>
+          <article class="feature feature--wide feature--photo reveal">
+            <div class="feature__body">
+              <div class="feature__icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M3 8h18M3 8v8a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2V8M3 8l2-4h14l2 4"/><path d="M8 12h4"/></svg></div>
+              <h3>Stop giving away yardage</h3>
+              <p>Quotes that price cut cost and roll cost per square yard, per product — so the waste is in the quote, not out of your margin.</p>
+              <ul>
+                <li>Materials and labor priced separately on every line</li>
+                <li>Good / better / best options the customer picks from</li>
+                <li>Tax by county, terms, deposit %, dual sales reps</li>
+                <li>A 36,188-product catalog with vendor, style, and colour</li>
+              </ul>
+            </div>
+            <div class="feature__media">
+              <picture>
+                <source srcset="assets/roll-goods.avif" type="image/avif">
+                <img src="assets/roll-goods.jpg" width="1280" height="546" alt="A roll of carpet broadloom, lit against black" loading="lazy">
+              </picture>
+            </div>
           </article>
 
           <article class="feature reveal">
@@ -334,6 +373,7 @@
             <div class="feature__icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M9 11H5a2 2 0 0 0-2 2v7h6m0-9v9m0-9h6m-6 9h6m0-9h4a2 2 0 0 1 2 2v7h-6m0-9V4a2 2 0 0 0-2-2h-2a2 2 0 0 0-2 2v7"/></svg></div>
             <h3>Every sample board, accounted for</h3>
             <p>Sample checkouts track which board went home with whom and when it&rsquo;s due back — so displays stop walking away.</p>
+            <img class="feature__shot" src="assets/frag-samples.webp" width="1520" height="385" alt="FloorLogic sample checkouts: two boards out with customer names and products" loading="lazy">
           </article>
 
           <article class="feature reveal">
@@ -483,15 +523,23 @@
 
     <!-- ============ STORY ============ -->
     <section id="story">
-      <div class="wrap wrap--narrow">
+      <div class="wrap">
         <div class="section-head reveal">
           <p class="kicker">Where it comes from</p>
           <h2>Built inside a flooring store. Not a tech incubator.</h2>
         </div>
-        <div class="story reveal">
-          <p>FloorLogic runs Landmark Flooring in Carson City, Nevada — every quote, every install, every invoice, every day. When something slowed down a real job, we felt it the same week, and we fixed it.</p>
-          <p>That&rsquo;s the whole pitch. No fake reviews, no stock-photo testimonials, no &ldquo;trusted by 10,000 contractors.&rdquo; FloorLogic is new, and the proof is that a real flooring company bet its own operations on it. Run one real job through it and judge for yourself.</p>
-          <p class="story__sign">— Jeff &amp; Brandon, Landmark Flooring / Digital Horizon, Carson City NV</p>
+        <div class="story__cols">
+          <div class="story reveal">
+            <p>FloorLogic runs Landmark Flooring in Carson City, Nevada — every quote, every install, every invoice, every day. When something slowed down a real job, we felt it the same week, and we fixed it.</p>
+            <p>That&rsquo;s the whole pitch. No fake reviews, no stock-photo testimonials, no &ldquo;trusted by 10,000 contractors.&rdquo; FloorLogic is new, and the proof is that a real flooring company bet its own operations on it. Run one real job through it and judge for yourself.</p>
+            <p class="story__sign">— Jeff &amp; Brandon, Landmark Flooring / Digital Horizon, Carson City NV</p>
+          </div>
+          <div class="story__media reveal" aria-hidden="true">
+            <picture>
+              <source srcset="assets/offcut-stack.avif" type="image/avif">
+              <img src="assets/offcut-stack.jpg" width="1280" height="649" alt="" loading="lazy">
+            </picture>
+          </div>
         </div>
       </div>
     </section>
@@ -661,6 +709,12 @@
 
           <p class="form-note">Prefer to talk to a human who sells floors? <a href="tel:+17752378898">(775) 237-8898</a> or <a href="mailto:brandon@digitalhorizon.dev">brandon@digitalhorizon.dev</a></p>
         </div>
+      </div>
+      <div class="closer__band" aria-hidden="true">
+        <picture>
+          <source srcset="assets/hero-oak.avif" type="image/avif">
+          <img src="assets/hero-oak.jpg" width="1920" height="1280" alt="" loading="lazy">
+        </picture>
       </div>
     </section>
   </main>
