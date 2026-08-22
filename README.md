@@ -16,8 +16,9 @@ CVD-safe status ramp, true-neutral `--sample-tray`). One sanctioned exception:
 `favicon.svg` is a standalone asset that can't reference CSS custom properties, so it
 carries literal copies of `--accent` / `--text-inverse`.
 
-- Light theme is the default; the toggle persists to `localStorage` (`floorlogic-theme`).
-  Per spec, system dark preference is deliberately **not** auto-applied.
+- **Dark theme is the default** (owner's call 2026-08-22, deliberately overriding the
+  spec's light-default rule for this marketing page); the toggle persists to
+  `localStorage` (`floorlogic-theme`). System preference is never consulted.
 - Status pills/steps always carry icon + text label + color — color never means anything alone.
 - No gradients, no glassmorphism, no shadows, no zebra striping, no tinted rows.
 
