@@ -31,7 +31,7 @@ a:focus-visible, button:focus-visible, input:focus-visible, select:focus-visible
   outline-offset: 2px;
 }
 
-::selection { background: var(--accent); color: var(--text-inverse); }
+::selection { background: var(--cta); color: var(--text-inverse); }
 
 .mono {
   font-family: "Geist Mono", ui-monospace, "Cascadia Mono", Consolas, monospace;
@@ -93,8 +93,8 @@ section + section { border-top: 1px solid var(--border); }
 }
 .btn:hover { text-decoration: none; }
 
-.btn--primary { background: var(--accent); color: var(--text-inverse); border-color: var(--accent); }
-.btn--primary:hover { background: var(--accent-hover); border-color: var(--accent-hover); color: var(--text-inverse); }
+.btn--primary { background: var(--cta); color: var(--text-inverse); border-color: var(--cta); }
+.btn--primary:hover { background: var(--cta-hover); border-color: var(--cta-hover); color: var(--text-inverse); }
 
 .btn--ghost { background: var(--surface); color: var(--text); border-color: var(--border-strong); }
 .btn--ghost:hover { border-color: var(--text-muted); color: var(--text); }
@@ -132,9 +132,10 @@ section + section { border-top: 1px solid var(--border); }
   color: var(--text-muted); cursor: pointer; padding: 0;
 }
 .theme-toggle:hover { color: var(--text); }
-.theme-toggle .icon-sun { display: none; }
-[data-theme="dark"] .theme-toggle .icon-sun { display: block; }
-[data-theme="dark"] .theme-toggle .icon-moon { display: none; }
+/* dark is the default: show the sun (path to light); light shows the moon */
+.theme-toggle .icon-moon { display: none; }
+[data-theme="light"] .theme-toggle .icon-moon { display: block; }
+[data-theme="light"] .theme-toggle .icon-sun { display: none; }
 
 /* ---------- hero ---------- */
 
@@ -347,10 +348,12 @@ section + section { border-top: 1px solid var(--border); }
 .compare .yes { display: inline-flex; align-items: center; gap: 7px; color: var(--st-complete); font-weight: 600; }
 .compare .no { display: inline-flex; align-items: center; gap: 7px; color: var(--text-muted); }
 .compare .yes svg, .compare .no svg { width: 15px; height: 15px; flex: none; }
-/* status hexes are specified against light surfaces only — in dark, the label
-   carries the meaning in --text and the icon keeps the hue as a redundant cue */
-[data-theme="dark"] .compare .yes { color: var(--text); }
-[data-theme="dark"] .compare .yes svg { color: var(--st-complete); }
+/* status hexes are specified against light surfaces only — in dark (the
+   default), the label carries the meaning in --text and the icon keeps the
+   hue as a redundant cue; light theme may color the label directly */
+.compare .yes { color: var(--text); }
+.compare .yes svg { color: var(--st-complete); }
+[data-theme="light"] .compare .yes { color: var(--st-complete); }
 
 /* ---------- pricing ---------- */
 
@@ -361,10 +364,10 @@ section + section { border-top: 1px solid var(--border); }
   border-radius: 15px; padding: 28px; display: grid; gap: 18px;
   align-content: start; position: relative;
 }
-.tier--featured { border-color: var(--accent); border-width: 2px; }
+.tier--featured { border-color: var(--cta); border-width: 2px; }
 .tier__flag {
   position: absolute; top: -13px; left: 24px;
-  background: var(--accent); color: var(--text-inverse);
+  background: var(--cta); color: var(--text-inverse);
   font-size: 0.76rem; font-weight: 650; letter-spacing: 0.05em; text-transform: uppercase;
   padding: 4px 12px; border-radius: 999px;
 }
@@ -438,15 +441,15 @@ footer { border-top: 1px solid var(--border-strong); padding: 48px 0 56px; }
 .phone__row { display: flex; justify-content: space-between; gap: 10px; font-size: 0.82rem; color: var(--text-muted); }
 .phone__row--total { border-top: 1px solid var(--border); padding-top: 8px; color: var(--text); font-weight: 650; }
 .phone__approve {
-  margin-top: 4px; text-align: center; background: var(--accent); color: var(--text-inverse);
+  margin-top: 4px; text-align: center; background: var(--cta); color: var(--text-inverse);
   border-radius: 8px; padding: 9px 10px; font-size: 0.85rem; font-weight: 650;
 }
 
 .loop__tap { margin-top: 10px; display: grid; gap: 10px; justify-items: start; }
 .loop__button {
-  background: var(--accent); color: var(--text-inverse);
+  background: var(--cta); color: var(--text-inverse);
   border-radius: 10px; padding: 13px 26px; font-size: 1rem; font-weight: 650;
-  outline: 2px solid var(--accent); outline-offset: 3px;
+  outline: 2px solid var(--cta); outline-offset: 3px;
 }
 .loop__stamp { font-size: 0.8rem; color: var(--text-muted); }
 

@@ -1,57 +1,79 @@
 /* ============================================================
-   FloorLogic — color tokens
-   Source of truth: "Color system — flooring CRM UI" spec.
-   These two blocks are the ONLY place a hex value may appear.
+   FloorLogic — color tokens · "Cobalt Ink"
+   Owner-approved direction 2026-08-22 (supersedes the original
+   flooring-CRM spec palette for this marketing site; the status
+   ramp and --sample-tray are retained from that spec verbatim).
+   These two blocks are the ONLY place a hex value may appear
+   (favicon.svg carries sanctioned copies — it can't read vars).
    Ratios in comments are measured WCAG contrast vs stated bg.
+
+   DARK IS THE DEFAULT THEME. Bare :root = dark; [data-theme=
+   "light"] overrides. A stored choice always wins; system
+   preference is never consulted.
+
+   Accent has two roles:
+   - --accent      text-role blue (links, kickers, icons) — must
+                   pass 4.5:1 as text on canvas/surface
+   - --cta         fill-role electric cobalt (buttons, brand
+                   mark) — carries --text-inverse labels
    ============================================================ */
 
 :root {
-  /* surfaces — near-zero chroma, do not warm these */
-  --canvas:        #F7F7F8;
-  --surface:       #FFFFFF;
-  --surface-sunk:  #EFEFF1;
-  --border:        #E2E3E5;
-  --border-strong: #C9CBCF;
+  /* surfaces — deep blue-black ink */
+  --canvas:        #0B0E14;
+  --surface:       #121722;
+  --surface-sunk:  #070A0F;
+  --border:        #242C3B;
+  --border-strong: #33405A;
 
   /* text */
-  --text:          #17181A;  /* 16.6:1 on canvas */
-  --text-muted:    #5F6368;  /*  5.7:1 on canvas */
+  --text:          #F2F5F9;  /* 17.2:1 on canvas */
+  --text-muted:    #9AA6B8;  /*  7.7:1 on canvas */
   --text-inverse:  #FFFFFF;
 
-  /* accent — blue is the only hue no flooring material is */
-  --accent:        #175CD3;  /*  5.6:1 on canvas */
-  --accent-hover:  #1249A8;
-  --accent-subtle: #EFF4FF;
+  /* accent — text role (light cobalt) */
+  --accent:        #6EA8FE;  /*  8.0:1 on canvas, 7.4:1 on surface */
+  --accent-hover:  #96C0FF;
+  --accent-subtle: #14203B;
 
-  /* material viewer backdrop — TRUE neutral, never white, never tinted */
+  /* accent — fill role (electric cobalt) */
+  --cta:           #2563EB;  /* white label: 5.1:1 */
+  --cta-hover:     #1D4ED8;  /* white label: 6.7:1 */
+
+  /* material viewer backdrop — TRUE neutral, never tinted (kept from spec) */
   --sample-tray:   #808080;
   --sample-tray-light: #BFBFBF;
 
-  /* status ramp — hue AND lightness both vary (CVD-safe) */
-  --st-lead:       #475467;  /* 7.2:1 — Lead / new              */
-  --st-quoted:     #175CD3;  /* 5.6:1 — Measured / quoted       */
-  --st-sold:       #6941C6;  /* 6.2:1 — Sold / ordered          */
-  --st-attention:  #B54708;  /* 5.1:1 — Needs attention         */
-  --st-complete:   #067647;  /* 5.3:1 — Installed / complete    */
-  --st-problem:    #B42318;  /* 6.1:1 — Punchlist / problem     */
-  --st-hold:       #667085;  /* 4.7:1 — On hold; body size (14px+) only */
+  /* status ramp — kept verbatim from the flooring-CRM spec.
+     Values are specified against LIGHT surfaces; in dark theme the
+     hue renders only in dots/icons (labels use --text/--text-muted). */
+  --st-lead:       #475467;
+  --st-quoted:     #175CD3;
+  --st-sold:       #6941C6;
+  --st-attention:  #B54708;
+  --st-complete:   #067647;
+  --st-problem:    #B42318;
+  --st-hold:       #667085;
 }
 
-[data-theme="dark"] {
-  --canvas:        #16181C;
-  --surface:       #1E2126;
-  --surface-sunk:  #121418;
-  --border:        #2E323A;
-  --border-strong: #434952;
+[data-theme="light"] {
+  --canvas:        #F6F7F9;
+  --surface:       #FFFFFF;
+  --surface-sunk:  #EDEFF3;
+  --border:        #E1E4EA;
+  --border-strong: #C6CCD8;
 
-  --text:          #E6E7E9;  /* 14.4:1 on canvas */
-  --text-muted:    #A0A5AD;
-  --text-inverse:  #16181C;
+  --text:          #14181F;  /* 15.6:1 on canvas */
+  --text-muted:    #5B6472;  /*  5.2:1 on canvas */
+  --text-inverse:  #FFFFFF;
 
-  --accent:        #7FB0FF;  /*  8.1:1 on canvas — #175CD3 fails on dark, never reuse it */
-  --accent-hover:  #A3C6FF;
-  --accent-subtle: #1B2534;
+  --accent:        #2563EB;  /*  4.8:1 on canvas, 5.2:1 on surface */
+  --accent-hover:  #1D4ED8;
+  --accent-subtle: #EAF1FE;
 
-  --sample-tray:   #808080;  /* unchanged in both themes — it is a measurement reference */
+  --cta:           #2563EB;  /* white label: 5.1:1 */
+  --cta-hover:     #1D4ED8;  /* white label: 6.7:1 */
+
+  --sample-tray:   #808080;  /* unchanged in both themes — measurement reference */
   --sample-tray-light: #BFBFBF;
 }

@@ -10,15 +10,18 @@ Open `index.html` or serve the folder with any static server.
 
 ## Color system
 
-`css/tokens.css` is the **only** file allowed to contain hex values — it implements the
-"Color system — flooring CRM UI" spec verbatim (neutral gray chrome, one blue accent,
-CVD-safe status ramp, true-neutral `--sample-tray`). One sanctioned exception:
-`favicon.svg` is a standalone asset that can't reference CSS custom properties, so it
-carries literal copies of `--accent` / `--text-inverse`.
+`css/tokens.css` is the **only** file allowed to contain hex values. Palette:
+**"Cobalt Ink"** — owner-approved 2026-08-22 after a four-direction comparison;
+it supersedes the original flooring-CRM spec palette for this marketing site,
+while keeping that spec's CVD-safe status ramp and true-neutral `--sample-tray`
+verbatim. Accent has two roles: `--accent` (text-role light cobalt for links and
+kickers) and `--cta` (fill-role electric cobalt for buttons and the brand mark).
+One sanctioned exception: `favicon.svg` is a standalone asset that can't reference
+CSS custom properties, so it carries literal copies of `--cta` / `--text-inverse`.
 
-- **Dark theme is the default** (owner's call 2026-08-22, deliberately overriding the
-  spec's light-default rule for this marketing page); the toggle persists to
-  `localStorage` (`floorlogic-theme`). System preference is never consulted.
+- **Dark is the default theme** (bare `:root`; `[data-theme="light"]` overrides).
+  The toggle persists to `localStorage` (`floorlogic-theme`); system preference
+  is never consulted.
 - Status pills/steps always carry icon + text label + color — color never means anything alone.
 - No gradients, no glassmorphism, no shadows, no zebra striping, no tinted rows.
 

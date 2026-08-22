@@ -29,8 +29,9 @@ function ratio(a, b) {
 }
 
 const css = readFileSync(join(root, 'css', 'tokens.css'), 'utf8');
-const light = parseTokens(css, /:root\s*\{([\s\S]*?)\}/);
-const dark = { ...light, ...parseTokens(css, /\[data-theme="dark"\]\s*\{([\s\S]*?)\}/) };
+// Cobalt Ink structure: bare :root = DARK (the default), [data-theme="light"] overrides.
+const dark = parseTokens(css, /:root\s*\{([\s\S]*?)\}/);
+const light = { ...dark, ...parseTokens(css, /\[data-theme="light"\]\s*\{([\s\S]*?)\}/) };
 
 // Every fg/bg pairing the site actually renders. min = required ratio.
 // Body copy (text on canvas/surface) is held to 7:1 per spec rule 8.
@@ -39,8 +40,8 @@ const pairs = [
   ['text', 'accent-subtle', 7],
   ['text-muted', 'canvas', 4.5], ['text-muted', 'surface', 4.5], ['text-muted', 'surface-sunk', 4.5],
   ['accent', 'canvas', 4.5], ['accent', 'surface', 4.5], ['accent', 'accent-subtle', 4.5],
-  ['text-inverse', 'accent', 4.5],          // primary button label
-  ['text-inverse', 'accent-hover', 4.5],    // primary button label, hovered
+  ['text-inverse', 'cta', 4.5],             // primary button label
+  ['text-inverse', 'cta-hover', 4.5],       // primary button label, hovered
   ['st-lead', 'canvas', 4.5], ['st-lead', 'surface', 4.5],
   ['st-quoted', 'canvas', 4.5], ['st-quoted', 'surface', 4.5],
   ['st-sold', 'canvas', 4.5], ['st-sold', 'surface', 4.5],
