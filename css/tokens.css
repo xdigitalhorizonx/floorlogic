@@ -1,0 +1,57 @@
+/* ============================================================
+   FloorLogic — color tokens
+   Source of truth: "Color system — flooring CRM UI" spec.
+   These two blocks are the ONLY place a hex value may appear.
+   Ratios in comments are measured WCAG contrast vs stated bg.
+   ============================================================ */
+
+:root {
+  /* surfaces — near-zero chroma, do not warm these */
+  --canvas:        #F7F7F8;
+  --surface:       #FFFFFF;
+  --surface-sunk:  #EFEFF1;
+  --border:        #E2E3E5;
+  --border-strong: #C9CBCF;
+
+  /* text */
+  --text:          #17181A;  /* 16.6:1 on canvas */
+  --text-muted:    #5F6368;  /*  5.7:1 on canvas */
+  --text-inverse:  #FFFFFF;
+
+  /* accent — blue is the only hue no flooring material is */
+  --accent:        #175CD3;  /*  5.6:1 on canvas */
+  --accent-hover:  #1249A8;
+  --accent-subtle: #EFF4FF;
+
+  /* material viewer backdrop — TRUE neutral, never white, never tinted */
+  --sample-tray:   #808080;
+  --sample-tray-light: #BFBFBF;
+
+  /* status ramp — hue AND lightness both vary (CVD-safe) */
+  --st-lead:       #475467;  /* 7.2:1 — Lead / new              */
+  --st-quoted:     #175CD3;  /* 5.6:1 — Measured / quoted       */
+  --st-sold:       #6941C6;  /* 6.2:1 — Sold / ordered          */
+  --st-attention:  #B54708;  /* 5.1:1 — Needs attention         */
+  --st-complete:   #067647;  /* 5.3:1 — Installed / complete    */
+  --st-problem:    #B42318;  /* 6.1:1 — Punchlist / problem     */
+  --st-hold:       #667085;  /* 4.7:1 — On hold; body size (14px+) only */
+}
+
+[data-theme="dark"] {
+  --canvas:        #16181C;
+  --surface:       #1E2126;
+  --surface-sunk:  #121418;
+  --border:        #2E323A;
+  --border-strong: #434952;
+
+  --text:          #E6E7E9;  /* 14.4:1 on canvas */
+  --text-muted:    #A0A5AD;
+  --text-inverse:  #16181C;
+
+  --accent:        #7FB0FF;  /*  8.1:1 on canvas — #175CD3 fails on dark, never reuse it */
+  --accent-hover:  #A3C6FF;
+  --accent-subtle: #1B2534;
+
+  --sample-tray:   #808080;  /* unchanged in both themes — it is a measurement reference */
+  --sample-tray-light: #BFBFBF;
+}

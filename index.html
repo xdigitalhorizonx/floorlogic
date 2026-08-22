@@ -1,0 +1,714 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+  <!-- TITLE EXISTS IN FOUR PLACES: <title>, og:title, twitter:title, and the
+       JSON-LD WebPage "name". If it changes, change all four in the same edit. -->
+  <title>FloorLogic — Flooring Software With a Real Free Trial</title>
+  <meta name="description" content="Quote roll goods, get online approvals that create the work order and invoice automatically, cost every job, and get paid by card. $149–$549/mo, 14-day free trial, no credit card. Built inside a real flooring store.">
+
+  <meta property="og:type" content="website">
+  <meta property="og:title" content="FloorLogic — Flooring Software With a Real Free Trial">
+  <meta property="og:description" content="The last flooring software you'll ever need. Quotes with roll-goods math, online approval that writes the work order and invoice, job costing, invoicing, inventory. 14-day free trial, no credit card.">
+  <meta name="twitter:card" content="summary_large_image">
+  <meta name="twitter:title" content="FloorLogic — Flooring Software With a Real Free Trial">
+  <meta name="twitter:description" content="The last flooring software you'll ever need. 14-day free trial, no credit card, pricing on the page.">
+  <!-- TODO (pre-publish): final domain not yet provided — add canonical, og:url,
+       og:image (absolute URLs) and sitemap.xml in the same edit once it exists. -->
+
+  <link rel="icon" type="image/svg+xml" href="favicon.svg">
+
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Geist:wght@100..900&family=Geist+Mono:wght@100..900&display=swap" rel="stylesheet">
+
+  <link rel="stylesheet" href="css/tokens.css">
+  <link rel="stylesheet" href="css/styles.css">
+  <!-- theme.js runs before paint so a stored dark choice never flashes light -->
+  <script src="js/theme.js"></script>
+
+  <script type="application/ld+json">
+  {
+    "@context": "https://schema.org",
+    "@graph": [
+      {
+        "@type": "Organization",
+        "@id": "#org",
+        "name": "FloorLogic",
+        "description": "Flooring business management software built inside Landmark Flooring, a working flooring store in Carson City, Nevada.",
+        "email": "brandon@digitalhorizon.dev",
+        "telephone": "+1-775-237-8898",
+        "address": { "@type": "PostalAddress", "addressLocality": "Carson City", "addressRegion": "NV", "addressCountry": "US" },
+        "parentOrganization": { "@type": "Organization", "name": "Digital Horizon" }
+      },
+      { "@type": "WebSite", "@id": "#site", "name": "FloorLogic", "publisher": { "@id": "#org" } },
+      {
+        "@type": "WebPage",
+        "@id": "#page",
+        "name": "FloorLogic — Flooring Software With a Real Free Trial",
+        "isPartOf": { "@id": "#site" },
+        "about": { "@id": "#app" }
+      },
+      {
+        "@type": "SoftwareApplication",
+        "@id": "#app",
+        "name": "FloorLogic",
+        "applicationCategory": "BusinessApplication",
+        "operatingSystem": "Web browser",
+        "description": "Flooring contractor software: quotes with roll-goods and cut-sheet costing, hosted quotes with online approval that auto-creates the work order and invoice, job costing with estimate-vs-actual variance, invoicing with embedded card payment, purchase orders, inventory, sample checkouts, two-way SMS and call transcription.",
+        "offers": [
+          { "@type": "Offer", "name": "Crew", "price": "149", "priceCurrency": "USD", "description": "Up to 3 seats. $149/month or $1,490/year. 14-day free trial, no credit card, no setup fee." },
+          { "@type": "Offer", "name": "Shop", "price": "299", "priceCurrency": "USD", "description": "Up to 10 seats. $299/month or $2,990/year. 14-day free trial, no credit card, no setup fee." },
+          { "@type": "Offer", "name": "Ledger", "price": "549", "priceCurrency": "USD", "description": "Unlimited seats. $549/month or $5,490/year. 14-day free trial, no credit card, no setup fee." }
+        ],
+        "creator": { "@id": "#org" }
+      },
+      {
+        "@type": "FAQPage",
+        "@id": "#faq-schema",
+        "mainEntity": [
+          {
+            "@type": "Question",
+            "name": "What happens after I enter my email?",
+            "acceptedAnswer": { "@type": "Answer", "text": "A real person at FloorLogic builds your private workspace and emails your login — usually the same day. No credit card, no sales call required. FloorLogic is single-tenant, so a human sets up each company's own database rather than a signup script." }
+          },
+          {
+            "@type": "Question",
+            "name": "Is my data mixed in with other companies' data?",
+            "acceptedAnswer": { "@type": "Answer", "text": "No. FloorLogic is single-tenant: every company runs in its own private database. Your quotes, customers, and books are not rows in a shared system." }
+          },
+          {
+            "@type": "Question",
+            "name": "Will my crew actually use it?",
+            "acceptedAnswer": { "@type": "Answer", "text": "It runs in the browser on any phone, tablet, or desktop — nothing to install and no server to babysit. Crews see their work orders, schedules, job photos, and tasks; the accounting section is PIN-gated to a finance allowlist, so an installer can cost a job without ever seeing the books." }
+          },
+          {
+            "@type": "Question",
+            "name": "Does it replace QuickBooks?",
+            "acceptedAnswer": { "@type": "Answer", "text": "FloorLogic has its own books: bank transaction import with reconciliation and auto-categorization, payables and receivables, job costing, and Stripe payout reports. There is no two-way QuickBooks sync today — Landmark Flooring runs entirely on FloorLogic's books. If you need to keep QuickBooks, ask us about your setup before you commit." }
+          },
+          {
+            "@type": "Question",
+            "name": "Is there a mobile app?",
+            "acceptedAnswer": { "@type": "Answer", "text": "FloorLogic is a responsive web app — it runs in the browser on phones and tablets, with nothing to install and no native app to update. We say that plainly because you should know exactly what you're getting." }
+          },
+          {
+            "@type": "Question",
+            "name": "How long is the trial, and what does it cost after?",
+            "acceptedAnswer": { "@type": "Answer", "text": "14 days, free, no credit card. After that it's $149, $299, or $549 per month depending on tier — the full pricing is published on this page. Annual billing gets two months free. There is no setup fee." }
+          },
+          {
+            "@type": "Question",
+            "name": "Who is behind FloorLogic?",
+            "acceptedAnswer": { "@type": "Answer", "text": "FloorLogic is a Digital Horizon product, built in Carson City, Nevada, inside Landmark Flooring — a working flooring store. The same system runs Landmark's real quotes, installs, and books every day." }
+          }
+        ]
+      }
+    ]
+  }
+  </script>
+</head>
+<body>
+  <a class="skip-link" href="#main">Skip to content</a>
+
+  <header class="masthead">
+    <div class="wrap masthead__row">
+      <a class="brand" href="#top" aria-label="FloorLogic — home">
+        <svg viewBox="0 0 64 64" aria-hidden="true">
+          <rect width="64" height="64" rx="14" fill="var(--accent)"/>
+          <rect x="12" y="14" width="40" height="9" rx="2" fill="var(--text-inverse)"/>
+          <rect x="12" y="27" width="25" height="9" rx="2" fill="var(--text-inverse)"/>
+          <rect x="41" y="27" width="11" height="9" rx="2" fill="var(--text-inverse)" opacity=".55"/>
+          <rect x="12" y="40" width="13" height="9" rx="2" fill="var(--text-inverse)" opacity=".55"/>
+          <rect x="29" y="40" width="23" height="9" rx="2" fill="var(--text-inverse)"/>
+        </svg>
+        <span><b>Floor</b>Logic</span>
+      </a>
+      <nav aria-label="Main">
+        <a href="#product">Product</a>
+        <a href="#loop">How it works</a>
+        <a href="#why">Why FloorLogic</a>
+        <a href="#pricing">Pricing</a>
+        <a href="#faq">FAQ</a>
+      </nav>
+      <div class="masthead__actions">
+        <button class="theme-toggle" type="button" data-theme-toggle aria-pressed="false" aria-label="Toggle dark theme" onclick="floorlogicToggleTheme()">
+          <svg class="icon-moon" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"/></svg>
+          <svg class="icon-sun" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="4"/><path d="M12 2v2M12 20v2M4.93 4.93l1.41 1.41M17.66 17.66l1.41 1.41M2 12h2M20 12h2M4.93 19.07l1.41-1.41M17.66 6.34l1.41-1.41"/></svg>
+        </button>
+        <a class="masthead__login" href="https://landmarkflooring.app" rel="noopener">Log in</a>
+        <a class="btn btn--primary" href="#start">Start free trial</a>
+      </div>
+    </div>
+  </header>
+
+  <main id="main">
+
+    <!-- ============ HERO ============ -->
+    <section class="hero" id="top">
+      <div class="wrap">
+        <div class="hero__grid">
+          <p class="kicker">The last flooring software you&rsquo;ll ever need</p>
+          <h1>Quote it. They tap Approve. The&nbsp;work order and invoice write&nbsp;themselves.</h1>
+          <p class="lead">From the first phone call to job costing, invoicing, and inventory — every job in one system. Built inside Landmark Flooring in Carson City, and running its real jobs every day.</p>
+
+          <form class="hero__signup" id="start" data-trial-form data-source="hero" novalidate>
+            <div class="capture">
+              <label class="visually-hidden" for="hero-email">Work email</label>
+              <input id="hero-email" name="email" type="email" autocomplete="email" placeholder="Work email" required>
+              <button class="btn btn--primary btn--lg" type="submit">Start free trial</button>
+            </div>
+            <div class="capture-more" data-step2 hidden>
+              <label class="visually-hidden" for="hero-company">Company name</label>
+              <input id="hero-company" name="company_name" type="text" autocomplete="organization" placeholder="Company name" required>
+              <label class="visually-hidden" for="hero-name">Your name</label>
+              <input id="hero-name" name="full_name" type="text" autocomplete="name" placeholder="Your name" required>
+              <label class="visually-hidden" for="hero-phone">Phone (optional)</label>
+              <input id="hero-phone" name="phone" type="tel" autocomplete="tel" placeholder="Phone (optional)">
+              <label class="visually-hidden" for="hero-crew">Crew size</label>
+              <select id="hero-crew" name="crew_size">
+                <option value="" selected>Crew size (optional)</option>
+                <option>Just me</option>
+                <option>2&ndash;5</option>
+                <option>6&ndash;15</option>
+                <option>16&ndash;40</option>
+                <option>40+</option>
+              </select>
+              <label class="visually-hidden" for="hero-tool">What runs the shop today?</label>
+              <input class="span-2" id="hero-tool" name="current_tool" type="text" placeholder="What runs the shop today? (spreadsheets, QuickBooks, paper&hellip;)">
+            </div>
+            <!-- honeypot -->
+            <input type="text" name="website" tabindex="-1" autocomplete="off" aria-hidden="true" style="position:absolute;left:-9999px">
+            <p class="form-note" data-form-note hidden></p>
+            <div class="form-success" data-form-success role="status">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"/><path d="M22 4 12 14.01l-3-3"/></svg>
+              <span><strong>Request received.</strong> A real person builds your private workspace and emails your login — usually the same day. No card, no obligation.</span>
+            </div>
+            <div class="micro">
+              <span><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M20 6 9 17l-5-5"/></svg>Free for 14 days</span>
+              <span><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M20 6 9 17l-5-5"/></svg>No credit card</span>
+              <span><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M20 6 9 17l-5-5"/></svg>A real person sets you up</span>
+            </div>
+          </form>
+
+          <p class="form-note">Don&rsquo;t demo it. Run one real job through it — quote, approval, invoice, payment — and decide.</p>
+        </div>
+
+        <!-- ============ PRODUCT FRAME ============ -->
+        <div class="product" id="product">
+          <div class="frame reveal">
+            <div class="frame__bar">
+              <div class="frame__dots" aria-hidden="true"><i></i><i></i><i></i></div>
+              <div class="frame__url">app.floorlogic &mdash; your shop, one login</div>
+            </div>
+            <div class="frame__tabs" role="tablist" aria-label="Product views">
+              <button class="frame__tab" role="tab" aria-selected="true" aria-controls="view-pipeline" id="tab-pipeline" type="button">Lead pipeline</button>
+              <button class="frame__tab" role="tab" aria-selected="false" aria-controls="view-quotes" id="tab-quotes" type="button">Quotes</button>
+              <button class="frame__tab" role="tab" aria-selected="false" aria-controls="view-books" id="tab-books" type="button">Accounting</button>
+            </div>
+            <div class="frame__view is-active" id="view-pipeline" role="tabpanel" aria-labelledby="tab-pipeline">
+              <img src="assets/app-leads.webp" width="1600" height="1067" alt="FloorLogic lead pipeline board with stage columns from New through Approved, win rate, and follow-up cards for each lead">
+            </div>
+            <div class="frame__view" id="view-quotes" role="tabpanel" aria-labelledby="tab-quotes">
+              <img src="assets/app-quotes.webp" width="1600" height="1067" alt="FloorLogic quotes list showing draft, sent, approved, and declined quotes with totals and $108,124 pending value" loading="lazy">
+            </div>
+            <div class="frame__view" id="view-books" role="tabpanel" aria-labelledby="tab-books">
+              <img src="assets/app-accounting.webp" width="1600" height="1067" alt="FloorLogic accounting overview with receivables and payables aging, monthly collected and spent totals, and spend by category" loading="lazy">
+            </div>
+          </div>
+          <p class="frame-caption">The actual product — shown with invented demo-company data, not customer records. Every screenshot on this page is the real app.</p>
+        </div>
+      </div>
+    </section>
+
+    <!-- ============ PROOF ============ -->
+    <section class="proof">
+      <div class="wrap">
+        <div class="section-head reveal">
+          <p class="kicker">Proof, not promises</p>
+          <h2>It already runs a real flooring store.</h2>
+          <p class="lead">FloorLogic isn&rsquo;t a pitch deck. It runs Landmark Flooring in Carson City, Nevada — every quote, every install, every reconciled dollar. These numbers are from that live database.</p>
+        </div>
+        <div class="proof__grid">
+          <div class="stat reveal"><b>36,188</b><span>products in the live catalog — with roll width, cut cost, and roll cost per sq&nbsp;yd</span></div>
+          <div class="stat reveal"><b>992</b><span>bank transactions imported, reconciled, and auto-categorized</span></div>
+          <div class="stat reveal"><b>88 &rarr; 34</b><span>quotes sent, jobs created — approval to work order with nothing re-typed</span></div>
+          <div class="stat reveal"><b>1,249</b><span>activity records on the audit trail — every send, view, approval, and payment</span></div>
+        </div>
+        <p class="wedge-note">Figures from the Landmark Flooring production database, August 14, 2026. One store runs on FloorLogic today — ours. No customer counts, no testimonials, no logo walls: run one real job through it and judge for yourself.</p>
+      </div>
+    </section>
+
+    <!-- ============ THE LOOP ============ -->
+    <section id="loop">
+      <div class="wrap">
+        <div class="section-head reveal">
+          <p class="kicker">The FloorLogic loop</p>
+          <h2>One customer tap replaces a night of paperwork.</h2>
+          <p class="lead">Your quote is a live link, not a PDF attachment. The customer opens it on their phone, sees the price, and taps Approve — and FloorLogic does the re-typing you used to do at the kitchen table.</p>
+        </div>
+
+        <div class="loop">
+          <article class="loop__beat reveal">
+            <div class="loop__num mono">01</div>
+            <h3>Send a link, not a PDF</h3>
+            <p>The customer opens a live quote in their browser — no login, no app. Materials and labor priced separately, options they can pick from, and a place to ask a question.</p>
+            <div class="phone" aria-hidden="true">
+              <div class="phone__bar"></div>
+              <div class="phone__doc">
+                <div class="phone__title">Quote QT-321 &middot; Silverado Ridge HOA</div>
+                <div class="phone__row"><span>Materials</span><span class="mono">$29,904.15</span></div>
+                <div class="phone__row"><span>Labor</span><span class="mono">$14,674.25</span></div>
+                <div class="phone__row phone__row--total"><span>Total</span><span class="mono">$44,578.40</span></div>
+                <div class="phone__approve">Approve quote</div>
+              </div>
+            </div>
+          </article>
+
+          <article class="loop__beat reveal">
+            <div class="loop__num mono">02</div>
+            <h3>They tap Approve</h3>
+            <p>Approval is recorded with a timestamp on the audit trail, and the signed PDF is emailed to your rep and the owners. You find out the moment it happens — not next Thursday.</p>
+            <div class="loop__tap" aria-hidden="true">
+              <div class="loop__button">Approve quote</div>
+              <div class="loop__stamp mono">Approved &middot; Aug 14, 3:34 PM</div>
+            </div>
+          </article>
+
+          <article class="loop__beat reveal">
+            <div class="loop__num mono">03</div>
+            <h3>The paperwork writes itself</h3>
+            <p>The work order and the invoice are created automatically from the approved quote. The deposit follows your payment terms, and the customer can pay it by card right on the invoice link.</p>
+            <div class="loop__made" aria-hidden="true">
+              <div class="loop__doc"><span class="loop__chip">Created</span><b>Work order WO-321</b><span>Ready to schedule</span></div>
+              <div class="loop__doc"><span class="loop__chip">Created</span><b>Invoice INV-321</b><span class="mono">Deposit due &middot; $22,289.20</span></div>
+            </div>
+          </article>
+        </div>
+      </div>
+    </section>
+
+    <!-- ============ FEATURES ============ -->
+    <section class="features">
+      <div class="wrap">
+        <div class="section-head reveal">
+          <p class="kicker">Run the whole shop</p>
+          <h2>Software that knows what a roll is.</h2>
+          <p class="lead">Generic field-service apps can schedule a crew, but they can&rsquo;t price a seam. FloorLogic was built on flooring math first — everything else grew around it.</p>
+        </div>
+
+        <div class="grid">
+          <article class="feature feature--wide reveal">
+            <div class="feature__icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M3 8h18M3 8v8a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2V8M3 8l2-4h14l2 4"/><path d="M8 12h4"/></svg></div>
+            <h3>Stop giving away yardage</h3>
+            <p>Quotes that price cut cost and roll cost per square yard, per product — so the waste is in the quote, not out of your margin.</p>
+            <ul>
+              <li>Materials and labor priced separately on every line</li>
+              <li>Good / better / best options the customer picks from</li>
+              <li>Tax by county, terms, deposit %, dual sales reps</li>
+              <li>A 36,188-product catalog with vendor, style, and colour</li>
+            </ul>
+          </article>
+
+          <article class="feature reveal">
+            <div class="feature__icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="2" y="5" width="20" height="14" rx="2"/><path d="M2 10h20"/></svg></div>
+            <h3>Get paid on the link</h3>
+            <p>Hosted invoices with card payment built in. The deposit is collected the minute they approve — not 45 days after the floor goes down.</p>
+          </article>
+
+          <article class="feature reveal">
+            <div class="feature__icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="4" y="2" width="16" height="20" rx="2"/><path d="M8 6h8M8 10h8M8 14h4"/><path d="m14.5 15.5 2 2 3.5-3.5"/></svg></div>
+            <h3>Know which jobs made money</h3>
+            <p>Estimate vs. actual vs. variance on every job — contractor payments, purchases, supplies — each cost with a receipt photo attached.</p>
+          </article>
+
+          <article class="feature reveal">
+            <div class="feature__icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M16.5 9.4 7.55 4.24M21 16V8a2 2 0 0 0-1-1.73l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.73l7 4a2 2 0 0 0 2 0l7-4A2 2 0 0 0 21 16z"/><path d="M3.27 6.96 12 12.01l8.73-5.05M12 22.08V12"/></svg></div>
+            <h3>Inventory that matches the warehouse</h3>
+            <p>On-hand, allocated, prepared, available, shortages, low-stock alerts — and purchase orders tracked from ordered to received.</p>
+          </article>
+
+          <article class="feature reveal">
+            <div class="feature__icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M9 11H5a2 2 0 0 0-2 2v7h6m0-9v9m0-9h6m-6 9h6m0-9h4a2 2 0 0 1 2 2v7h-6m0-9V4a2 2 0 0 0-2-2h-2a2 2 0 0 0-2 2v7"/></svg></div>
+            <h3>Every sample board, accounted for</h3>
+            <p>Sample checkouts track which board went home with whom and when it&rsquo;s due back — so displays stop walking away.</p>
+          </article>
+
+          <article class="feature reveal">
+            <div class="feature__icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/></svg></div>
+            <h3>Change orders you can prove</h3>
+            <p>Two-way texting lives on the job record. When someone says &ldquo;that&rsquo;s not what we agreed to,&rdquo; you scroll, you point, you&rsquo;re done.</p>
+          </article>
+
+          <article class="feature reveal">
+            <div class="feature__icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 2a3 3 0 0 0-3 3v7a3 3 0 0 0 6 0V5a3 3 0 0 0-3-3z"/><path d="M19 10v2a7 7 0 0 1-14 0v-10"/><path d="M12 19v3"/></svg></div>
+            <h3>The customer said it on the phone</h3>
+            <p>FloorLogic wrote it down. Calls are logged with recordings, transcripts, and AI summaries — attached to the job, searchable forever.</p>
+          </article>
+
+          <article class="feature reveal">
+            <div class="feature__icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="3" y="11" width="18" height="11" rx="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/></svg></div>
+            <h3>Books with a PIN on them</h3>
+            <p>Bank feeds, reconciliation, auto-categorization, payables and receivables, commissions — gated to a finance allowlist, so the crew can cost a job without seeing the books.</p>
+          </article>
+
+          <article class="feature feature--wide reveal">
+            <div class="feature__icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 3v3M18.4 5.6l-2.1 2.1M21 12h-3M18.4 18.4l-2.1-2.1M12 18v3M7.7 16.3l-2.1 2.1M6 12H3M7.7 7.7 5.6 5.6"/><circle cx="12" cy="12" r="3"/></svg></div>
+            <h3>Ask the software, not the filing cabinet</h3>
+            <p>Casper, the built-in assistant, digs answers out of your own records — and the activity timeline keeps every send, view, note, and payment on the record it belongs to. Realtime sync with edit guards means two people never clobber each other&rsquo;s work.</p>
+          </article>
+        </div>
+
+        <p class="retire reveal">Retire the pile: <s>the quote pad</s> <s>the whiteboard</s> <s>three spreadsheets</s> <s>the sticky notes</s> <s>the personal texting thread</s> <s>the 1997 install</s> <b>One login.</b></p>
+      </div>
+    </section>
+
+    <!-- ============ JOURNEY ============ -->
+    <section>
+      <div class="wrap wrap--narrow">
+        <div class="section-head reveal">
+          <p class="kicker">First call to final payment</p>
+          <h2>One thread runs through the whole job.</h2>
+          <p class="lead">No re-typing between systems, no &ldquo;let me find that.&rdquo; A job moves through FloorLogic the way it moves through your shop.</p>
+        </div>
+
+        <div class="journey">
+          <div class="step step--lead reveal">
+            <div class="step__marker"><div class="step__icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M19 8v6M22 11h-6"/></svg></div></div>
+            <div class="step__body">
+              <h3>Every call becomes a card <span class="pill pill--lead"><svg viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><circle cx="12" cy="12" r="9"/></svg>Lead</span></h3>
+              <p>Pipeline stages, follow-up dates, site surveys, win rate — with duplicate guards so the same customer never gets entered twice.</p>
+            </div>
+          </div>
+
+          <div class="step step--quoted reveal">
+            <div class="step__marker"><div class="step__icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M21.3 8.7 15.3 2.7a1 1 0 0 0-1.4 0l-11.2 11.2a1 1 0 0 0 0 1.4l6 6a1 1 0 0 0 1.4 0L21.3 10.1a1 1 0 0 0 0-1.4z"/><path d="m7.5 10.5 1.5 1.5M10.5 7.5l1.5 1.5M13.5 4.5 15 6"/></svg></div></div>
+            <div class="step__body">
+              <h3>Measured and quoted in the same visit <span class="pill pill--quoted"><svg viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><circle cx="12" cy="12" r="9"/></svg>Quoted</span></h3>
+              <p>Roll math, waste, and labor in the quote itself. Versioning, expiration dates, and view tracking tell you who opened it and when.</p>
+            </div>
+          </div>
+
+          <div class="step step--sold reveal">
+            <div class="step__marker"><div class="step__icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M20 6 9 17l-5-5"/></svg></div></div>
+            <div class="step__body">
+              <h3>Approved online <span class="pill pill--sold"><svg viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><circle cx="12" cy="12" r="9"/></svg>Sold</span></h3>
+              <p>The customer taps Approve on the live quote link. The work order and the deposit invoice are created for you, and the rep gets the PDF by email.</p>
+              <span class="step__auto"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M13 2 3 14h9l-1 8 10-12h-9l1-8z"/></svg>Automatic — nothing re-typed</span>
+            </div>
+          </div>
+
+          <div class="step step--complete reveal">
+            <div class="step__marker"><div class="step__icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4 22V4a2 2 0 0 1 2-2h12a2 2 0 0 1 2 2v18"/><path d="M2 22h20"/><path d="M9 8h6M9 12h6M9 16h6"/></svg></div></div>
+            <div class="step__body">
+              <h3>Installed, costed, banked <span class="pill pill--complete"><svg viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><circle cx="12" cy="12" r="9"/></svg>Complete</span></h3>
+              <p>Crews scheduled — split across two installers when the job needs it. Costs land against the estimate as they happen, so you know what you made before the van is unloaded.</p>
+            </div>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- ============ WHY / WEDGE ============ -->
+    <section class="features" id="why">
+      <div class="wrap">
+        <div class="section-head reveal">
+          <p class="kicker">Why FloorLogic</p>
+          <h2>Try it before anyone calls you.</h2>
+          <p class="lead">We checked eight flooring business-management systems. Zero offer a free trial — every one sells by demo appointment. FloorLogic hands you the keys instead: full product, 14 days, no card.</p>
+        </div>
+
+        <div class="compare reveal">
+          <table>
+            <colgroup><col><col class="you"><col><col></colgroup>
+            <thead>
+              <tr>
+                <th scope="col"><span class="visually-hidden">Capability</span></th>
+                <th scope="col">FloorLogic</th>
+                <th scope="col">FloorZap</th>
+                <th scope="col">Jobber / Housecall&nbsp;Pro</th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr>
+                <th scope="row">Flooring-native math — roll goods, cut vs. roll $/sq&nbsp;yd, waste</th>
+                <td><span class="yes"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M20 6 9 17l-5-5"/></svg>Yes</span></td>
+                <td><span class="yes"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M20 6 9 17l-5-5"/></svg>Yes</span></td>
+                <td><span class="no"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" aria-hidden="true"><path d="M18 6 6 18M6 6l12 12"/></svg>Generic</span></td>
+              </tr>
+              <tr>
+                <th scope="row">Free trial</th>
+                <td><span class="yes"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M20 6 9 17l-5-5"/></svg>14 days, no card</span></td>
+                <td><span class="no"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" aria-hidden="true"><path d="M18 6 6 18M6 6l12 12"/></svg>Demo only</span></td>
+                <td><span class="yes"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M20 6 9 17l-5-5"/></svg>Yes</span></td>
+              </tr>
+              <tr>
+                <th scope="row">Full pricing on the website</th>
+                <td><span class="yes"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M20 6 9 17l-5-5"/></svg>Every number, below</span></td>
+                <td><span class="no"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" aria-hidden="true"><path d="M18 6 6 18M6 6l12 12"/></svg>&ldquo;Starting at&rdquo; only</span></td>
+                <td><span class="yes"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M20 6 9 17l-5-5"/></svg>Yes</span></td>
+              </tr>
+              <tr>
+                <th scope="row">Setup fee</th>
+                <td><span class="yes"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M20 6 9 17l-5-5"/></svg>None</span></td>
+                <td><span class="no"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" aria-hidden="true"><path d="M18 6 6 18M6 6l12 12"/></svg>Charges one</span></td>
+                <td><span class="yes"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M20 6 9 17l-5-5"/></svg>None</span></td>
+              </tr>
+              <tr>
+                <th scope="row">Job costing with estimate-vs-actual variance</th>
+                <td><span class="yes"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M20 6 9 17l-5-5"/></svg>Yes</span></td>
+                <td><span class="no"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" aria-hidden="true"><path d="M18 6 6 18M6 6l12 12"/></svg>Partial</span></td>
+                <td><span class="no"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" aria-hidden="true"><path d="M18 6 6 18M6 6l12 12"/></svg>No</span></td>
+              </tr>
+              <tr>
+                <th scope="row">Bank feed reconciliation + auto-categorization</th>
+                <td><span class="yes"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M20 6 9 17l-5-5"/></svg>Yes</span></td>
+                <td><span class="no"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" aria-hidden="true"><path d="M18 6 6 18M6 6l12 12"/></svg>No</span></td>
+                <td><span class="no"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" aria-hidden="true"><path d="M18 6 6 18M6 6l12 12"/></svg>No</span></td>
+              </tr>
+              <tr>
+                <th scope="row">Built and used daily inside a flooring store</th>
+                <td><span class="yes"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M20 6 9 17l-5-5"/></svg>Yes — Landmark Flooring</span></td>
+                <td><span class="no"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" aria-hidden="true"><path d="M18 6 6 18M6 6l12 12"/></svg>No</span></td>
+                <td><span class="no"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" aria-hidden="true"><path d="M18 6 6 18M6 6l12 12"/></svg>No</span></td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+        <p class="wedge-note">Trial census checked August 15, 2026 across eight flooring-native business-management systems: FloorZap, QFloors, RFMS, RollMaster, Comp-U-Floor, Broadlume, Pacific Solutions, and Service Buddy — none offered a free trial. Takeoff-and-estimating-only tools are a different category and aren&rsquo;t included. Comparison rows reflect each vendor&rsquo;s published materials on that date; we re-check quarterly.</p>
+      </div>
+    </section>
+
+    <!-- ============ STORY ============ -->
+    <section id="story">
+      <div class="wrap wrap--narrow">
+        <div class="section-head reveal">
+          <p class="kicker">Where it comes from</p>
+          <h2>Built inside a flooring store. Not a tech incubator.</h2>
+        </div>
+        <div class="story reveal">
+          <p>FloorLogic runs Landmark Flooring in Carson City, Nevada — every quote, every install, every invoice, every day. When something slowed down a real job, we felt it the same week, and we fixed it.</p>
+          <p>That&rsquo;s the whole pitch. No fake reviews, no stock-photo testimonials, no &ldquo;trusted by 10,000 contractors.&rdquo; FloorLogic is new, and the proof is that a real flooring company bet its own operations on it. Run one real job through it and judge for yourself.</p>
+          <p class="story__sign">— Jeff &amp; Brandon, Landmark Flooring / Digital Horizon, Carson City NV</p>
+        </div>
+      </div>
+    </section>
+
+    <!-- ============ PRICING ============ -->
+    <section class="pricing" id="pricing">
+      <div class="wrap">
+        <div class="section-head reveal">
+          <p class="kicker">Priced in the open</p>
+          <h2>No &ldquo;book a demo to see pricing.&rdquo;</h2>
+          <p class="lead">Every number, on the page. Seats included in the tier, no per-seat surcharges inside it, and no setup fee — ever.</p>
+        </div>
+
+        <div class="tiers">
+          <article class="tier reveal">
+            <div>
+              <h3 class="tier__name">Crew</h3>
+              <p class="tier__seats">Up to 3 seats</p>
+            </div>
+            <div>
+              <p class="tier__price"><b>$149</b><span>/month</span></p>
+              <p class="tier__annual">or $1,490/year — two months free</p>
+            </div>
+            <ul>
+              <li><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M20 6 9 17l-5-5"/></svg>Leads &amp; pipeline</li>
+              <li><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M20 6 9 17l-5-5"/></svg>Quote builder + full product catalog</li>
+              <li><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M20 6 9 17l-5-5"/></svg>Live customer quote links &amp; online approval</li>
+              <li><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M20 6 9 17l-5-5"/></svg>Work orders, scheduling &amp; calendar</li>
+              <li><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M20 6 9 17l-5-5"/></svg>Invoices with card payment</li>
+              <li><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M20 6 9 17l-5-5"/></svg>SMS &amp; email delivery</li>
+            </ul>
+            <a class="btn btn--ghost" href="#closer" data-plan="crew">Start free on Crew</a>
+          </article>
+
+          <article class="tier tier--featured reveal">
+            <span class="tier__flag">Recommended</span>
+            <div>
+              <h3 class="tier__name">Shop</h3>
+              <p class="tier__seats">Up to 10 seats</p>
+            </div>
+            <div>
+              <p class="tier__price"><b>$299</b><span>/month</span></p>
+              <p class="tier__annual">or $2,990/year — two months free</p>
+            </div>
+            <ul>
+              <li class="tier__carry">Everything in Crew, plus:</li>
+              <li><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M20 6 9 17l-5-5"/></svg>Job costing with estimate-vs-actual</li>
+              <li><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M20 6 9 17l-5-5"/></svg>Purchase orders</li>
+              <li><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M20 6 9 17l-5-5"/></svg>Inventory &amp; sample checkouts</li>
+              <li><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M20 6 9 17l-5-5"/></svg>Projects &amp; change orders</li>
+              <li><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M20 6 9 17l-5-5"/></svg>Dual sales reps &amp; commissions</li>
+              <li><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M20 6 9 17l-5-5"/></svg>Call logging with transcripts</li>
+            </ul>
+            <a class="btn btn--primary" href="#closer" data-plan="shop">Start free on Shop</a>
+          </article>
+
+          <article class="tier reveal">
+            <div>
+              <h3 class="tier__name">Ledger</h3>
+              <p class="tier__seats">Unlimited seats</p>
+            </div>
+            <div>
+              <p class="tier__price"><b>$549</b><span>/month</span></p>
+              <p class="tier__annual">or $5,490/year — two months free</p>
+            </div>
+            <ul>
+              <li class="tier__carry">Everything in Shop, plus:</li>
+              <li><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M20 6 9 17l-5-5"/></svg>Full accounting</li>
+              <li><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M20 6 9 17l-5-5"/></svg>Bank feeds, reconciliation &amp; auto-categorization</li>
+              <li><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M20 6 9 17l-5-5"/></svg>Payables / receivables</li>
+              <li><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M20 6 9 17l-5-5"/></svg>Stripe payout reports</li>
+              <li><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M20 6 9 17l-5-5"/></svg>PIN-gated finance access</li>
+              <li><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M20 6 9 17l-5-5"/></svg>Webhooks, priority onboarding &amp; data migration</li>
+            </ul>
+            <a class="btn btn--ghost" href="#closer" data-plan="ledger">Start free on Ledger</a>
+          </article>
+        </div>
+
+        <p class="pricing__foot"><b>Every tier starts with 14 days free — no credit card.</b> Card processing is Stripe&rsquo;s standard rate, billed by Stripe; FloorLogic adds nothing on top.</p>
+      </div>
+    </section>
+
+    <!-- ============ FAQ ============ -->
+    <section id="faq">
+      <div class="wrap wrap--narrow">
+        <div class="section-head reveal">
+          <p class="kicker">Straight answers</p>
+          <h2>The questions we&rsquo;d ask, too.</h2>
+        </div>
+        <div class="faq reveal">
+          <details>
+            <summary>What happens after I enter my email?<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" aria-hidden="true"><path d="M12 5v14M5 12h14"/></svg></summary>
+            <div class="faq__a"><p>A real person builds your private workspace and emails your login — usually the same day. No credit card, no sales call required. FloorLogic is single-tenant, so a human sets up each company&rsquo;s own database rather than a signup script. We think that beats a &ldquo;book a demo&rdquo; form by a mile, and we&rsquo;d rather tell you exactly how it works than pretend there&rsquo;s a magic instant-signup behind the button.</p></div>
+          </details>
+          <details>
+            <summary>Is my data mixed in with other companies&rsquo; data?<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" aria-hidden="true"><path d="M12 5v14M5 12h14"/></svg></summary>
+            <div class="faq__a"><p>No. Every company runs in its own private database. Your quotes, customers, and books are not rows in a shared system sitting next to your competitor&rsquo;s.</p></div>
+          </details>
+          <details>
+            <summary>Will my crew actually use it?<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" aria-hidden="true"><path d="M12 5v14M5 12h14"/></svg></summary>
+            <div class="faq__a"><p>It runs in the browser on any phone, tablet, or desktop — nothing to install, no server to babysit. Crews see their work orders, schedules, job photos, and tasks. The accounting section is PIN-gated to a finance allowlist, so an installer can cost a job without ever seeing the books.</p></div>
+          </details>
+          <details>
+            <summary>Does it replace QuickBooks?<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" aria-hidden="true"><path d="M12 5v14M5 12h14"/></svg></summary>
+            <div class="faq__a"><p>FloorLogic has its own books: bank transaction import with reconciliation and auto-categorization, payables and receivables, job costing, and Stripe payout reports. There&rsquo;s no two-way QuickBooks sync today — we&rsquo;d rather say that here than surprise you in week two. Landmark Flooring runs entirely on FloorLogic&rsquo;s books; if you need to keep QuickBooks, tell us about your setup and we&rsquo;ll give you a straight answer before you commit.</p></div>
+          </details>
+          <details>
+            <summary>Is there a mobile app?<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" aria-hidden="true"><path d="M12 5v14M5 12h14"/></svg></summary>
+            <div class="faq__a"><p>FloorLogic is a responsive web app — it runs in the browser on phones and tablets, with nothing to install and no app-store updates to chase. We say that plainly because you should know exactly what you&rsquo;re getting.</p></div>
+          </details>
+          <details>
+            <summary>How long is the trial, and what does it cost after?<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" aria-hidden="true"><path d="M12 5v14M5 12h14"/></svg></summary>
+            <div class="faq__a"><p>14 days, free, no credit card. After that it&rsquo;s $149, $299, or $549 a month depending on tier — <a href="#pricing">the full pricing is right on this page</a>. Annual billing gets two months free. There is no setup fee.</p></div>
+          </details>
+          <details>
+            <summary>Who&rsquo;s behind FloorLogic?<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" aria-hidden="true"><path d="M12 5v14M5 12h14"/></svg></summary>
+            <div class="faq__a"><p>FloorLogic is a Digital Horizon product, built in Carson City, Nevada, inside Landmark Flooring — a working flooring store. The people answering your questions are the people who run flooring jobs on it. Call us: <a href="tel:+17752378898">(775) 237-8898</a>.</p></div>
+          </details>
+        </div>
+      </div>
+    </section>
+
+    <!-- ============ CLOSER ============ -->
+    <section class="closer features" id="closer">
+      <div class="wrap">
+        <div class="closer__inner">
+          <p class="kicker">Still free. Still no card.</p>
+          <h2 class="reveal">You didn&rsquo;t open a flooring store to spend your nights re-typing quotes.</h2>
+          <p class="lead reveal">Put the quote pad, the whiteboard, and the 1997 software out with the scrap. FloorLogic is the last flooring software you&rsquo;ll ever need — and the first one built by people who sell floors.</p>
+
+          <form class="hero__signup" data-trial-form data-source="closer" novalidate>
+            <div class="capture">
+              <label class="visually-hidden" for="closer-email">Work email</label>
+              <input id="closer-email" name="email" type="email" autocomplete="email" placeholder="Work email" required>
+              <button class="btn btn--primary btn--lg" type="submit">Start free trial</button>
+            </div>
+            <div class="capture-more" data-step2 hidden>
+              <label class="visually-hidden" for="closer-company">Company name</label>
+              <input id="closer-company" name="company_name" type="text" autocomplete="organization" placeholder="Company name" required>
+              <label class="visually-hidden" for="closer-name">Your name</label>
+              <input id="closer-name" name="full_name" type="text" autocomplete="name" placeholder="Your name" required>
+              <label class="visually-hidden" for="closer-phone">Phone (optional)</label>
+              <input id="closer-phone" name="phone" type="tel" autocomplete="tel" placeholder="Phone (optional)">
+              <label class="visually-hidden" for="closer-crew">Crew size</label>
+              <select id="closer-crew" name="crew_size">
+                <option value="" selected>Crew size (optional)</option>
+                <option>Just me</option>
+                <option>2&ndash;5</option>
+                <option>6&ndash;15</option>
+                <option>16&ndash;40</option>
+                <option>40+</option>
+              </select>
+              <input class="span-2" id="closer-tool" name="current_tool" type="text" placeholder="What runs the shop today? (spreadsheets, QuickBooks, paper&hellip;)">
+            </div>
+            <input type="text" name="website" tabindex="-1" autocomplete="off" aria-hidden="true" style="position:absolute;left:-9999px">
+            <p class="form-note" data-form-note hidden></p>
+            <div class="form-success" data-form-success role="status">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"/><path d="M22 4 12 14.01l-3-3"/></svg>
+              <span><strong>Request received.</strong> A real person builds your private workspace and emails your login — usually the same day. No card, no obligation.</span>
+            </div>
+            <div class="micro">
+              <span><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M20 6 9 17l-5-5"/></svg>Free for 14 days</span>
+              <span><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M20 6 9 17l-5-5"/></svg>No credit card</span>
+              <span><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M20 6 9 17l-5-5"/></svg>A real person sets you up</span>
+            </div>
+          </form>
+
+          <p class="form-note">Prefer to talk to a human who sells floors? <a href="tel:+17752378898">(775) 237-8898</a> or <a href="mailto:brandon@digitalhorizon.dev">brandon@digitalhorizon.dev</a></p>
+        </div>
+      </div>
+    </section>
+  </main>
+
+  <footer>
+    <div class="wrap">
+      <div class="footer__grid">
+        <div class="footer__col">
+          <a class="brand" href="#top" aria-label="FloorLogic — back to top">
+            <svg viewBox="0 0 64 64" aria-hidden="true">
+              <rect width="64" height="64" rx="14" fill="var(--accent)"/>
+              <rect x="12" y="14" width="40" height="9" rx="2" fill="var(--text-inverse)"/>
+              <rect x="12" y="27" width="25" height="9" rx="2" fill="var(--text-inverse)"/>
+              <rect x="41" y="27" width="11" height="9" rx="2" fill="var(--text-inverse)" opacity=".55"/>
+              <rect x="12" y="40" width="13" height="9" rx="2" fill="var(--text-inverse)" opacity=".55"/>
+              <rect x="29" y="40" width="23" height="9" rx="2" fill="var(--text-inverse)"/>
+            </svg>
+            <span><b>Floor</b>Logic</span>
+          </a>
+          <p>The last flooring software you&rsquo;ll ever need.</p>
+          <p>Built inside Landmark Flooring &middot; Carson City, Nevada</p>
+        </div>
+        <div class="footer__col">
+          <b>Product</b>
+          <a href="#product">The app</a>
+          <a href="#loop">How it works</a>
+          <a href="#pricing">Pricing</a>
+          <a href="#faq">FAQ</a>
+        </div>
+        <div class="footer__col">
+          <b>Talk to us</b>
+          <a href="tel:+17752378898">(775) 237-8898</a>
+          <a href="mailto:brandon@digitalhorizon.dev">brandon@digitalhorizon.dev</a>
+          <a href="https://landmarkflooring.app" rel="noopener">Customer log in</a>
+        </div>
+      </div>
+      <div class="footer__legal">
+        <span>&copy; 2026 Digital Horizon &middot; FloorLogic</span>
+        <span>A <a href="https://digitalhorizon.dev" rel="noopener">Digital Horizon</a> product</span>
+      </div>
+    </div>
+  </footer>
+
+  <!-- mobile sticky CTA -->
+  <div class="mobilebar" data-mobilebar hidden>
+    <a class="btn btn--primary" href="#closer">Start free trial &middot; no card</a>
+  </div>
+
+  <script src="js/main.js" defer></script>
+</body>
+</html>
