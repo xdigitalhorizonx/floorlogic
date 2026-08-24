@@ -1,84 +1,106 @@
 /* ============================================================
-   FloorLogic — color tokens · "Cobalt Ink"
-   Owner-approved direction 2026-08-22 (supersedes the original
-   flooring-CRM spec palette for this marketing site; the status
-   ramp and --sample-tray are retained from that spec verbatim).
-   These two blocks are the ONLY place a hex value may appear
-   (favicon.svg carries sanctioned copies — it can't read vars).
-   Ratios in comments are measured WCAG contrast vs stated bg.
+   FLOORLOGIC — "FIELD SHEET" IDENTITY (v2, blueprint palette)
+   The page speaks the visual language of the trade's own paper:
+   takeoff drawings, dimension lines, chalk, stamps, spec tables —
+   drawn in blueprint blue on white (owner direction 2026-08-24),
+   which also matches the app's own white + cobalt UI.
 
-   DARK IS THE DEFAULT THEME. Bare :root = dark; [data-theme=
-   "light"] overrides. A stored choice always wins; system
-   preference is never consulted.
-
-   Accent has two roles:
-   - --accent      text-role blue (links, kickers, icons) — must
-                   pass 4.5:1 as text on canvas/surface
-   - --cta         fill-role electric cobalt (buttons, brand
-                   mark) — carries --text-inverse labels
+   RULES OF THE IDENTITY
+   - This file is the ONLY place a raw color value may appear.
+   - White paper is the brand: one deliberate light look, no toggle.
+   - Square corners. Hairline rules. Hard offset shadows only
+     (print/stamp language) — never soft blurs.
+   - Gradients are permitted ONLY as line patterns (grid, hatch),
+     never as color washes.
+   - Type: Archivo variable (display at width 125%, weight 800),
+     IBM Plex Mono for every number, label, and annotation.
    ============================================================ */
 
-:root {
-  /* surfaces — deep blue-black ink */
-  --canvas:        #0B0E14;
-  --surface:       #121722;
-  --surface-sunk:  #070A0F;
-  --border:        #242C3B;
-  --border-strong: #33405A;
-
-  /* text */
-  --text:          #F2F5F9;  /* 17.2:1 on canvas */
-  --text-muted:    #9AA6B8;  /*  7.7:1 on canvas */
-  --text-inverse:  #FFFFFF;
-
-  /* accent — text role (light cobalt) */
-  --accent:        #6EA8FE;  /*  8.0:1 on canvas, 7.4:1 on surface */
-  --accent-hover:  #96C0FF;
-  --accent-subtle: #14203B;
-
-  /* accent — fill role (electric cobalt) */
-  --cta:           #2563EB;  /* white label: 5.1:1 */
-  --cta-hover:     #1D4ED8;  /* white label: 6.7:1 */
-
-  /* material viewer backdrop — TRUE neutral, never tinted (kept from spec) */
-  --sample-tray:   #808080;
-  --sample-tray-light: #BFBFBF;
-
-  /* photography well — the site's photos are shot on near-black; this constant
-     dark backdrop hosts them in BOTH themes so they composite seamlessly */
-  --photo-well:    #070A0F;
-
-  /* status ramp — kept verbatim from the flooring-CRM spec.
-     Values are specified against LIGHT surfaces; in dark theme the
-     hue renders only in dots/icons (labels use --text/--text-muted). */
-  --st-lead:       #475467;
-  --st-quoted:     #175CD3;
-  --st-sold:       #6941C6;
-  --st-attention:  #B54708;
-  --st-complete:   #067647;
-  --st-problem:    #B42318;
-  --st-hold:       #667085;
+@font-face {
+  font-family: 'Archivo';
+  font-style: normal;
+  font-weight: 100 900;
+  font-stretch: 62.5% 125%;
+  font-display: swap;
+  src: url('../fonts/Archivo-var-latin.woff2') format('woff2');
+}
+@font-face {
+  font-family: 'IBM Plex Mono';
+  font-style: normal;
+  font-weight: 400;
+  font-display: swap;
+  src: url('../fonts/IBMPlexMono-400-latin.woff2') format('woff2');
+}
+@font-face {
+  font-family: 'IBM Plex Mono';
+  font-style: normal;
+  font-weight: 600;
+  font-display: swap;
+  src: url('../fonts/IBMPlexMono-600-latin.woff2') format('woff2');
 }
 
-[data-theme="light"] {
-  --canvas:        #F6F7F9;
-  --surface:       #FFFFFF;
-  --surface-sunk:  #EDEFF3;
-  --border:        #E1E4EA;
-  --border-strong: #C6CCD8;
+:root {
+  /* paper */
+  --paper:       #F6FAFF;   /* blue-white — page ground */
+  --paper-high:  #FFFFFF;   /* raised sheets and cards */
+  --paper-dim:   #E9F0FA;   /* recessed wells, table stripes */
 
-  --text:          #14181F;  /* 15.6:1 on canvas */
-  --text-muted:    #5B6472;  /*  5.2:1 on canvas */
-  --text-inverse:  #FFFFFF;
+  /* ink (blue-black) */
+  --ink:         #0F1E38;   /* navy ink — text, borders, closer/footer ground */
+  --ink-soft:    #3A5170;   /* secondary text */
+  --ink-faint:   #57709A;   /* tertiary text, quiet annotations (AA at 12px) */
 
-  --accent:        #2563EB;  /*  4.8:1 on canvas, 5.2:1 on surface */
-  --accent-hover:  #1D4ED8;
-  --accent-subtle: #EAF1FE;
+  /* drafting lines */
+  --rule:        #C2D3EA;   /* hairline rules and card borders */
+  --grid:        #DAE6F6;   /* background grid lines */
 
-  --cta:           #2563EB;  /* white label: 5.1:1 */
-  --cta-hover:     #1D4ED8;  /* white label: 6.7:1 */
+  /* accents */
+  --accent:      #2563EB;   /* cobalt — CTA fills (white label), underline, marks */
+  --accent-deep: #1A47B8;   /* small cobalt text (AA at 11px) */
+  --chalk:       #2563EB;   /* links + dimension lines (chalk lines are blue) */
+  --sky:         #7FA8F2;   /* accent text on ink surfaces (closer, footer) */
+  --stamp-go:    #1F7A46;   /* APPROVED / PAID stamps */
+  --stamp-stop:  #B3261E;   /* alerts, "no" marks */
 
-  --sample-tray:   #808080;  /* unchanged in both themes — measurement reference */
-  --sample-tray-light: #BFBFBF;
-  --photo-well:    #070A0F;  /* unchanged in both themes — photo backdrop */
+  /* hatching (drawing fills) */
+  --hatch:       #6C8FCB;   /* pattern strokes */
+  --hatch-lite:  #D6E3F6;   /* pattern ground tint */
+
+  /* type */
+  --font-body: 'Archivo', 'Helvetica Neue', Arial, sans-serif;
+  --font-mono: 'IBM Plex Mono', 'Consolas', monospace;
+
+  /* pattern utilities (line-gradients only) */
+  --pat-grid:
+    repeating-linear-gradient(0deg,  var(--grid) 0 1px, transparent 1px 26px),
+    repeating-linear-gradient(90deg, var(--grid) 0 1px, transparent 1px 26px);
+  --pat-hatch-wood:
+    repeating-linear-gradient(0deg, var(--hatch) 0 2px, transparent 2px 9px);
+  --pat-hatch-tile:
+    repeating-linear-gradient(45deg,  var(--hatch) 0 1px, transparent 1px 9px),
+    repeating-linear-gradient(-45deg, var(--hatch) 0 1px, transparent 1px 9px);
+
+  /* stamp shadows (hard, never blurred) */
+  --shadow-stamp: 4px 4px 0 var(--accent);
+  --shadow-card:  6px 6px 0 var(--paper-dim);
+}
+
+/* ============================================================
+   APP SCOPE - verbatim palette of the product UI, used ONLY by
+   the .fl-quote builder recreation in the hero. The app window
+   is always light and mirrors the product exactly (same reason
+   the real screenshots do), so it is exempt from the site
+   palette rules above. Values copied from the shipped Lead
+   Pipeline / New Quote mockup (main branch, owner-approved).
+   ============================================================ */
+:root {
+  --fl-bg: #F4F6F8; --fl-card: #FFFFFF; --fl-border: #E6E9EF; --fl-border-strong: #D6DBE4;
+  --fl-text: #151B26; --fl-muted: #69727F; --fl-faint: #98A1AE;
+  --fl-green: #10B981; --fl-navy: #1E3A8A; --fl-cta: #2563EB;
+  --fl-white: #FFFFFF;
+  --fl-access-bg: #FEFCE8; --fl-access-bd: #FDE68A; --fl-access-fg: #854D0E;
+  --fl-pdf-fg: #15803D; --fl-pdf-bg: #DCFCE7; --fl-pdf-bd: #BBF7D0;
+  --fl-band-bg: #EFF6FF; --fl-band-bd: #BFDBFE;
+  --fl-mat: #EA580C; --fl-lab: #475569;
+  --fl-hl-y: #FDE68A; --fl-hl-g: #BBF7D0; --fl-hl-b: #BFDBFE; --fl-hl-p: #FBCFE8;
 }

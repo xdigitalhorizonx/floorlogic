@@ -1,4 +1,4 @@
-// WCAG 2.x contrast audit for FloorLogic tokens.
+// WCAG 2.x contrast audit for FloorLogic tokens (v2 — Field Sheet).
 // Usage: node tools/contrast-check.mjs
 // Exits 1 if any used text/background pairing fails its required ratio,
 // or if a hex literal appears outside css/tokens.css.
@@ -29,43 +29,39 @@ function ratio(a, b) {
 }
 
 const css = readFileSync(join(root, 'css', 'tokens.css'), 'utf8');
-// Cobalt Ink structure: bare :root = DARK (the default), [data-theme="light"] overrides.
-const dark = parseTokens(css, /:root\s*\{([\s\S]*?)\}/);
-const light = { ...dark, ...parseTokens(css, /\[data-theme="light"\]\s*\{([\s\S]*?)\}/) };
+// Field Sheet is a single deliberate light theme: bare :root only.
+const tokens = parseTokens(css, /:root\s*\{([\s\S]*?)\}/);
 
 // Every fg/bg pairing the site actually renders. min = required ratio.
-// Body copy (text on canvas/surface) is held to 7:1 per spec rule 8.
+// Body copy is held to 7:1; secondary/annotation text to 4.5:1; the blaze
+// accent is 3:1 as a non-text UI color (borders, underline, shadows) and is
+// never used for body-size text on paper (blaze-deep carries that role).
 const pairs = [
-  ['text', 'canvas', 7], ['text', 'surface', 7], ['text', 'surface-sunk', 7],
-  ['text', 'accent-subtle', 7],
-  ['text-muted', 'canvas', 4.5], ['text-muted', 'surface', 4.5], ['text-muted', 'surface-sunk', 4.5],
-  ['accent', 'canvas', 4.5], ['accent', 'surface', 4.5], ['accent', 'accent-subtle', 4.5],
-  ['text-inverse', 'cta', 4.5],             // primary button label
-  ['text-inverse', 'cta-hover', 4.5],       // primary button label, hovered
-  ['st-lead', 'canvas', 4.5], ['st-lead', 'surface', 4.5],
-  ['st-quoted', 'canvas', 4.5], ['st-quoted', 'surface', 4.5],
-  ['st-sold', 'canvas', 4.5], ['st-sold', 'surface', 4.5],
-  ['st-attention', 'canvas', 4.5], ['st-attention', 'surface', 4.5],
-  ['st-complete', 'canvas', 4.5], ['st-complete', 'surface', 4.5],
-  ['st-problem', 'canvas', 4.5], ['st-problem', 'surface', 4.5],
-  ['st-hold', 'canvas', 4.5], ['st-hold', 'surface', 4.5], // 14px+ only, enforced in CSS
+  // paper surfaces
+  ['ink', 'paper', 7], ['ink', 'paper-high', 7], ['ink', 'paper-dim', 7],
+  ['ink-soft', 'paper', 4.5], ['ink-soft', 'paper-high', 4.5],
+  ['ink-faint', 'paper', 4.5], ['ink-faint', 'paper-high', 4.5],
+  ['chalk', 'paper', 4.5], ['chalk', 'paper-high', 4.5],
+  ['accent-deep', 'paper', 4.5], ['accent-deep', 'paper-high', 4.5],
+  ['stamp-go', 'paper', 4.5], ['stamp-go', 'paper-high', 4.5],
+  ['stamp-stop', 'paper', 4.5], ['stamp-stop', 'paper-high', 4.5],
+  ['accent', 'paper', 3],           // non-text UI: underline, borders, marks
+  ['hatch', 'paper-high', 3],       // non-text UI: hatch strokes, swatches
+  ['paper-high', 'accent', 4.5],    // primary button label on cobalt fill
+  // ink surfaces (closer + footer + compare thead)
+  ['paper-high', 'ink', 7],         // headings, button labels, links on ink
+  ['rule', 'ink', 4.5],             // footer body text, closer lead/micro
+  ['sky', 'ink', 4.5],              // closer kicker + accent words on navy
 ];
 
 let failures = 0;
-for (const [theme, tokens] of [['light', light], ['dark', dark]]) {
-  console.log(`\n=== ${theme} theme ===`);
-  for (const [fg, bg, min] of pairs) {
-    // The spec defines status hexes against light surfaces only. In dark
-    // theme, pill LABELS render in --text (passing) and the status hue is
-    // carried by the dot alone — meaning stays redundant via icon + label,
-    // so the dot is exempt from text-contrast minimums. Skip st-* here.
-    if (theme === 'dark' && fg.startsWith('st-')) continue;
-    if (!tokens[fg] || !tokens[bg]) { console.log(`SKIP ${fg}/${bg} (token missing)`); continue; }
-    const r = ratio(tokens[fg], tokens[bg]);
-    const ok = r >= min;
-    if (!ok) failures++;
-    console.log(`${ok ? 'PASS' : 'FAIL'}  --${fg} on --${bg}  ${r.toFixed(2)}:1  (min ${min}:1)`);
-  }
+console.log('=== Field Sheet (single light theme) ===');
+for (const [fg, bg, min] of pairs) {
+  if (!tokens[fg] || !tokens[bg]) { console.log(`SKIP ${fg}/${bg} (token missing)`); failures++; continue; }
+  const r = ratio(tokens[fg], tokens[bg]);
+  const ok = r >= min;
+  if (!ok) failures++;
+  console.log(`${ok ? 'PASS' : 'FAIL'}  --${fg} on --${bg}  ${r.toFixed(2)}:1  (min ${min}:1)`);
 }
 
 // Hex literals are only allowed in css/tokens.css.
@@ -73,16 +69,20 @@ console.log('\n=== hex-outside-tokens scan ===');
 const offenders = [];
 function walk(dir) {
   for (const name of readdirSync(dir)) {
-    if (name === '.git' || name === 'node_modules') continue;
+    if (name === '.git' || name === 'node_modules' || name === 'fonts') continue;
     const p = join(dir, name);
     if (statSync(p).isDirectory()) { walk(p); continue; }
     if (!/\.(css|html|js|mjs|svg)$/.test(name)) continue;
     const rel = relative(root, p).replaceAll('\\', '/');
     // favicon.svg is a standalone asset that cannot reference CSS custom
-    // properties; it carries sanctioned copies of --accent / --text-inverse.
-    if (rel === 'css/tokens.css' || rel === 'favicon.svg' || rel.startsWith('tools/')) continue;
+    // properties; it carries sanctioned copies of --ink / --blaze.
+    // js/vendor/ is minified third-party code (GSAP).
+    if (rel === 'css/tokens.css' || rel === 'favicon.svg' || rel.startsWith('tools/') || rel.startsWith('js/vendor/')) continue;
     const src = readFileSync(p, 'utf8');
-    for (const [hex] of src.matchAll(/#[0-9A-Fa-f]{3,8}\b/g)) {
+    // (?<!&) skips HTML numeric character references like &#128274;; the
+    // length alternation only matches valid CSS hex lengths (3/4/6/8), so
+    // prose like a license number "NV #0074221" doesn't false-positive.
+    for (const [hex] of src.matchAll(/(?<!&)#(?:[0-9A-Fa-f]{8}|[0-9A-Fa-f]{6}|[0-9A-Fa-f]{3,4})\b/g)) {
       offenders.push(`${rel}: ${hex}`);
     }
   }
