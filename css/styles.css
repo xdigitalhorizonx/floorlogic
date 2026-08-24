@@ -140,31 +140,9 @@ section + section { border-top: 1px solid var(--border); }
 /* ---------- hero ---------- */
 
 .hero { padding: 84px 0 72px; border-top: none; }
-.hero__cols { display: grid; grid-template-columns: minmax(0, 1.05fr) minmax(0, 0.95fr); gap: 56px; align-items: center; }
-.hero__grid { display: grid; gap: 28px; }
 .hero h1 { max-width: 16ch; font-size: clamp(2.3rem, 3.8vw, 3.55rem); }
 .hero .lead { max-width: 620px; }
-
-/* hero visual — real photography on the photo well, real UI fragments on top */
-.hero__visual {
-  position: relative; min-height: 520px;
-  background: var(--photo-well); border-radius: 20px;
-}
-.hero__photo img {
-  position: absolute; inset: 0; width: 100%; height: 100%;
-  object-fit: cover; object-position: 65% 30%; border-radius: 20px;
-}
-.shot {
-  position: absolute; height: auto; border-radius: 12px;
-  border: 1px solid var(--border-strong); background: var(--surface);
-  box-shadow: 0 0 0 8px var(--photo-well); /* flat cutout ring, no blur */
-}
-.shot--a { width: 56%; left: -5%; top: 10%; transform: rotate(-2deg); }
-.shot--b { width: 44%; right: 4%; bottom: 9%; transform: rotate(1.6deg); }
-.hero__cred {
-  position: absolute; left: 16px; bottom: -30px;
-  font-size: 0.8rem; color: var(--text-muted);
-}
+.hero__cred { font-size: 0.8rem; color: var(--text-muted); }
 
 .hero__signup { display: grid; gap: 10px; max-width: 560px; }
 
@@ -941,54 +919,76 @@ footer { border-top: 1px solid var(--border-strong); padding: 48px 0 56px; }
   .fl-listrow .fl-line { display: none; }
 }
 
-/* ---------- hero module assembly (js/hero.js) ----------
-   Seven module cards over the oak photo. Their CSS positions ARE the final,
-   in-order state — no-JS and reduced-motion render the finished composition;
-   JS only rewinds (scatters) and then assembles. Flat cutout-ring cards on
-   the photo well, same idiom as .shot. */
+/* ---------- hero stage — the floor lays itself ----------
+   Full-bleed, near-full-viewport hero per the house hero canon: immersive
+   edge-to-edge scene, two-tone display headline, bottom module strip, primary
+   + secondary CTA. The 3D floor (js/vendor/hero3d.js) assembles row by row;
+   copy sits over clean ink (AA by token math — no scrim needed). Without
+   WebGL, on small screens, with reduced motion, or without JS, the oak
+   photograph carries the hero instead. */
 
-.hero__connector { position: absolute; left: 6%; top: 4%; width: 88%; height: 90%; z-index: 1; }
-.hero__connector path {
-  fill: none; stroke: var(--accent); stroke-width: 2px; opacity: 0.55;
-  stroke-linecap: round; vector-effect: non-scaling-stroke;
+.hero--stage { padding: 0 0 64px; }
+.hero__stage {
+  position: relative; min-height: 91vh;
+  display: flex; align-items: stretch;
+  background: var(--canvas);
+  border-bottom: 1px solid var(--border);
+  overflow: hidden;
 }
-.hero__stack { position: absolute; inset: 0; margin: 0; padding: 0; list-style: none; z-index: 2; }
-.mod {
-  position: absolute; width: 47%;
-  display: flex; gap: 10px; align-items: center;
-  padding: 11px 13px; border-radius: 12px;
+#hero-canvas { position: absolute; inset: 0; width: 100%; height: 100%; opacity: 0; transition: opacity 0.9s ease; }
+.hero__stage.is-3d #hero-canvas { opacity: 1; }
+.hero__fallback { position: absolute; inset: 0; }
+.hero__fallback img { width: 100%; height: 100%; object-fit: cover; object-position: 70% 24%; opacity: 0.32; }
+.hero__stage.is-3d .hero__fallback { display: none; }
+
+.hero__overlay {
+  position: relative; z-index: 2;
+  display: flex; flex-direction: column;
+  width: 100%; padding-top: 72px; padding-bottom: 30px;
+}
+.hero__copy { max-width: 660px; display: grid; gap: 26px; }
+.hero--stage h1 { font-size: clamp(2.3rem, 3.7vw, 3.5rem); max-width: 18ch; }
+.hero--stage h1 em { font-style: normal; color: var(--accent); }
+.hero--stage .lead { max-width: 600px; }
+.hero__watch { margin-left: auto; font-size: 0.88rem; font-weight: 600; color: var(--accent); white-space: nowrap; }
+.hero__watch:hover { color: var(--accent-hover); text-decoration: none; }
+
+/* bottom feature strip — the seven modules, standing on the finished floor */
+.hero__modules {
+  list-style: none; margin: auto 0 0; padding: 46px 0 0;
+  display: flex; gap: 9px; flex-wrap: wrap;
+}
+.hchip {
+  display: flex; gap: 9px; align-items: center;
+  padding: 9px 13px 9px 10px; border-radius: 11px;
   background: var(--surface); border: 1px solid var(--border-strong);
-  box-shadow: 0 0 0 6px var(--photo-well); /* flat cutout ring, no blur — matches .shot */
 }
-.mod--1 { top: 4%;  left: 1%; }
-.mod--2 { top: 1%;  right: 1%; }
-.mod--3 { top: 25%; left: 4%; }
-.mod--4 { top: 22%; right: 0; }
-.mod--5 { top: 47%; left: 1%; }
-.mod--6 { top: 44%; right: 3%; }
-.mod--7 { top: 68%; left: 24%; width: 52%; }
-.mod__n {
-  width: 20px; height: 20px; border-radius: 50%; flex: none;
+.hchip i {
+  width: 19px; height: 19px; border-radius: 50%; flex: none; font-style: normal;
   display: flex; align-items: center; justify-content: center;
-  background: var(--canvas); border: 1px solid var(--border-strong);
-  color: var(--text-muted); font-size: 0.7rem; font-weight: 700;
+  background: var(--cta); color: var(--text-inverse);
+  font-size: 0.68rem; font-weight: 700;
 }
-.mod.is-set .mod__n { background: var(--cta); border-color: var(--cta); color: var(--text-inverse); }
-.mod__ic {
-  width: 34px; height: 34px; border-radius: 9px; flex: none;
+.hchip__ic {
+  width: 30px; height: 30px; border-radius: 8px; flex: none;
   display: flex; align-items: center; justify-content: center;
   background: var(--accent-subtle); color: var(--accent);
 }
-.mod__ic svg { width: 17px; height: 17px; fill: none; stroke: currentColor; stroke-width: 2; stroke-linecap: round; stroke-linejoin: round; }
-.mod b { display: block; font-size: 0.92rem; font-weight: 650; letter-spacing: -0.01em; }
-.mod small { display: block; color: var(--text-muted); font-size: 0.76rem; line-height: 1.35; }
+.hchip__ic svg { width: 15px; height: 15px; fill: none; stroke: currentColor; stroke-width: 2; stroke-linecap: round; stroke-linejoin: round; }
+.hchip b { display: block; font-size: 0.84rem; font-weight: 650; letter-spacing: -0.01em; white-space: nowrap; }
+.hchip small { display: block; color: var(--text-muted); font-size: 0.72rem; white-space: nowrap; }
+.hero--stage .hero__cred { position: static; margin-top: 12px; }
+.hero--stage .product { margin-top: 56px; }
 
+@media (max-width: 1250px) { .hchip small { display: none; } }
 @media (max-width: 880px) {
-  .hero__visual { min-height: 0; }
-  .hero__photo img { position: static; height: 200px; }
-  .hero__connector { display: none; }
-  .hero__stack { position: static; display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin-top: 14px; }
-  .mod, .mod--1, .mod--2, .mod--3, .mod--4, .mod--5, .mod--6, .mod--7 { position: static; width: auto; box-shadow: none; }
-  .mod--7 { grid-column: 1 / -1; }
-  .hero__cred { position: static; margin-top: 10px; }
+  .hero__stage { min-height: 0; }
+  #hero-canvas { display: none; }
+  .hero__fallback { position: static; order: 2; }
+  .hero__fallback img { height: 210px; opacity: 1; }
+  .hero__stage { flex-direction: column; }
+  .hero__overlay { padding-top: 44px; }
+  .hero__modules { display: grid; grid-template-columns: 1fr 1fr; padding-top: 30px; }
+  .hchip small { display: block; white-space: normal; }
+  .hero__watch { margin-left: 0; }
 }
