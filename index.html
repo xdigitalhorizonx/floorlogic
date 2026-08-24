@@ -412,39 +412,108 @@
               <div class="fl-list" id="fl-list"></div>
             </div>
             <div class="fl-quote" id="fl-quote" hidden>
-              <div class="fl-quote__head">
-                <button class="fl-back" id="fl-back" type="button"><svg width="13" height="13" class="fl-ico"><use href="#i-arrow"/></svg>Back</button>
-                <div class="fl-quote__title">
-                  <h3>New Quote <span class="fl-quote__num" data-q-num>QT-347</span></h3>
-                  <small>Prepared for <b data-q-lead>Priya Raman</b> &middot; Marisol Vega &middot; today</small>
-                </div>
-                <span class="fl-draft" data-q-status>Draft</span>
-                <button class="fl-newlead" data-q-send type="button">Send Quote</button>
+              <button class="fl-back" id="fl-back" type="button"><svg width="13" height="13" class="fl-ico"><use href="#i-arrow"/></svg>Back to pipeline</button>
+              <div class="qb-title">
+                <h3><svg width="20" height="20" class="fl-ico" style="color:var(--fl-cta)"><use href="#i-doc"/></svg>New Quote</h3>
+                <p>+ Name this job &mdash; e.g. Crest Drive, Kitchen &amp; Bath</p>
               </div>
-              <div class="fl-quote__grid">
-                <div class="fl-qcard">
-                  <div class="fl-qcard__head">Line items <span data-q-lines>6</span></div>
-                  <div class="fl-qline"><div><b>Shaw Endura Plus LVP &mdash; Gunstock Oak</b><small>7&Prime; click-lock plank &middot; living room + hall</small></div><span class="fl-qqty">640 sq ft &times; $3.89</span><b class="fl-qtot">$2,489.60</b></div>
-                  <div class="fl-qline"><div><b>Mohawk SmartStrand &mdash; Slate</b><small>12&prime; roll goods &middot; bedrooms &times;2</small></div><span class="fl-qqty">58 sq yd &times; $22.40</span><b class="fl-qtot">$1,299.20</b></div>
-                  <div class="fl-qline"><div><b>7# rebond pad</b><small>under all carpet</small></div><span class="fl-qqty">58 sq yd &times; $4.15</span><b class="fl-qtot">$240.70</b></div>
-                  <div class="fl-qline"><div><b>Tear-out &amp; haul away</b><small>existing carpet + pad</small></div><span class="fl-qqty">flat</span><b class="fl-qtot">$480.00</b></div>
-                  <div class="fl-qline"><div><b>Install &mdash; LVP click-lock</b><small>incl. transitions at doorways</small></div><span class="fl-qqty">640 sq ft &times; $2.25</span><b class="fl-qtot">$1,440.00</b></div>
-                  <div class="fl-qline"><div><b>Install &mdash; carpet stretch-in</b><small>incl. tack strip as needed</small></div><span class="fl-qqty">58 sq yd &times; $6.50</span><b class="fl-qtot">$377.00</b></div>
-                  <button class="fl-addline" id="fl-addline" type="button">+ Add line item</button>
-                </div>
-                <aside class="fl-quote__side">
-                  <div class="fl-qcard fl-qsum">
-                    <div class="fl-qrow"><span>Materials</span><b data-q="mat">$4,029.50</b></div>
-                    <div class="fl-qrow"><span>Labor</span><b data-q="labor">$1,817.00</b></div>
-                    <div class="fl-qrow"><span>Tear-out &amp; disposal</span><b data-q="tear">$480.00</b></div>
-                    <div class="fl-qrow fl-qrow--total"><span>Total</span><b data-q="total">$6,326.50</b></div>
-                    <div class="fl-qmargin">38.4% margin &middot; est. 2 install days</div>
-                    <div class="fl-qactions">
-                      <button class="fl-back" type="button" style="flex:1; justify-content:center">Save draft</button>
-                      <button class="fl-newlead" data-q-send type="button" style="flex:1">Send to customer</button>
+              <div class="qb-cols">
+                <div class="qb-paper">
+                  <div class="qb-cohead">
+                    <div class="qb-brand">
+                      <svg width="34" height="34" viewBox="0 0 64 64" aria-hidden="true"><rect width="64" height="64" rx="14" fill="#2563EB"/><rect x="14" y="18" width="36" height="7" rx="3.5" fill="#fff" opacity="0.95"/><rect x="14" y="29" width="24" height="7" rx="3.5" fill="#fff" opacity="0.75"/><rect x="14" y="40" width="30" height="7" rx="3.5" fill="#fff" opacity="0.55"/></svg>
+                      <div><b>Floor<span>Logic</span></b>
+                        <small>4120 Sierra Commerce Way, Reno, NV 89502<br>floorlogic.test &middot; (775) 555-0140 &middot; NV #0074221</small>
+                      </div>
+                    </div>
+                    <div class="qb-meta">
+                      <div class="qb-qnum"><span>Quote number</span><b>(unsaved)</b></div>
+                      <div class="qb-dates">
+                        <label>Issued<i>08/14/2026</i></label>
+                        <label>Valid until<i>09/13/2026</i></label>
+                        <label>Sales rep *<i>Marisol Vega</i></label>
+                      </div>
                     </div>
                   </div>
-                  <div class="fl-qhint"><b>Roll math, done for you:</b> 12&prime; roll &times; 43.5 LF = 58 sq yd &middot; 4.2% waste &middot; cut sheet attached to the work order.</div>
+                  <div class="qb-parties">
+                    <div class="qb-part">
+                      <div class="qb-bar">Bill to <span class="qb-barbtns"><i>&#128065; View</i><i>&#8635; Change</i></span></div>
+                      <div class="qb-part__body">
+                        <b data-qb-name>Priya Raman</b>
+                        <div><span>Address:</span> <span data-qb-addr>3925 Skyline Blvd, Reno, NV 89509</span></div>
+                        <div><span>Phone:</span> <span data-qb-phone>(775) 555-0301</span></div>
+                        <div><span>Email:</span> <span data-qb-email>priya.raman@example.test</span></div>
+                        <div class="qb-taxrow">
+                          <div><small>Tax rate</small><b>8.265% <em>Washoe County</em></b></div>
+                          <div><small>Payment terms</small><b>Due on Receipt &#9662;</b></div>
+                        </div>
+                      </div>
+                    </div>
+                    <div class="qb-part">
+                      <div class="qb-bar">Site details</div>
+                      <div class="qb-part__body">
+                        <div class="qb-prop"><b>&#8962; Home</b><i>&#8635; Change</i></div>
+                        <div><span>Contact:</span> <span data-qb-name2>Priya Raman</span></div>
+                        <div><span>Address:</span> <span data-qb-addr2>3925 Skyline Blvd, Reno, NV 89509</span></div>
+                        <div class="qb-access"><b>&#128203; Property notes / access</b>Gate codes, lockbox, parking, etc.</div>
+                      </div>
+                    </div>
+                  </div>
+                  <div class="qb-lines">
+                    <div class="qb-bar qb-bar--section"><span class="qb-secname">Materials &amp; Labor</span>
+                      <span class="qb-barbtns"><i>&#128230; Bundle Materials &amp; Labor</i><i>+ Bundle</i><i>&#8942;</i></span>
+                    </div>
+                    <table class="qb-table">
+                      <thead>
+                        <tr>
+                          <th>Line items</th>
+                          <th><em class="qb-pdf">&#128065; in PDF</em>Description</th>
+                          <th><em class="qb-pdf">&#128065; in PDF</em>Qty <small>/ UOM</small></th>
+                          <th><em class="qb-pdf">&#128065; in PDF</em>Price</th>
+                          <th><em class="qb-pdf">&#128065; in PDF</em>Total</th>
+                        </tr>
+                      </thead>
+                      <tbody id="qb-rows">
+                        <tr class="qb-addrow"><td colspan="5"><input id="qb-add" type="text" placeholder="Type to add a line item&hellip;" aria-label="Add a line item"></td></tr>
+                      </tbody>
+                    </table>
+                    <div class="qb-sectotals">
+                      <div><span>Section totals <em class="qb-pdf">&#128065; in PDF</em></span></div>
+                      <div><span>Sales tax</span><b data-qt="stax">$0.00</b></div>
+                      <div class="qb-secsub"><span>Materials &amp; Labor subtotal</span><b data-qt="ssub">$0.00</b></div>
+                    </div>
+                  </div>
+                  <button class="qb-addsection" type="button">+ Add Section / Option</button>
+                  <div class="qb-bottom">
+                    <div class="qb-notes">
+                      <div class="qb-bar">&#128221; Job notes</div>
+                      <div class="qb-notes__tools"><b>B</b><i>I</i><u>U</u><s>S</s><span>Size &#9662;</span><em class="qb-hl qb-hl--y"></em><em class="qb-hl qb-hl--g"></em><em class="qb-hl qb-hl--b"></em><em class="qb-hl qb-hl--p"></em></div>
+                      <div class="qb-notes__body">- LVP | Style: Great Basin - Color: Sand Mountain<br>- Tear out &amp; disposal<br>- Installation of new baseboard</div>
+                    </div>
+                    <div class="qb-totalband">
+                      <div><span>Total</span><b data-qt="band">$0.00</b></div>
+                      <label><input type="checkbox"> Show Materials &amp; Labor breakdown to customer</label>
+                    </div>
+                  </div>
+                  <div class="qb-terms">
+                    <div class="qb-bar">&#128203; Terms &amp; conditions</div>
+                    <div class="qb-terms__hint">&#128161; Check terms to include them on the PDF. <u>Edit wording in System Lists.</u></div>
+                    <label class="qb-term"><input type="checkbox" checked><i>1</i><div><b>Acceptance &amp; Validity <em>default on</em></b><small>This quote is valid for 30 days from the issue date. Acceptance constitutes a binding agreement&hellip;</small></div></label>
+                    <label class="qb-term"><input type="checkbox" checked><i>2</i><div><b>Scope of Work <em>default on</em></b><small>Work is limited to the materials and labor described on the itemized list above&hellip;</small></div></label>
+                    <label class="qb-term"><input type="checkbox" checked><i>3</i><div><b>Deposit &amp; Payment Schedule <em>default on</em></b><small>A 50% deposit is required to schedule the job and order materials&hellip;</small></div></label>
+                  </div>
+                </div>
+                <aside class="qb-side">
+                  <div class="qb-sidecard">
+                    <div class="qb-sidehead">Quote total <span>&mdash;</span></div>
+                    <div class="qb-siderow"><span class="qb-mat">&#129521; Materials</span><b data-qt="mat">$0.00</b></div>
+                    <div class="qb-siderow"><span class="qb-lab">&#128296; Labor</span><b data-qt="labor">$0.00</b></div>
+                    <div class="qb-siderow qb-siderow--line"><span>Subtotal</span><b data-qt="sub">$0.00</b></div>
+                    <div class="qb-siderow"><span>Tax (8.27%)</span><b data-qt="tax">$0.00</b></div>
+                    <div class="qb-grand"><span>Grand total</span><b data-qt="grand">$0.00</b></div>
+                    <div class="qb-siderow qb-siderow--margin"><span>Margin</span><b data-qt="margin">0.0% &middot; $0.00</b></div>
+                  </div>
+                  <div class="qb-sidenote">&#128274; Internal notes<br><small>Click anywhere to add a note</small></div>
                 </aside>
               </div>
             </div>

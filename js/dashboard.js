@@ -219,71 +219,116 @@
     }, 12000);
   });
 
-  /* ---------- quote builder: the app's second screen ----------
-     The blue New-quote button on any card opens it for that lead; the Back
-     button and the browser's back button both return to the pipeline. */
+  /* ---------- quote builder: faithful recreation of the app's New Quote screen ----------
+     The blue quote button on any card opens it pre-filled for that lead; it
+     starts at $0.00 (unsaved) like the real thing, then line items type
+     themselves in and every total climbs. Back / browser-back / #quote-builder
+     deep link all navigate; the board cycle pauses while hidden. */
 
   var page = dash.querySelector('.fl-page');
   var quote = document.getElementById('fl-quote');
   var builderOpen = false;
-  var qSeq = 347;
-  var totals = { mat: 4029.50, labor: 1817.00, tear: 480.00 };
-  var EXTRAS = [
-    { name: 'Transition strips & trim', meta: 'doorways + kitchen edge', qty: 'flat', amt: 164.00 },
-    { name: 'Stair nosing (6)', meta: 'matching Gunstock Oak', qty: '6 × $57.00', amt: 342.00 },
-    { name: 'Quarter round — 3 rooms', meta: 'painted to match base', qty: 'flat', amt: 128.00 }
+  var qbTimers = [];
+  var qb = { mat: 0, labor: 0 };
+  var TAX = 0.08265;
+
+  var QB_LINES = [
+    { name: 'LVP — Great Basin', desc: 'Sand Mountain · 7″ click-lock plank', qty: '640 sq ft', price: '$3.89', total: 2489.60, kind: 'mat', type: true },
+    { name: 'Tear out & disposal', desc: 'existing floor + haul away', qty: 'flat', price: '—', total: 480.00, kind: 'labor' },
+    { name: 'Installation — LVP', desc: 'incl. new baseboard', qty: '640 sq ft', price: '$2.25', total: 1440.00, kind: 'labor' }
   ];
-  var extraAt = 0;
 
   function money(v) { return '$' + v.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 }); }
-  function qEl(key) { return quote.querySelector('[data-q="' + key + '"]'); }
-  function grandTotal() { return totals.mat + totals.labor + totals.tear; }
+  function qEl(key) { return quote.querySelector('[data-qt="' + key + '"]'); }
+  function qbLater(fn, ms) { qbTimers.push(setTimeout(fn, ms)); }
+  function qbClearTimers() { qbTimers.forEach(clearTimeout); qbTimers = []; }
 
-  function renderTotals(countUp) {
-    var spec = { mat: totals.mat, labor: totals.labor, tear: totals.tear, total: grandTotal() };
-    Object.keys(spec).forEach(function (key, i) {
-      var el = qEl(key);
-      if (reduced || !countUp) { el.textContent = money(spec[key]); return; }
-      var obj = { v: 0 };
-      animate(obj, {
-        v: spec[key], duration: 900, delay: 80 * i, ease: 'outExpo',
-        onUpdate: function () { el.textContent = money(obj.v); },
-        onComplete: function () { el.textContent = money(spec[key]); }
-      });
-    });
+  function qbRenderTotals(pop) {
+    var sub = qb.mat + qb.labor;
+    var tax = qb.mat * TAX;
+    var cost = qb.mat * 0.70 + qb.labor * 0.55;
+    var marginPct = sub > 0 ? ((sub - cost) / sub) * 100 : 0;
+    var vals = { mat: qb.mat, labor: qb.labor, sub: sub, tax: tax, grand: sub + tax, band: sub + tax, stax: tax, ssub: sub };
+    Object.keys(vals).forEach(function (k) { qEl(k).textContent = money(vals[k]); });
+    qEl('margin').textContent = marginPct.toFixed(1) + '% · ' + money(Math.max(0, sub - cost));
+    if (pop && !reduced) { bump(qEl('grand')); bump(qEl('band')); }
   }
 
-  function resetQuoteStatus() {
-    var chip = quote.querySelector('[data-q-status]');
-    chip.textContent = 'Draft';
-    chip.classList.remove('is-sent');
-    [].forEach.call(quote.querySelectorAll('[data-q-send]'), function (b) {
-      b.disabled = false;
-      b.textContent = b.textContent.indexOf('customer') !== -1 ? 'Send to customer' : 'Send Quote';
-    });
+  function qbAddLine(line, pop) {
+    qb[line.kind] += line.total;
+    var tr = document.createElement('tr');
+    tr.className = 'qb-row';
+    tr.innerHTML = '<td><b>' + line.name + '</b></td><td>' + line.desc + '</td><td>' + line.qty + '</td><td>' + line.price + '</td><td>' + money(line.total) + '</td>';
+    var addRow = quote.querySelector('.qb-addrow');
+    addRow.parentNode.insertBefore(tr, addRow);
+    if (pop && !reduced) animate(tr, { opacity: [0, 1], translateY: [-6, 0], duration: 380, ease: 'outCubic' });
+    qbRenderTotals(pop);
   }
 
-  function openQuote(leadName, viaHash) {
+  function qbType(input, text, done) {
+    var i = 0;
+    (function tick() {
+      if (!builderOpen) return;
+      input.value = text.slice(0, i);
+      i += 1;
+      if (i <= text.length) qbLater(tick, 26);
+      else qbLater(function () { input.value = ''; done(); }, 220);
+    })();
+  }
+
+  function qbFill() {
+    var input = document.getElementById('qb-add');
+    if (reduced) { QB_LINES.forEach(function (l) { qbAddLine(l, false); }); return; }
+    var i = 0;
+    (function next() {
+      if (!builderOpen || i >= QB_LINES.length) return;
+      var line = QB_LINES[i]; i += 1;
+      if (line.type) qbType(input, line.name, function () { qbAddLine(line, true); qbLater(next, 500); });
+      else qbLater(function () { qbAddLine(line, true); qbLater(next, 500); }, 250);
+    })();
+  }
+
+  function qbReset() {
+    qbClearTimers();
+    qb = { mat: 0, labor: 0 };
+    [].forEach.call(quote.querySelectorAll('.qb-row'), function (r) { r.remove(); });
+    qbRenderTotals(false);
+  }
+
+  function qbSetLead(card) {
+    var name = card.getAttribute('data-name');
+    var lines = card.querySelectorAll('.fl-line');
+    var phone = lines[0] ? lines[0].textContent.trim() : '';
+    var addr = lines[1] ? lines[1].textContent.trim() : '';
+    var email = name.toLowerCase().replace(/[^a-z0-9]+/g, '.').replace(/^\.|\.$/g, '') + '@example.test';
+    quote.querySelector('[data-qb-name]').textContent = name;
+    quote.querySelector('[data-qb-name2]').textContent = name;
+    quote.querySelector('[data-qb-addr]').textContent = addr;
+    quote.querySelector('[data-qb-addr2]').textContent = addr;
+    quote.querySelector('[data-qb-phone]').textContent = phone;
+    quote.querySelector('[data-qb-email]').textContent = email;
+  }
+
+  function openQuote(card, viaHash) {
     if (builderOpen) return;
     builderOpen = true;
-    qSeq += 1;
-    quote.querySelector('[data-q-num]').textContent = 'QT-' + qSeq;
-    quote.querySelector('[data-q-lead]').textContent = leadName;
-    resetQuoteStatus();
+    if (card) qbSetLead(card);
+    qbReset();
     if (!viaHash) { try { history.pushState({ flQuote: true }, '', '#quote-builder'); } catch (e) {} }
     page.hidden = true;
     quote.hidden = false;
-    renderTotals(true);
     if (!reduced) {
-      animate(quote.querySelectorAll('.fl-quote__head, .fl-qline, .fl-qsum, .fl-qhint'), {
-        opacity: [0, 1], translateY: [12, 0], delay: stagger(45), duration: 420, ease: 'outCubic'
+      animate(quote.querySelectorAll('.qb-title, .qb-paper > *, .qb-sidecard, .qb-sidenote'), {
+        opacity: [0, 1], translateY: [10, 0], delay: stagger(40), duration: 380, ease: 'outCubic'
       });
     }
+    qbLater(qbFill, reduced ? 0 : 900);
   }
 
   function closeQuote() {
     if (!builderOpen) return;
     builderOpen = false;
+    qbClearTimers();
     quote.hidden = true;
     page.hidden = false;
     if (!reduced) {
@@ -293,7 +338,7 @@
 
   board.addEventListener('click', function (e) {
     var btn = e.target.closest ? e.target.closest('.fl-quotebtn') : null;
-    if (btn) openQuote(btn.closest('.fl-card').getAttribute('data-name'));
+    if (btn) openQuote(btn.closest('.fl-card'));
   });
 
   document.getElementById('fl-back').addEventListener('click', function () {
@@ -305,38 +350,17 @@
   });
   window.addEventListener('popstate', function () { if (builderOpen) closeQuote(); });
 
+  // typing a line item + Enter really adds it (the builder's core interaction)
+  document.getElementById('qb-add').addEventListener('keydown', function (e) {
+    if (e.key !== 'Enter' || !this.value.trim()) return;
+    qbAddLine({ name: this.value.trim(), desc: 'custom line item', qty: 'flat', price: '—', total: 150.00, kind: 'labor' }, true);
+    this.value = '';
+  });
+
   // deep link: landing on (or refreshing at) #quote-builder opens the builder directly
   if (location.hash === '#quote-builder') {
-    var firstCard = board.querySelector('.fl-card');
-    openQuote(firstCard ? firstCard.getAttribute('data-name') : 'New lead', true);
+    openQuote(board.querySelector('.fl-card'), true);
   }
-
-  document.getElementById('fl-addline').addEventListener('click', function () {
-    var x = EXTRAS[extraAt % EXTRAS.length];
-    extraAt += 1;
-    totals.mat += x.amt;
-    var line = document.createElement('div');
-    line.className = 'fl-qline';
-    line.innerHTML = '<div><b>' + x.name + '</b><small>' + x.meta + '</small></div>' +
-      '<span class="fl-qqty">' + x.qty + '</span><b class="fl-qtot">' + money(x.amt) + '</b>';
-    this.parentNode.insertBefore(line, this);
-    var chip = quote.querySelector('[data-q-lines]');
-    chip.textContent = String(quote.querySelectorAll('.fl-qline').length);
-    bump(chip);
-    if (!reduced) animate(line, { opacity: [0, 1], translateY: [-8, 0], duration: 420, ease: 'outCubic' });
-    renderTotals(false);
-    bump(qEl('total'));
-  });
-
-  [].forEach.call(quote.querySelectorAll('[data-q-send]'), function (btn) {
-    btn.addEventListener('click', function () {
-      var chip = quote.querySelector('[data-q-status]');
-      chip.textContent = 'Sent';
-      chip.classList.add('is-sent');
-      bump(chip);
-      [].forEach.call(quote.querySelectorAll('[data-q-send]'), function (b) { b.disabled = true; b.textContent = 'Sent ✓'; });
-    });
-  });
 
   /* ---------- entrance: stats count up, columns settle in ---------- */
 
