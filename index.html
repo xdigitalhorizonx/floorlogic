@@ -197,14 +197,24 @@
           <p class="form-note">Don&rsquo;t demo it. Run one real job through it — quote, approval, invoice, payment — and decide.</p>
         </div>
 
-        <div class="hero__visual reveal">
+        <div class="hero__visual reveal" id="hero-visual">
           <picture class="hero__photo">
             <source srcset="assets/hero-oak.avif" type="image/avif">
             <img src="assets/hero-oak.jpg" width="1920" height="1280" alt="Oak planks laid mid-install against a black ground" fetchpriority="high">
           </picture>
-          <img class="shot shot--a" src="assets/frag-quotes.webp" width="1020" height="795" alt="FloorLogic quote list: totals moving through draft, sent, approved, and declined statuses">
-          <img class="shot shot--b" src="assets/frag-workorder.webp" width="780" height="670" alt="FloorLogic work-order schedule: paid, in progress, scheduled, and materials-ordered statuses">
-          <p class="hero__cred">The real product &middot; demo company data</p>
+          <svg class="hero__connector" viewBox="0 0 100 100" preserveAspectRatio="none" aria-hidden="true">
+            <path d="M24 9 Q50 3 74 7 Q54 20 27 30 Q50 23 73 28 Q46 42 25 52 Q50 45 73 50 Q64 66 50 74"/>
+          </svg>
+          <ul class="hero__stack" id="hero-stack" aria-label="The seven FloorLogic modules, falling into one workflow">
+            <li class="mod mod--1"><i class="mod__n">1</i><span class="mod__ic"><svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="9"/><circle cx="12" cy="12" r="4.5"/><circle cx="12" cy="12" r="0.5"/></svg></span><div><b>Sales</b><small>Lead pipeline with win rates</small></div></li>
+            <li class="mod mod--2"><i class="mod__n">2</i><span class="mod__ic"><svg viewBox="0 0 24 24"><rect x="3" y="3" width="5.5" height="18" rx="1.5"/><rect x="12" y="3" width="5.5" height="11" rx="1.5"/><rect x="12" y="17" width="9" height="4" rx="1.5"/><rect x="21" y="3" width="0" height="0"/></svg></span><div><b>Job Management</b><small>Every job, crew, and schedule</small></div></li>
+            <li class="mod mod--3"><i class="mod__n">3</i><span class="mod__ic"><svg viewBox="0 0 24 24"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="16" y1="13" x2="8" y2="13"/><line x1="16" y1="17" x2="8" y2="17"/></svg></span><div><b>Quotes</b><small>Roll-goods math built in</small></div></li>
+            <li class="mod mod--4"><i class="mod__n">4</i><span class="mod__ic"><svg viewBox="0 0 24 24"><path d="M14.7 6.3a1 1 0 0 0 0 1.4l1.6 1.6a1 1 0 0 0 1.4 0l3.77-3.77a6 6 0 0 1-7.94 7.94l-6.91 6.91a2.12 2.12 0 0 1-3-3l6.91-6.91a6 6 0 0 1 7.94-7.94l-3.76 3.76z"/></svg></span><div><b>Work Orders</b><small>Written by the approval</small></div></li>
+            <li class="mod mod--5"><i class="mod__n">5</i><span class="mod__ic"><svg viewBox="0 0 24 24"><rect x="2" y="5" width="20" height="14" rx="2"/><line x1="2" y1="10" x2="22" y2="10"/><line x1="6" y1="15" x2="10" y2="15"/></svg></span><div><b>Invoices</b><small>Card payment on the link</small></div></li>
+            <li class="mod mod--6"><i class="mod__n">6</i><span class="mod__ic"><svg viewBox="0 0 24 24"><path d="M3 21h18M3 10h18M5 6l7-3 7 3M4 10v11M20 10v11M8 14v3M12 14v3M16 14v3"/></svg></span><div><b>Accounting</b><small>Bank feeds + reconciliation</small></div></li>
+            <li class="mod mod--7"><i class="mod__n">7</i><span class="mod__ic"><svg viewBox="0 0 24 24"><line x1="4" y1="20" x2="4" y2="10"/><line x1="10" y1="20" x2="10" y2="4"/><line x1="16" y1="20" x2="16" y2="13"/><line x1="22" y1="20" x2="2" y2="20"/></svg></span><div><b>Job Costing</b><small>Estimate vs actual, live</small></div></li>
+          </ul>
+          <p class="hero__cred">Seven modules &middot; one login &middot; watch them fall in line</p>
         </div>
         </div>
 
@@ -1040,8 +1050,10 @@
   </div>
 
   <script src="js/main.js" defer></script>
-  <!-- live dashboard mockup (#live) — vendored anime.js v4 + the section driver -->
+  <!-- vendored motion toolkits + section drivers (hero assembly, live dashboard mockup) -->
   <script src="js/vendor/anime.umd.min.js" defer></script>
+  <script src="js/vendor/mo.umd.js" defer></script>
+  <script src="js/hero.js" defer></script>
   <script src="js/dashboard.js" defer></script>
 </body>
 </html>

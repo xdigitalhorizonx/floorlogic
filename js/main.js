@@ -90,6 +90,8 @@
         step2.classList.remove('is-open');
         hideNote();
         success.classList.add('is-shown');
+        // hero.js listens and fires a celebration burst at the success message
+        try { window.dispatchEvent(new CustomEvent('fl:trial-success', { detail: { el: success } })); } catch (_) {}
       }
       function fail() {
         sending = false;

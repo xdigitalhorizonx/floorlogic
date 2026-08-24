@@ -939,5 +939,56 @@ footer { border-top: 1px solid var(--border-strong); padding: 48px 0 56px; }
   .fl-board { grid-template-columns: repeat(5, 198px); } /* board scrolls sideways inside the frame */
   .fl-listrow { grid-template-columns: 1fr auto; }
   .fl-listrow .fl-line { display: none; }
-  .fl-quote__grid { grid-template-columns: 1fr; }
+}
+
+/* ---------- hero module assembly (js/hero.js) ----------
+   Seven module cards over the oak photo. Their CSS positions ARE the final,
+   in-order state — no-JS and reduced-motion render the finished composition;
+   JS only rewinds (scatters) and then assembles. Flat cutout-ring cards on
+   the photo well, same idiom as .shot. */
+
+.hero__connector { position: absolute; left: 6%; top: 4%; width: 88%; height: 90%; z-index: 1; }
+.hero__connector path {
+  fill: none; stroke: var(--accent); stroke-width: 2px; opacity: 0.55;
+  stroke-linecap: round; vector-effect: non-scaling-stroke;
+}
+.hero__stack { position: absolute; inset: 0; margin: 0; padding: 0; list-style: none; z-index: 2; }
+.mod {
+  position: absolute; width: 47%;
+  display: flex; gap: 10px; align-items: center;
+  padding: 11px 13px; border-radius: 12px;
+  background: var(--surface); border: 1px solid var(--border-strong);
+  box-shadow: 0 0 0 6px var(--photo-well); /* flat cutout ring, no blur — matches .shot */
+}
+.mod--1 { top: 4%;  left: 1%; }
+.mod--2 { top: 1%;  right: 1%; }
+.mod--3 { top: 25%; left: 4%; }
+.mod--4 { top: 22%; right: 0; }
+.mod--5 { top: 47%; left: 1%; }
+.mod--6 { top: 44%; right: 3%; }
+.mod--7 { top: 68%; left: 24%; width: 52%; }
+.mod__n {
+  width: 20px; height: 20px; border-radius: 50%; flex: none;
+  display: flex; align-items: center; justify-content: center;
+  background: var(--canvas); border: 1px solid var(--border-strong);
+  color: var(--text-muted); font-size: 0.7rem; font-weight: 700;
+}
+.mod.is-set .mod__n { background: var(--cta); border-color: var(--cta); color: var(--text-inverse); }
+.mod__ic {
+  width: 34px; height: 34px; border-radius: 9px; flex: none;
+  display: flex; align-items: center; justify-content: center;
+  background: var(--accent-subtle); color: var(--accent);
+}
+.mod__ic svg { width: 17px; height: 17px; fill: none; stroke: currentColor; stroke-width: 2; stroke-linecap: round; stroke-linejoin: round; }
+.mod b { display: block; font-size: 0.92rem; font-weight: 650; letter-spacing: -0.01em; }
+.mod small { display: block; color: var(--text-muted); font-size: 0.76rem; line-height: 1.35; }
+
+@media (max-width: 880px) {
+  .hero__visual { min-height: 0; }
+  .hero__photo img { position: static; height: 200px; }
+  .hero__connector { display: none; }
+  .hero__stack { position: static; display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin-top: 14px; }
+  .mod, .mod--1, .mod--2, .mod--3, .mod--4, .mod--5, .mod--6, .mod--7 { position: static; width: auto; box-shadow: none; }
+  .mod--7 { grid-column: 1 / -1; }
+  .hero__cred { position: static; margin-top: 10px; }
 }
