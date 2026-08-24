@@ -9,14 +9,16 @@
 Static site, no build step: `index.html` + `css/` + `js/` + `fonts/` + `assets/`.
 Open `index.html` or serve the folder with any static server.
 
-## The Field Sheet identity
+## The Field Sheet identity (blueprint palette)
 
 The page speaks the visual language of the trade's own paperwork — takeoff
 drawings, dimension lines, chalk, rubber stamps, spec schedules — instead of
-generic SaaS. Rules (enforced in `css/tokens.css`, the **only** file allowed
-to contain hex):
+generic SaaS. Palette: **blueprint blue on white** (owner direction
+2026-08-24; cobalt `--accent` #2563EB matches the app's own UI, so real
+screenshots blend with the page). Rules (enforced in `css/tokens.css`, the
+**only** file allowed to contain hex):
 
-- **Paper is the brand.** One deliberate warm-light theme; no dark mode, no toggle.
+- **White paper is the brand.** One deliberate light theme; no dark mode, no toggle.
 - Square corners, hairline rules, hard offset shadows (print/stamp language) —
   never soft blurs. Gradients only as line patterns (grid, hatch), never washes.
 - Type: **Archivo** variable (display at `font-stretch:125%` weight 800) +
@@ -31,14 +33,17 @@ pairing the site renders, plus the hex-outside-tokens scan.
 ## Motion
 
 One library on the page: vendored **GSAP** (`js/vendor/gsap.min.js` +
-ScrollTrigger + DrawSVG). `js/hero.js` draws the hero takeoff board — walls,
-dimensions, room hatching with a blaze "current course" sweep, the counting
-tally, the APPROVED stamp, the seven legend chips. `js/scroll.js` runs the
+ScrollTrigger + DrawSVG). `js/hero.js` builds the hero construction-style:
+a blueprint frame and corner registration marks are drawn first, the
+quote-builder window (a faithful mini of the app's New Quote screen — same
+lines and math as the full builder mockup) installs piece by piece, line
+items type themselves in while the totals climb, the scaffolding fades,
+APPROVED slams, and the seven legend chips rise. `js/scroll.js` runs the
 proof counters and scroll stamps.
 
-- The SVG board is authored at its **finished state**: with no JS or with
-  `prefers-reduced-motion`, the page renders complete and static. All initial
-  hide/offset states are set from JS only.
+- The builder window is authored at its **finished state**: with no JS or
+  with `prefers-reduced-motion`, the page renders complete and static. All
+  initial hide/offset states are set from JS only.
 - `.reveal` hiding is scoped to `html.js` (set by an inline snippet), so no-JS
   never hides content.
 - Click / Enter on the board replays the takeoff.

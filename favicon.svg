@@ -1,10 +1,10 @@
 <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64">
   <!-- Standalone favicon: cannot reference CSS custom properties, so this file
        is the one sanctioned asset carrying literal hex — values are copies of
-       --ink (#1C1917) and --blaze (#E4572E) from css/tokens.css. -->
-  <rect width="64" height="64" fill="#1C1917"/>
+       --accent (#2563EB) and --paper-high (#FFFFFF) from css/tokens.css. -->
+  <rect width="64" height="64" fill="#2563EB"/>
   <!-- staggered plank courses -->
-  <g fill="#E4572E">
+  <g fill="#FFFFFF">
     <rect x="10" y="14" width="44" height="10"/>
     <rect x="10" y="28" width="27" height="10"/>
     <rect x="41" y="28" width="13" height="10"/>

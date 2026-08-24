@@ -42,15 +42,16 @@ const pairs = [
   ['ink-soft', 'paper', 4.5], ['ink-soft', 'paper-high', 4.5],
   ['ink-faint', 'paper', 4.5], ['ink-faint', 'paper-high', 4.5],
   ['chalk', 'paper', 4.5], ['chalk', 'paper-high', 4.5],
-  ['blaze-deep', 'paper', 4.5], ['blaze-deep', 'paper-high', 4.5],
+  ['accent-deep', 'paper', 4.5], ['accent-deep', 'paper-high', 4.5],
   ['stamp-go', 'paper', 4.5], ['stamp-go', 'paper-high', 4.5],
   ['stamp-stop', 'paper', 4.5], ['stamp-stop', 'paper-high', 4.5],
-  ['blaze', 'paper', 3],            // non-text UI: underline, borders, marks
-  ['wood', 'paper-high', 3],        // non-text UI: hatch strokes, swatches
-  // ink surfaces (closer + footer + compare thead + buttons)
+  ['accent', 'paper', 3],           // non-text UI: underline, borders, marks
+  ['hatch', 'paper-high', 3],       // non-text UI: hatch strokes, swatches
+  ['paper-high', 'accent', 4.5],    // primary button label on cobalt fill
+  // ink surfaces (closer + footer + compare thead)
   ['paper-high', 'ink', 7],         // headings, button labels, links on ink
   ['rule', 'ink', 4.5],             // footer body text, closer lead/micro
-  ['blaze', 'ink', 4.5],            // closer kicker + accent words (mono 600 / display)
+  ['sky', 'ink', 4.5],              // closer kicker + accent words on navy
 ];
 
 let failures = 0;

@@ -1,11 +1,13 @@
 /* ============================================================
-   FLOORLOGIC — "FIELD SHEET" IDENTITY (v2)
+   FLOORLOGIC — "FIELD SHEET" IDENTITY (v2, blueprint palette)
    The page speaks the visual language of the trade's own paper:
-   takeoff drawings, dimension lines, chalk, stamps, spec tables.
+   takeoff drawings, dimension lines, chalk, stamps, spec tables —
+   drawn in blueprint blue on white (owner direction 2026-08-24),
+   which also matches the app's own white + cobalt UI.
 
    RULES OF THE IDENTITY
    - This file is the ONLY place a raw color value may appear.
-   - Paper is the brand: one deliberate light look, no theme toggle.
+   - White paper is the brand: one deliberate light look, no toggle.
    - Square corners. Hairline rules. Hard offset shadows only
      (print/stamp language) — never soft blurs.
    - Gradients are permitted ONLY as line patterns (grid, hatch),
@@ -39,29 +41,30 @@
 
 :root {
   /* paper */
-  --paper:       #F4EFE6;   /* warm drafting paper — page ground */
-  --paper-high:  #FCF9F3;   /* raised sheets and cards */
-  --paper-dim:   #EAE3D4;   /* recessed wells, table stripes */
+  --paper:       #F6FAFF;   /* blue-white — page ground */
+  --paper-high:  #FFFFFF;   /* raised sheets and cards */
+  --paper-dim:   #E9F0FA;   /* recessed wells, table stripes */
 
-  /* ink */
-  --ink:         #1C1917;   /* warm near-black — text, walls, borders */
-  --ink-soft:    #55503F;   /* secondary text */
-  --ink-faint:   #6E6852;   /* tertiary text, quiet annotations (AA at 12px) */
+  /* ink (blue-black) */
+  --ink:         #0F1E38;   /* navy ink — text, borders, closer/footer ground */
+  --ink-soft:    #3A5170;   /* secondary text */
+  --ink-faint:   #57709A;   /* tertiary text, quiet annotations (AA at 12px) */
 
   /* drafting lines */
-  --rule:        #C9BFA9;   /* hairline rules and card borders */
-  --grid:        #E4DCCA;   /* background grid lines */
+  --rule:        #C2D3EA;   /* hairline rules and card borders */
+  --grid:        #DAE6F6;   /* background grid lines */
 
   /* accents */
-  --blaze:       #E4572E;   /* chalk/blaze orange — the accent */
-  --blaze-deep:  #B93D18;   /* hover / pressed / small blaze text */
-  --chalk:       #2456A6;   /* surveyor's chalk blue — dims + links */
+  --accent:      #2563EB;   /* cobalt — CTA fills (white label), underline, marks */
+  --accent-deep: #1A47B8;   /* small cobalt text (AA at 11px) */
+  --chalk:       #2563EB;   /* links + dimension lines (chalk lines are blue) */
+  --sky:         #7FA8F2;   /* accent text on ink surfaces (closer, footer) */
   --stamp-go:    #1F7A46;   /* APPROVED / PAID stamps */
   --stamp-stop:  #B3261E;   /* alerts, "no" marks */
 
-  /* material */
-  --wood:        #8A5A33;   /* plank hatching */
-  --wood-lite:   #C89A66;
+  /* hatching (drawing fills) */
+  --hatch:       #6C8FCB;   /* pattern strokes */
+  --hatch-lite:  #D6E3F6;   /* pattern ground tint */
 
   /* type */
   --font-body: 'Archivo', 'Helvetica Neue', Arial, sans-serif;
@@ -72,12 +75,12 @@
     repeating-linear-gradient(0deg,  var(--grid) 0 1px, transparent 1px 26px),
     repeating-linear-gradient(90deg, var(--grid) 0 1px, transparent 1px 26px);
   --pat-hatch-wood:
-    repeating-linear-gradient(0deg, var(--wood) 0 2px, transparent 2px 9px);
+    repeating-linear-gradient(0deg, var(--hatch) 0 2px, transparent 2px 9px);
   --pat-hatch-tile:
-    repeating-linear-gradient(45deg,  var(--ink-faint) 0 1px, transparent 1px 9px),
-    repeating-linear-gradient(-45deg, var(--ink-faint) 0 1px, transparent 1px 9px);
+    repeating-linear-gradient(45deg,  var(--hatch) 0 1px, transparent 1px 9px),
+    repeating-linear-gradient(-45deg, var(--hatch) 0 1px, transparent 1px 9px);
 
-  /* stamp shadow (hard, never blurred) */
-  --shadow-stamp: 4px 4px 0 var(--blaze);
+  /* stamp shadows (hard, never blurred) */
+  --shadow-stamp: 4px 4px 0 var(--accent);
   --shadow-card:  6px 6px 0 var(--paper-dim);
 }

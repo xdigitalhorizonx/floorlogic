@@ -114,8 +114,8 @@
     <div class="wrap masthead__row">
       <a class="brand" href="#top" aria-label="FloorLogic — home">
         <svg viewBox="0 0 64 64" aria-hidden="true">
-          <rect width="64" height="64" fill="var(--ink)"/>
-          <g fill="var(--blaze)">
+          <rect width="64" height="64" fill="var(--accent)"/>
+          <g fill="var(--paper-high)">
             <rect x="10" y="14" width="44" height="10"/>
             <rect x="10" y="28" width="27" height="10"/>
             <rect x="41" y="28" width="13" height="10"/>
@@ -145,7 +145,7 @@
     <section class="hero" id="top">
       <div class="wrap hero__grid">
         <div class="hero__copy">
-          <p class="kicker">Field sheet 01 — Takeoff &middot; Flooring business software</p>
+          <p class="kicker">Field sheet 01 — The quote &middot; Flooring business software</p>
           <h1>Every job, <em>wall to wall.<svg viewBox="0 0 300 24" preserveAspectRatio="none" aria-hidden="true"><path id="hero-underline" d="M4,15 C70,21 170,5 296,12"/></svg></em></h1>
           <p class="lead">Measure it, quote it with real roll math, and let the customer tap Approve on their phone — the work order, the invoice, and the job costs write themselves. One system for the whole shop, built inside Landmark Flooring, a working store in Carson City, Nevada.</p>
 
@@ -191,123 +191,49 @@
         </div>
 
         <div class="hero__board-wrap">
-          <div class="board" id="board" title="Replay the takeoff">
+          <div class="board qbw" id="board" title="Replay the build">
             <span class="board__hint" aria-hidden="true">Tap to replay</span>
-            <!-- The takeoff drawing. Authored at its finished state so the page
-                 is complete with no JS / reduced motion; js/hero.js draws it. -->
-            <svg id="takeoff" viewBox="0 0 980 700" role="img" aria-label="A flooring takeoff drawing of a five-room floor plan with dimensions, plank and tile hatching, and a quote tally stamped Approved">
-              <defs>
-                <pattern id="pat-planks" width="200" height="40" patternUnits="userSpaceOnUse">
-                  <rect width="200" height="40" fill="var(--wood-lite)" opacity="0.10"/>
-                  <line x1="0" y1="19.5" x2="200" y2="19.5" stroke="var(--wood)" stroke-width="1.4" opacity="0.75"/>
-                  <line x1="0" y1="39.5" x2="200" y2="39.5" stroke="var(--wood)" stroke-width="1.4" opacity="0.75"/>
-                  <line x1="72" y1="0" x2="72" y2="19.5" stroke="var(--wood)" stroke-width="1.4" opacity="0.6"/>
-                  <line x1="152" y1="19.5" x2="152" y2="39.5" stroke="var(--wood)" stroke-width="1.4" opacity="0.6"/>
-                </pattern>
-                <pattern id="pat-tiles" width="26" height="26" patternUnits="userSpaceOnUse">
-                  <path d="M0,26 26,0" stroke="var(--ink-faint)" stroke-width="0.9" opacity="0.55"/>
-                  <path d="M0,0 26,26" stroke="var(--ink-faint)" stroke-width="0.9" opacity="0.55"/>
-                </pattern>
-              </defs>
-
-              <!-- room fills (hatching) -->
-              <g id="tk-fill-great" class="tk-fill"><rect x="77" y="97" width="476" height="256" fill="url(#pat-planks)"/></g>
-              <g id="tk-fill-bed1" class="tk-fill"><rect x="77" y="367" width="346" height="236" fill="url(#pat-planks)"/></g>
-              <g id="tk-fill-bed2" class="tk-fill"><rect x="437" y="367" width="256" height="236" fill="url(#pat-planks)"/></g>
-              <g id="tk-fill-kitchen" class="tk-fill"><rect x="567" y="97" width="336" height="256" fill="url(#pat-tiles)"/></g>
-              <g id="tk-fill-bath" class="tk-fill"><rect x="707" y="367" width="196" height="236" fill="url(#pat-tiles)"/></g>
-              <!-- "current course" sweep lines (one per wood room, hidden until animated) -->
-              <line id="tk-course-great" class="tk-course" x1="77" y1="97" x2="553" y2="97" stroke="var(--blaze)" stroke-width="3" opacity="0"/>
-              <line id="tk-course-bed1" class="tk-course" x1="77" y1="367" x2="423" y2="367" stroke="var(--blaze)" stroke-width="3" opacity="0"/>
-              <line id="tk-course-bed2" class="tk-course" x1="437" y1="367" x2="693" y2="367" stroke="var(--blaze)" stroke-width="3" opacity="0"/>
-
-              <!-- walls -->
-              <g id="tk-walls" fill="none" stroke="var(--ink)" stroke-linecap="square">
-                <path class="tk-wall" d="M70,90 H910 V610 H70 Z" stroke-width="7"/>
-                <path class="tk-wall" d="M560,90 V210 M560,265 V360" stroke-width="4"/>
-                <path class="tk-wall" d="M70,360 H300 M365,360 H735 M790,360 H910" stroke-width="4"/>
-                <path class="tk-wall" d="M430,360 V455 M430,510 V610" stroke-width="4"/>
-                <path class="tk-wall" d="M700,360 V610" stroke-width="4"/>
-              </g>
-
-              <!-- windows (double-line plan symbol on outer walls) -->
-              <g id="tk-wins" stroke="var(--chalk)" stroke-width="1.6">
-                <rect x="200" y="84" width="130" height="12" fill="var(--paper-high)" stroke="var(--ink)" stroke-width="1.4"/>
-                <line x1="200" y1="90" x2="330" y2="90"/>
-                <rect x="640" y="84" width="130" height="12" fill="var(--paper-high)" stroke="var(--ink)" stroke-width="1.4"/>
-                <line x1="640" y1="90" x2="770" y2="90"/>
-                <rect x="64" y="170" width="12" height="120" fill="var(--paper-high)" stroke="var(--ink)" stroke-width="1.4"/>
-                <line x1="70" y1="170" x2="70" y2="290"/>
-              </g>
-
-              <!-- door swings -->
-              <g id="tk-doors" fill="none" stroke="var(--ink-faint)" stroke-width="1.5">
-                <path d="M560,265 A55,55 0 0 1 615,210 L560,210"/>
-                <path d="M365,360 A65,65 0 0 1 300,295 L300,360"/>
-                <path d="M790,360 A55,55 0 0 0 735,305 L735,360"/>
-                <path d="M430,510 A55,55 0 0 1 485,455 L430,455"/>
-              </g>
-
-              <!-- dimensions -->
-              <g id="tk-dims" stroke="var(--chalk)" stroke-width="1.4" fill="none">
-                <line class="tk-dimline" x1="70" y1="78" x2="70" y2="44"/>
-                <line class="tk-dimline" x1="910" y1="78" x2="910" y2="44"/>
-                <line class="tk-dimline" x1="70" y1="52" x2="910" y2="52"/>
-                <path class="tk-arrow" d="M70,52 l12,-4.5 v9 Z M910,52 l-12,-4.5 v9 Z" fill="var(--chalk)" stroke="none"/>
-                <line class="tk-dimline" x1="58" y1="90" x2="26" y2="90"/>
-                <line class="tk-dimline" x1="58" y1="610" x2="26" y2="610"/>
-                <line class="tk-dimline" x1="34" y1="90" x2="34" y2="610"/>
-                <path class="tk-arrow" d="M34,90 l-4.5,12 h9 Z M34,610 l-4.5,-12 h9 Z" fill="var(--chalk)" stroke="none"/>
-              </g>
-              <g id="tk-dimtext" class="tkm" fill="var(--chalk)" font-size="15" font-weight="600" text-anchor="middle">
-                <rect x="446" y="42" width="90" height="20" fill="var(--paper-high)" opacity="0.9"/>
-                <text x="490" y="57">38'-4"</text>
-                <rect x="24" y="308" width="20" height="86" fill="var(--paper-high)" opacity="0.9"/>
-                <text x="34" y="350" transform="rotate(-90 34 350)">23'-9"</text>
-              </g>
-
-              <!-- room labels -->
-              <g id="tk-labels" class="tkm" text-anchor="middle">
-                <g class="tk-label"><text x="315" y="212" font-size="17" font-weight="600" letter-spacing="2" fill="var(--ink)">GREAT ROOM</text><text x="315" y="234" font-size="13" fill="var(--ink-faint)">560 SF &middot; LVP GREAT BASIN</text></g>
-                <g class="tk-label"><text x="735" y="205" font-size="17" font-weight="600" letter-spacing="2" fill="var(--ink)">KITCHEN</text><text x="735" y="227" font-size="13" fill="var(--ink-faint)">410 SF &middot; TILE</text></g>
-                <g class="tk-label"><text x="250" y="475" font-size="17" font-weight="600" letter-spacing="2" fill="var(--ink)">PRIMARY BED</text><text x="250" y="497" font-size="13" fill="var(--ink-faint)">380 SF</text></g>
-                <g class="tk-label"><text x="565" y="475" font-size="17" font-weight="600" letter-spacing="2" fill="var(--ink)">BED 2 &middot; HALL</text><text x="565" y="497" font-size="13" fill="var(--ink-faint)">300 SF</text></g>
-                <g class="tk-label"><text x="805" y="475" font-size="17" font-weight="600" letter-spacing="2" fill="var(--ink)">BATH</text><text x="805" y="497" font-size="13" fill="var(--ink-faint)">190 SF</text></g>
-              </g>
-
-              <!-- title block + marks -->
-              <g id="tk-title" class="tkm">
-                <rect x="565" y="628" width="345" height="58" fill="var(--paper-high)" stroke="var(--ink)" stroke-width="1.6"/>
-                <line x1="565" y1="656" x2="910" y2="656" stroke="var(--rule)" stroke-width="1"/>
-                <line x1="760" y1="628" x2="760" y2="686" stroke="var(--rule)" stroke-width="1"/>
-                <text x="576" y="647" font-size="12.5" font-weight="600" fill="var(--ink)">CORDOVA BUILDERS &mdash; LOT 14</text>
-                <text x="576" y="675" font-size="11.5" fill="var(--ink-faint)">TAKEOFF FL-01 &middot; SCALE 1/4" = 1'-0"</text>
-                <text x="771" y="647" font-size="11.5" fill="var(--ink-faint)">TOTAL AREA</text>
-                <text x="771" y="676" font-size="17" font-weight="600" fill="var(--ink)"><tspan id="tk-sqft">1,840</tspan> SQ FT</text>
-              </g>
-              <g id="tk-marks">
-                <g class="tkm" text-anchor="middle">
-                  <circle cx="110" cy="655" r="17" fill="none" stroke="var(--ink)" stroke-width="1.6"/>
-                  <path d="M110,644 l5,16 -5,-5 -5,5 Z" fill="var(--ink)"/>
-                  <text x="110" y="692" font-size="11" fill="var(--ink-faint)">N</text>
-                </g>
-                <g stroke="var(--blaze)" stroke-width="2">
-                  <circle cx="42" cy="58" r="7" fill="none"/><line x1="42" y1="44" x2="42" y2="72"/><line x1="28" y1="58" x2="56" y2="58"/>
-                  <circle cx="938" cy="642" r="7" fill="none"/><line x1="938" y1="628" x2="938" y2="656"/><line x1="924" y1="642" x2="952" y2="642"/>
-                </g>
-              </g>
+            <svg class="qbw__guides" viewBox="0 0 100 100" preserveAspectRatio="none" aria-hidden="true">
+              <rect id="qg-frame" x="0.5" y="0.7" width="99" height="98.6" fill="none" stroke="var(--accent)" stroke-width="1.5"/>
             </svg>
+            <svg class="qbw__mark qbw__mark--tl" viewBox="0 0 24 24" aria-hidden="true"><g fill="none" stroke="var(--accent)" stroke-width="2"><circle cx="12" cy="12" r="6"/><line x1="12" y1="0" x2="12" y2="24"/><line x1="0" y1="12" x2="24" y2="12"/></g></svg>
+            <svg class="qbw__mark qbw__mark--br" viewBox="0 0 24 24" aria-hidden="true"><g fill="none" stroke="var(--accent)" stroke-width="2"><circle cx="12" cy="12" r="6"/><line x1="12" y1="0" x2="12" y2="24"/><line x1="0" y1="12" x2="24" y2="12"/></g></svg>
 
-            <!-- quote tally card -->
-            <aside class="tally" id="tally" aria-label="Quote tally for the takeoff">
-              <div class="tally__head">Quote QT-322 &middot; from this takeoff</div>
-              <div class="tally__row"><span>Area</span><b><span data-tally="sqft">1,840</span> sq ft</b></div>
-              <div class="tally__row"><span>Materials</span><b>$<span data-tally="mat">7,912.40</span></b></div>
-              <div class="tally__row"><span>Labor</span><b>$<span data-tally="lab">4,306.00</span></b></div>
-              <div class="tally__row"><span>Tax &middot; 8.265%</span><b>$<span data-tally="tax">653.96</span></b></div>
-              <div class="tally__row tally__row--total"><span>Total</span><b>$<span data-tally="total">12,872.36</span></b></div>
-              <span class="stamp" id="tally-stamp">Approved</span>
-            </aside>
+            <!-- Faithful mini of the app's New Quote screen (same lines and math
+                 as the full builder mockup this page shipped 2026-08-23).
+                 Authored at its finished state; js/hero.js builds it. -->
+            <div class="qbw__bar"><span>FLOORLOGIC / NEW QUOTE</span><em>QT-322 &middot; CORDOVA BUILDERS &mdash; LOT 14</em></div>
+            <div class="qbw__cols">
+              <div class="qbw__main">
+                <div class="qbw__billto">
+                  <b>Bill to: Cordova Builders &mdash; Lot 14</b>
+                  <span>3312 Meredith Way, Sparks, NV</span>
+                  <span>Tax 8.265% &middot; Washoe County</span>
+                  <span>Rep: Marisol Vega</span>
+                </div>
+                <table class="qbw__table" aria-label="Quote line items">
+                  <thead>
+                    <tr><th>Line item</th><th class="num">Qty</th><th class="num">Price</th><th class="num">Total</th></tr>
+                  </thead>
+                  <tbody>
+                    <tr class="qbw__row"><td><b>LVP &mdash; Great Basin</b><small>Sand Mountain &middot; 7&Prime; click-lock plank</small></td><td class="num">640 sq ft</td><td class="num">$3.89</td><td class="num">$2,489.60</td></tr>
+                    <tr class="qbw__row"><td><b>Tear out &amp; disposal</b><small>existing floor + haul away</small></td><td class="num">flat</td><td class="num">&mdash;</td><td class="num">$480.00</td></tr>
+                    <tr class="qbw__row"><td><b>Installation &mdash; LVP</b><small>incl. new baseboard</small></td><td class="num">640 sq ft</td><td class="num">$2.25</td><td class="num">$1,440.00</td></tr>
+                    <tr class="qbw__addrow"><td colspan="4"><input id="qbw-add" type="text" placeholder="Type to add a line item&hellip;" aria-label="Add a line item (demo)" readonly tabindex="-1"></td></tr>
+                  </tbody>
+                </table>
+              </div>
+              <aside class="qbw__side" aria-label="Quote totals">
+                <div class="qbw__sidehead">Quote total</div>
+                <div class="qbw__srow"><span>Materials</span><b data-qt="mat">$2,489.60</b></div>
+                <div class="qbw__srow"><span>Labor</span><b data-qt="labor">$1,920.00</b></div>
+                <div class="qbw__srow"><span>Subtotal</span><b data-qt="sub">$4,409.60</b></div>
+                <div class="qbw__srow"><span>Tax &middot; 8.265%</span><b data-qt="tax">$205.77</b></div>
+                <div class="qbw__srow qbw__srow--grand"><span>Grand total</span><b data-qt="grand">$4,615.37</b></div>
+                <div class="qbw__srow qbw__srow--margin"><span>Margin</span><b data-qt="margin">36.5% &middot; $1,610.88</b></div>
+                <div class="qbw__stampzone"><span class="stamp" id="tally-stamp">Approved</span></div>
+              </aside>
+            </div>
           </div>
         </div>
       </div>
@@ -750,8 +676,8 @@
         <div class="footer__col">
           <a class="brand" href="#top" aria-label="FloorLogic — back to top">
             <svg viewBox="0 0 64 64" aria-hidden="true">
-              <rect width="64" height="64" fill="var(--blaze)"/>
-              <g fill="var(--ink)">
+              <rect width="64" height="64" fill="var(--accent)"/>
+              <g fill="var(--paper-high)">
                 <rect x="10" y="14" width="44" height="10"/>
                 <rect x="10" y="28" width="27" height="10"/>
                 <rect x="41" y="28" width="13" height="10"/>
