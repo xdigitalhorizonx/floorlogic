@@ -247,6 +247,84 @@
       </div>
     </section>
 
+    <!-- ============ LIVE DASHBOARD (animated mockup — js/dashboard.js) ============ -->
+    <section class="live" id="live">
+      <div class="wrap">
+        <div class="section-head reveal">
+          <p class="kicker">See it move</p>
+          <h2>The board runs the day for you.</h2>
+          <p class="lead">A living mockup of the FloorLogic dashboard &mdash; totals climb, statuses advance, and the board reacts the moment work changes. Invented numbers, real product patterns. Try the filters.</p>
+        </div>
+        <div class="frame dash reveal" id="dash">
+          <div class="frame__bar">
+            <div class="frame__dots" aria-hidden="true"><i></i><i></i><i></i></div>
+            <div class="frame__url">app.floorlogic &mdash; today&rsquo;s board</div>
+          </div>
+          <div class="dash__body">
+            <div class="dash__kpis">
+              <div class="dash__kpi"><span>Revenue MTD</span><b data-kpi="revenue">$128,400</b></div>
+              <div class="dash__kpi"><span>Active jobs</span><b data-kpi="jobs">14</b></div>
+              <div class="dash__kpi"><span>Quotes pending</span><b data-kpi="quotes">9</b></div>
+              <div class="dash__kpi"><span>Avg margin</span><b data-kpi="margin">38.2%</b></div>
+            </div>
+            <div class="dash__panelhead">
+              <h3>Jobs</h3>
+              <div class="dash__tabs" role="group" aria-label="Filter jobs by status">
+                <button class="dash__tab is-on" data-filter="All" type="button">All</button>
+                <button class="dash__tab" data-filter="Scheduled" type="button">Scheduled</button>
+                <button class="dash__tab" data-filter="In Progress" type="button">In progress</button>
+                <button class="dash__tab" data-filter="Complete" type="button">Complete</button>
+              </div>
+            </div>
+            <div class="dash__rows">
+              <div class="dash__row" data-status="In Progress">
+                <div class="dash__row-inner">
+                  <span class="dash__job">Marchetti Residence &mdash; LVP install</span>
+                  <span class="dash__crew">Ruben</span>
+                  <b class="dash__value">$8,450</b>
+                  <span class="pill pill--sold"><svg viewBox="0 0 12 12" aria-hidden="true"><circle cx="6" cy="6" r="5" fill="currentColor"/></svg><span>In progress</span></span>
+                </div>
+              </div>
+              <div class="dash__row" data-status="Scheduled">
+                <div class="dash__row-inner">
+                  <span class="dash__job">Talon Ridge HOA &mdash; carpet, 12 units</span>
+                  <span class="dash__crew">Tanner</span>
+                  <b class="dash__value">$25,120</b>
+                  <span class="pill pill--quoted"><svg viewBox="0 0 12 12" aria-hidden="true"><circle cx="6" cy="6" r="5" fill="currentColor"/></svg><span>Scheduled</span></span>
+                </div>
+              </div>
+              <div class="dash__row" data-status="In Progress">
+                <div class="dash__row-inner">
+                  <span class="dash__job">Silver Peak Office &mdash; hardwood refinish</span>
+                  <span class="dash__crew">Ruben</span>
+                  <b class="dash__value">$11,900</b>
+                  <span class="pill pill--sold"><svg viewBox="0 0 12 12" aria-hidden="true"><circle cx="6" cy="6" r="5" fill="currentColor"/></svg><span>In progress</span></span>
+                </div>
+              </div>
+              <div class="dash__row" data-status="Complete">
+                <div class="dash__row-inner">
+                  <span class="dash__job">Kessler Kitchen &mdash; porcelain tile</span>
+                  <span class="dash__crew">Tanner</span>
+                  <b class="dash__value">$6,300</b>
+                  <span class="pill pill--complete"><svg viewBox="0 0 12 12" aria-hidden="true"><circle cx="6" cy="6" r="5" fill="currentColor"/></svg><span>Complete</span></span>
+                </div>
+              </div>
+              <div class="dash__row" data-status="Scheduled">
+                <div class="dash__row-inner">
+                  <span class="dash__job">Duncan Basement &mdash; carpet + pad</span>
+                  <span class="dash__crew">Ruben</span>
+                  <b class="dash__value">$4,750</b>
+                  <span class="pill pill--quoted"><svg viewBox="0 0 12 12" aria-hidden="true"><circle cx="6" cy="6" r="5" fill="currentColor"/></svg><span>Scheduled</span></span>
+                </div>
+              </div>
+              <p class="dash__empty" hidden>Nothing here this second &mdash; the board moves fast. It&rsquo;ll fill back up.</p>
+            </div>
+          </div>
+        </div>
+        <p class="frame-caption">A live animated mockup &mdash; spring physics in your browser, invented numbers. The screenshots above are the real app.</p>
+      </div>
+    </section>
+
     <!-- ============ PROOF ============ -->
     <section class="proof">
       <div class="wrap">
@@ -764,5 +842,8 @@
   </div>
 
   <script src="js/main.js" defer></script>
+  <!-- live dashboard mockup (#live) — vendored anime.js v4 + the section driver -->
+  <script src="js/vendor/anime.umd.min.js" defer></script>
+  <script src="js/dashboard.js" defer></script>
 </body>
 </html>
