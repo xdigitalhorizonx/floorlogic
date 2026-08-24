@@ -84,3 +84,23 @@
   --shadow-stamp: 4px 4px 0 var(--accent);
   --shadow-card:  6px 6px 0 var(--paper-dim);
 }
+
+/* ============================================================
+   APP SCOPE - verbatim palette of the product UI, used ONLY by
+   the .fl-quote builder recreation in the hero. The app window
+   is always light and mirrors the product exactly (same reason
+   the real screenshots do), so it is exempt from the site
+   palette rules above. Values copied from the shipped Lead
+   Pipeline / New Quote mockup (main branch, owner-approved).
+   ============================================================ */
+:root {
+  --fl-bg: #F4F6F8; --fl-card: #FFFFFF; --fl-border: #E6E9EF; --fl-border-strong: #D6DBE4;
+  --fl-text: #151B26; --fl-muted: #69727F; --fl-faint: #98A1AE;
+  --fl-green: #10B981; --fl-navy: #1E3A8A; --fl-cta: #2563EB;
+  --fl-white: #FFFFFF;
+  --fl-access-bg: #FEFCE8; --fl-access-bd: #FDE68A; --fl-access-fg: #854D0E;
+  --fl-pdf-fg: #15803D; --fl-pdf-bg: #DCFCE7; --fl-pdf-bd: #BBF7D0;
+  --fl-band-bg: #EFF6FF; --fl-band-bd: #BFDBFE;
+  --fl-mat: #EA580C; --fl-lab: #475569;
+  --fl-hl-y: #FDE68A; --fl-hl-g: #BBF7D0; --fl-hl-b: #BFDBFE; --fl-hl-p: #FBCFE8;
+}

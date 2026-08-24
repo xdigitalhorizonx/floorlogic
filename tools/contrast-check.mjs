@@ -79,7 +79,10 @@ function walk(dir) {
     // js/vendor/ is minified third-party code (GSAP).
     if (rel === 'css/tokens.css' || rel === 'favicon.svg' || rel.startsWith('tools/') || rel.startsWith('js/vendor/')) continue;
     const src = readFileSync(p, 'utf8');
-    for (const [hex] of src.matchAll(/#[0-9A-Fa-f]{3,8}\b/g)) {
+    // (?<!&) skips HTML numeric character references like &#128274;; the
+    // length alternation only matches valid CSS hex lengths (3/4/6/8), so
+    // prose like a license number "NV #0074221" doesn't false-positive.
+    for (const [hex] of src.matchAll(/(?<!&)#(?:[0-9A-Fa-f]{8}|[0-9A-Fa-f]{6}|[0-9A-Fa-f]{3,4})\b/g)) {
       offenders.push(`${rel}: ${hex}`);
     }
   }

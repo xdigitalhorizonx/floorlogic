@@ -199,41 +199,108 @@
             <svg class="qbw__mark qbw__mark--tl" viewBox="0 0 24 24" aria-hidden="true"><g fill="none" stroke="var(--accent)" stroke-width="2"><circle cx="12" cy="12" r="6"/><line x1="12" y1="0" x2="12" y2="24"/><line x1="0" y1="12" x2="24" y2="12"/></g></svg>
             <svg class="qbw__mark qbw__mark--br" viewBox="0 0 24 24" aria-hidden="true"><g fill="none" stroke="var(--accent)" stroke-width="2"><circle cx="12" cy="12" r="6"/><line x1="12" y1="0" x2="12" y2="24"/><line x1="0" y1="12" x2="24" y2="12"/></g></svg>
 
-            <!-- Faithful mini of the app's New Quote screen (same lines and math
-                 as the full builder mockup this page shipped 2026-08-23).
-                 Authored at its finished state; js/hero.js builds it. -->
-            <div class="qbw__bar"><span>FLOORLOGIC / NEW QUOTE</span><em>QT-322 &middot; CORDOVA BUILDERS &mdash; LOT 14</em></div>
-            <div class="qbw__cols">
-              <div class="qbw__main">
-                <div class="qbw__billto">
-                  <b>Bill to: Cordova Builders &mdash; Lot 14</b>
-                  <span>3312 Meredith Way, Sparks, NV</span>
-                  <span>Tax 8.265% &middot; Washoe County</span>
-                  <span>Rep: Marisol Vega</span>
-                </div>
-                <table class="qbw__table" aria-label="Quote line items">
-                  <thead>
-                    <tr><th>Line item</th><th class="num">Qty</th><th class="num">Price</th><th class="num">Total</th></tr>
-                  </thead>
-                  <tbody>
-                    <tr class="qbw__row"><td><b>LVP &mdash; Great Basin</b><small>Sand Mountain &middot; 7&Prime; click-lock plank</small></td><td class="num">640 sq ft</td><td class="num">$3.89</td><td class="num">$2,489.60</td></tr>
-                    <tr class="qbw__row"><td><b>Tear out &amp; disposal</b><small>existing floor + haul away</small></td><td class="num">flat</td><td class="num">&mdash;</td><td class="num">$480.00</td></tr>
-                    <tr class="qbw__row"><td><b>Installation &mdash; LVP</b><small>incl. new baseboard</small></td><td class="num">640 sq ft</td><td class="num">$2.25</td><td class="num">$1,440.00</td></tr>
-                    <tr class="qbw__addrow"><td colspan="4"><input id="qbw-add" type="text" placeholder="Type to add a line item&hellip;" aria-label="Add a line item (demo)" readonly tabindex="-1"></td></tr>
-                  </tbody>
-                </table>
+            <svg width="0" height="0" style="position:absolute" aria-hidden="true"><defs><symbol id="i-doc" viewBox="0 0 24 24"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="16" y1="13" x2="8" y2="13"/><line x1="16" y1="17" x2="8" y2="17"/></symbol></defs></svg>
+            <div class="fl-quote" id="fl-quote">
+              <div class="qb-title">
+                <h3><svg width="20" height="20" class="fl-ico" style="color:var(--fl-cta)"><use href="#i-doc"/></svg>New Quote</h3>
+                <p>+ Name this job &mdash; e.g. Crest Drive, Kitchen &amp; Bath</p>
               </div>
-              <aside class="qbw__side" aria-label="Quote totals">
-                <div class="qbw__sidehead">Quote total</div>
-                <div class="qbw__srow"><span>Materials</span><b data-qt="mat">$2,489.60</b></div>
-                <div class="qbw__srow"><span>Labor</span><b data-qt="labor">$1,920.00</b></div>
-                <div class="qbw__srow"><span>Subtotal</span><b data-qt="sub">$4,409.60</b></div>
-                <div class="qbw__srow"><span>Tax &middot; 8.265%</span><b data-qt="tax">$205.77</b></div>
-                <div class="qbw__srow qbw__srow--grand"><span>Grand total</span><b data-qt="grand">$4,615.37</b></div>
-                <div class="qbw__srow qbw__srow--margin"><span>Margin</span><b data-qt="margin">36.5% &middot; $1,610.88</b></div>
-                <div class="qbw__stampzone"><span class="stamp" id="tally-stamp">Approved</span></div>
-              </aside>
+              <div class="qb-cols">
+                <div class="qb-paper">
+                  <div class="qb-cohead">
+                    <div class="qb-brand">
+                      <svg width="34" height="34" viewBox="0 0 64 64" aria-hidden="true"><rect width="64" height="64" rx="14" fill="var(--fl-cta)"/><rect x="14" y="18" width="36" height="7" rx="3.5" fill="var(--fl-white)" opacity="0.95"/><rect x="14" y="29" width="24" height="7" rx="3.5" fill="var(--fl-white)" opacity="0.75"/><rect x="14" y="40" width="30" height="7" rx="3.5" fill="var(--fl-white)" opacity="0.55"/></svg>
+                      <div><b>Floor<span>Logic</span></b>
+                        <small>4120 Sierra Commerce Way, Reno, NV 89502<br>floorlogic.test &middot; (775) 555-0140 &middot; NV #0074221</small>
+                      </div>
+                    </div>
+                    <div class="qb-meta">
+                      <div class="qb-qnum"><span>Quote number</span><b>(unsaved)</b></div>
+                      <div class="qb-dates">
+                        <label>Issued<i>08/14/2026</i></label>
+                        <label>Valid until<i>09/13/2026</i></label>
+                        <label>Sales rep *<i>Marisol Vega</i></label>
+                      </div>
+                    </div>
+                  </div>
+                  <div class="qb-parties">
+                    <div class="qb-part">
+                      <div class="qb-bar">Bill to <span class="qb-barbtns"><i>&#128065; View</i><i>&#8635; Change</i></span></div>
+                      <div class="qb-part__body">
+                        <b data-qb-name>Priya Raman</b>
+                        <div><span>Address:</span> <span data-qb-addr>3925 Skyline Blvd, Reno, NV 89509</span></div>
+                        <div><span>Phone:</span> <span data-qb-phone>(775) 555-0301</span></div>
+                        <div><span>Email:</span> <span data-qb-email>priya.raman@example.test</span></div>
+                        <div class="qb-taxrow">
+                          <div><small>Tax rate</small><b>8.265% <em>Washoe County</em></b></div>
+                          <div><small>Payment terms</small><b>Due on Receipt &#9662;</b></div>
+                        </div>
+                      </div>
+                    </div>
+                    <div class="qb-part">
+                      <div class="qb-bar">Site details</div>
+                      <div class="qb-part__body">
+                        <div class="qb-prop"><b>&#8962; Home</b><i>&#8635; Change</i></div>
+                        <div><span>Contact:</span> <span data-qb-name2>Priya Raman</span></div>
+                        <div><span>Address:</span> <span data-qb-addr2>3925 Skyline Blvd, Reno, NV 89509</span></div>
+                        <div class="qb-access"><b>&#128203; Property notes / access</b>Gate codes, lockbox, parking, etc.</div>
+                      </div>
+                    </div>
+                  </div>
+                  <div class="qb-lines">
+                    <div class="qb-bar qb-bar--section"><span class="qb-secname">Materials &amp; Labor</span>
+                      <span class="qb-barbtns"><i>&#128230; Bundle Materials &amp; Labor</i><i>+ Bundle</i><i>&#8942;</i></span>
+                    </div>
+                    <table class="qb-table">
+                      <thead>
+                        <tr>
+                          <th>Line items</th>
+                          <th><em class="qb-pdf">&#128065; in PDF</em>Description</th>
+                          <th><em class="qb-pdf">&#128065; in PDF</em>Qty <small>/ UOM</small></th>
+                          <th><em class="qb-pdf">&#128065; in PDF</em>Price</th>
+                          <th><em class="qb-pdf">&#128065; in PDF</em>Total</th>
+                        </tr>
+                      </thead>
+                      <tbody id="qb-rows">
+                        <tr class="qb-row"><td><b>LVP &mdash; Great Basin</b></td><td>Sand Mountain &middot; 7&Prime; click-lock plank</td><td>640 sq ft</td><td>$3.89</td><td>$2,489.60</td></tr>
+                        <tr class="qb-row"><td><b>Tear out &amp; disposal</b></td><td>existing floor + haul away</td><td>flat</td><td>&mdash;</td><td>$480.00</td></tr>
+                        <tr class="qb-row"><td><b>Installation &mdash; LVP</b></td><td>incl. new baseboard</td><td>640 sq ft</td><td>$2.25</td><td>$1,440.00</td></tr>
+                        <tr class="qb-addrow"><td colspan="5"><input id="qb-add" type="text" placeholder="Type to add a line item&hellip;" aria-label="Add a line item"></td></tr>
+                      </tbody>
+                    </table>
+                    <div class="qb-sectotals">
+                      <div><span>Section totals <em class="qb-pdf">&#128065; in PDF</em></span></div>
+                      <div><span>Sales tax</span><b data-qt="stax">$205.77</b></div>
+                      <div class="qb-secsub"><span>Materials &amp; Labor subtotal</span><b data-qt="ssub">$4,409.60</b></div>
+                    </div>
+                  </div>
+                  <button class="qb-addsection" type="button">+ Add Section / Option</button>
+                  <div class="qb-bottom">
+                    <div class="qb-notes">
+                      <div class="qb-bar">&#128221; Job notes</div>
+                      <div class="qb-notes__tools"><b>B</b><i>I</i><u>U</u><s>S</s><span>Size &#9662;</span><em class="qb-hl qb-hl--y"></em><em class="qb-hl qb-hl--g"></em><em class="qb-hl qb-hl--b"></em><em class="qb-hl qb-hl--p"></em></div>
+                      <div class="qb-notes__body">- LVP | Style: Great Basin - Color: Sand Mountain<br>- Tear out &amp; disposal<br>- Installation of new baseboard</div>
+                    </div>
+                    <div class="qb-totalband">
+                      <div><span>Total</span><b data-qt="band">$4,615.37</b></div>
+                      <label><input type="checkbox"> Show Materials &amp; Labor breakdown to customer</label>
+                    </div>
+                  </div></div>
+                <aside class="qb-side">
+                  <div class="qb-sidecard">
+                    <div class="qb-sidehead">Quote total <span>&mdash;</span></div>
+                    <div class="qb-siderow"><span class="qb-mat">&#129521; Materials</span><b data-qt="mat">$2,489.60</b></div>
+                    <div class="qb-siderow"><span class="qb-lab">&#128296; Labor</span><b data-qt="labor">$1,920.00</b></div>
+                    <div class="qb-siderow qb-siderow--line"><span>Subtotal</span><b data-qt="sub">$4,409.60</b></div>
+                    <div class="qb-siderow"><span>Tax (8.27%)</span><b data-qt="tax">$205.77</b></div>
+                    <div class="qb-grand"><span>Grand total</span><b data-qt="grand">$4,615.37</b></div>
+                    <div class="qb-siderow qb-siderow--margin"><span>Margin</span><b data-qt="margin">36.5% &middot; $1,610.88</b></div>
+                  </div>
+                  <div class="qb-sidenote">&#128274; Internal notes<br><small>Click anywhere to add a note</small></div>
+                </aside>
+              </div>
             </div>
+            <span class="stamp" id="tally-stamp">Approved</span>
           </div>
         </div>
       </div>

@@ -35,11 +35,12 @@ pairing the site renders, plus the hex-outside-tokens scan.
 One library on the page: vendored **GSAP** (`js/vendor/gsap.min.js` +
 ScrollTrigger + DrawSVG). `js/hero.js` builds the hero construction-style:
 a blueprint frame and corner registration marks are drawn first, the
-quote-builder window (a faithful mini of the app's New Quote screen — same
-lines and math as the full builder mockup) installs piece by piece, line
-items type themselves in while the totals climb, the scaffolding fades,
-APPROVED slams, and the seven legend chips rise. `js/scroll.js` runs the
-proof counters and scroll stamps.
+quote builder — the app's New Quote screen recreation, ported verbatim
+from the shipped full-page mockup and zoom-fitted into the board (its
+`--fl-*` app palette lives as a documented scope in tokens.css) —
+installs piece by piece, line items type themselves in while every total
+climbs, the scaffolding fades, APPROVED slams, and the seven legend
+chips rise. `js/scroll.js` runs the proof counters and scroll stamps.
 
 - The builder window is authored at its **finished state**: with no JS or
   with `prefers-reduced-motion`, the page renders complete and static. All
