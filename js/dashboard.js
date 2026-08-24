@@ -119,8 +119,8 @@
       '<div class="fl-line"><svg width="11" height="11" class="fl-ico"><use href="#i-phone"/></svg>' + lead.phone + '</div>' +
       '<div class="fl-line"><svg width="11" height="11" class="fl-ico"><use href="#i-pin"/></svg>' + lead.addr + '</div>' +
       '<div class="fl-line"><svg width="11" height="11" class="fl-ico"><use href="#i-user"/></svg>Marisol Vega</div>' +
-      '<div class="fl-card__act fl-card__act--date"><span class="fl-date"><svg width="11" height="11" class="fl-ico"><use href="#i-cal"/></svg>mm/dd/yyyy</span><span class="fl-iconbtn fl-iconbtn--chat"><svg width="12" height="12" class="fl-ico"><use href="#i-chat"/></svg></span><span class="fl-iconbtn"><svg width="12" height="12" class="fl-ico"><use href="#i-eye"/></svg></span></div>' +
-      '<div class="fl-card__act fl-card__act--pill"><span class="fl-actpill" data-pill>→ Follow-up</span><span class="fl-iconbtn fl-iconbtn--chat"><svg width="12" height="12" class="fl-ico"><use href="#i-chat"/></svg></span><span class="fl-iconbtn"><svg width="12" height="12" class="fl-ico"><use href="#i-eye"/></svg></span></div>';
+      '<div class="fl-card__act fl-card__act--date"><span class="fl-date"><svg width="11" height="11" class="fl-ico"><use href="#i-cal"/></svg>mm/dd/yyyy</span><button class="fl-iconbtn fl-iconbtn--chat fl-quotebtn" type="button" aria-label="New quote"><svg width="12" height="12" class="fl-ico"><use href="#i-doc"/></svg></button><span class="fl-iconbtn"><svg width="12" height="12" class="fl-ico"><use href="#i-eye"/></svg></span></div>' +
+      '<div class="fl-card__act fl-card__act--pill"><span class="fl-actpill" data-pill>→ Follow-up</span><button class="fl-iconbtn fl-iconbtn--chat fl-quotebtn" type="button" aria-label="New quote"><svg width="12" height="12" class="fl-ico"><use href="#i-doc"/></svg></button><span class="fl-iconbtn"><svg width="12" height="12" class="fl-ico"><use href="#i-eye"/></svg></span></div>';
     return el;
   }
 
@@ -153,6 +153,7 @@
 
   function beginCycle() {
     setInterval(function () {
+      if (builderOpen) return; // the board is hidden — FLIP measurements would be garbage
       var eligible = STAGES.slice(0, 4).filter(function (s) { return cardsIn(s).length > 0; });
       if (eligible.length) {
         var stage = eligible[Math.floor(Math.random() * eligible.length)];
@@ -216,6 +217,125 @@
       else animate(notif, { height: notif.scrollHeight, opacity: 1, duration: 450, ease: 'outCubic',
         onComplete: function () { notif.style.height = ''; } });
     }, 12000);
+  });
+
+  /* ---------- quote builder: the app's second screen ----------
+     The blue New-quote button on any card opens it for that lead; the Back
+     button and the browser's back button both return to the pipeline. */
+
+  var page = dash.querySelector('.fl-page');
+  var quote = document.getElementById('fl-quote');
+  var builderOpen = false;
+  var qSeq = 347;
+  var totals = { mat: 4029.50, labor: 1817.00, tear: 480.00 };
+  var EXTRAS = [
+    { name: 'Transition strips & trim', meta: 'doorways + kitchen edge', qty: 'flat', amt: 164.00 },
+    { name: 'Stair nosing (6)', meta: 'matching Gunstock Oak', qty: '6 × $57.00', amt: 342.00 },
+    { name: 'Quarter round — 3 rooms', meta: 'painted to match base', qty: 'flat', amt: 128.00 }
+  ];
+  var extraAt = 0;
+
+  function money(v) { return '$' + v.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 }); }
+  function qEl(key) { return quote.querySelector('[data-q="' + key + '"]'); }
+  function grandTotal() { return totals.mat + totals.labor + totals.tear; }
+
+  function renderTotals(countUp) {
+    var spec = { mat: totals.mat, labor: totals.labor, tear: totals.tear, total: grandTotal() };
+    Object.keys(spec).forEach(function (key, i) {
+      var el = qEl(key);
+      if (reduced || !countUp) { el.textContent = money(spec[key]); return; }
+      var obj = { v: 0 };
+      animate(obj, {
+        v: spec[key], duration: 900, delay: 80 * i, ease: 'outExpo',
+        onUpdate: function () { el.textContent = money(obj.v); },
+        onComplete: function () { el.textContent = money(spec[key]); }
+      });
+    });
+  }
+
+  function resetQuoteStatus() {
+    var chip = quote.querySelector('[data-q-status]');
+    chip.textContent = 'Draft';
+    chip.classList.remove('is-sent');
+    [].forEach.call(quote.querySelectorAll('[data-q-send]'), function (b) {
+      b.disabled = false;
+      b.textContent = b.textContent.indexOf('customer') !== -1 ? 'Send to customer' : 'Send Quote';
+    });
+  }
+
+  function openQuote(leadName, viaHash) {
+    if (builderOpen) return;
+    builderOpen = true;
+    qSeq += 1;
+    quote.querySelector('[data-q-num]').textContent = 'QT-' + qSeq;
+    quote.querySelector('[data-q-lead]').textContent = leadName;
+    resetQuoteStatus();
+    if (!viaHash) { try { history.pushState({ flQuote: true }, '', '#quote-builder'); } catch (e) {} }
+    page.hidden = true;
+    quote.hidden = false;
+    renderTotals(true);
+    if (!reduced) {
+      animate(quote.querySelectorAll('.fl-quote__head, .fl-qline, .fl-qsum, .fl-qhint'), {
+        opacity: [0, 1], translateY: [12, 0], delay: stagger(45), duration: 420, ease: 'outCubic'
+      });
+    }
+  }
+
+  function closeQuote() {
+    if (!builderOpen) return;
+    builderOpen = false;
+    quote.hidden = true;
+    page.hidden = false;
+    if (!reduced) {
+      animate('.fl-col', { opacity: [0, 1], translateY: [10, 0], delay: stagger(50), duration: 380, ease: 'outCubic' });
+    }
+  }
+
+  board.addEventListener('click', function (e) {
+    var btn = e.target.closest ? e.target.closest('.fl-quotebtn') : null;
+    if (btn) openQuote(btn.closest('.fl-card').getAttribute('data-name'));
+  });
+
+  document.getElementById('fl-back').addEventListener('click', function () {
+    if (history.state && history.state.flQuote) { history.back(); return; }
+    closeQuote();
+    if (location.hash === '#quote-builder') {
+      try { history.replaceState(null, '', location.pathname + location.search + '#live'); } catch (e) {}
+    }
+  });
+  window.addEventListener('popstate', function () { if (builderOpen) closeQuote(); });
+
+  // deep link: landing on (or refreshing at) #quote-builder opens the builder directly
+  if (location.hash === '#quote-builder') {
+    var firstCard = board.querySelector('.fl-card');
+    openQuote(firstCard ? firstCard.getAttribute('data-name') : 'New lead', true);
+  }
+
+  document.getElementById('fl-addline').addEventListener('click', function () {
+    var x = EXTRAS[extraAt % EXTRAS.length];
+    extraAt += 1;
+    totals.mat += x.amt;
+    var line = document.createElement('div');
+    line.className = 'fl-qline';
+    line.innerHTML = '<div><b>' + x.name + '</b><small>' + x.meta + '</small></div>' +
+      '<span class="fl-qqty">' + x.qty + '</span><b class="fl-qtot">' + money(x.amt) + '</b>';
+    this.parentNode.insertBefore(line, this);
+    var chip = quote.querySelector('[data-q-lines]');
+    chip.textContent = String(quote.querySelectorAll('.fl-qline').length);
+    bump(chip);
+    if (!reduced) animate(line, { opacity: [0, 1], translateY: [-8, 0], duration: 420, ease: 'outCubic' });
+    renderTotals(false);
+    bump(qEl('total'));
+  });
+
+  [].forEach.call(quote.querySelectorAll('[data-q-send]'), function (btn) {
+    btn.addEventListener('click', function () {
+      var chip = quote.querySelector('[data-q-status]');
+      chip.textContent = 'Sent';
+      chip.classList.add('is-sent');
+      bump(chip);
+      [].forEach.call(quote.querySelectorAll('[data-q-send]'), function (b) { b.disabled = true; b.textContent = 'Sent ✓'; });
+    });
   });
 
   /* ---------- entrance: stats count up, columns settle in ---------- */
