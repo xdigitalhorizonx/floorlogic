@@ -1,7 +1,7 @@
-/* FloorLogic homepage interactions.
+/* FloorLogic homepage interactions (v2 — Field Sheet).
    The trial form posts to the SAME live endpoint the previous Foundation site
    used (verified end-to-end 2026-08-14): a Supabase edge function that records
-   the request and emails the owner. Only the `source` prefix changed. */
+   the request and emails the owner. Only the markup around it changed. */
 (function () {
   'use strict';
 
@@ -90,8 +90,6 @@
         step2.classList.remove('is-open');
         hideNote();
         success.classList.add('is-shown');
-        // hero.js listens and fires a celebration burst at the success message
-        try { window.dispatchEvent(new CustomEvent('fl:trial-success', { detail: { el: success } })); } catch (_) {}
       }
       function fail() {
         sending = false;
@@ -124,7 +122,7 @@
     });
   });
 
-  /* ---------- product frame tabs ---------- */
+  /* ---------- app frame tabs ---------- */
   var tabs = Array.prototype.slice.call(document.querySelectorAll('.frame__tab'));
   tabs.forEach(function (tab) {
     tab.addEventListener('click', function () {

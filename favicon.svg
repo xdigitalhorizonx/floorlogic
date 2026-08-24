@@ -1,12 +1,14 @@
 <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64">
   <!-- Standalone favicon: cannot reference CSS custom properties, so this file
        is the one sanctioned asset carrying literal hex — values are copies of
-       --cta (#2563EB) and --text-inverse (#FFFFFF) from css/tokens.css. -->
-  <rect width="64" height="64" rx="14" fill="#2563EB"/>
+       --ink (#1C1917) and --blaze (#E4572E) from css/tokens.css. -->
+  <rect width="64" height="64" fill="#1C1917"/>
   <!-- staggered plank courses -->
-  <rect x="12" y="14" width="40" height="9" rx="2" fill="#FFFFFF"/>
-  <rect x="12" y="27" width="25" height="9" rx="2" fill="#FFFFFF"/>
-  <rect x="41" y="27" width="11" height="9" rx="2" fill="#FFFFFF" opacity=".55"/>
-  <rect x="12" y="40" width="13" height="9" rx="2" fill="#FFFFFF" opacity=".55"/>
-  <rect x="29" y="40" width="23" height="9" rx="2" fill="#FFFFFF"/>
+  <g fill="#E4572E">
+    <rect x="10" y="14" width="44" height="10"/>
+    <rect x="10" y="28" width="27" height="10"/>
+    <rect x="41" y="28" width="13" height="10"/>
+    <rect x="10" y="42" width="13" height="10"/>
+    <rect x="24" y="42" width="30" height="10"/>
+  </g>
 </svg>
