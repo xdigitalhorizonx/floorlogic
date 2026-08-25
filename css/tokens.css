@@ -1,84 +1,88 @@
 /* ============================================================
-   FloorLogic — color tokens · "Cobalt Ink"
-   Owner-approved direction 2026-08-22 (supersedes the original
-   flooring-CRM spec palette for this marketing site; the status
-   ramp and --sample-tray are retained from that spec verbatim).
-   These two blocks are the ONLY place a hex value may appear
-   (favicon.svg carries sanctioned copies — it can't read vars).
-   Ratios in comments are measured WCAG contrast vs stated bg.
+   FLOORLOGIC — "NIGHT SHIFT" IDENTITY (v3)
+   The shop office after close: a dark room, one screen glowing,
+   the paperwork doing itself. The product is the light source —
+   real app windows luminous on a deep navy stage.
 
-   DARK IS THE DEFAULT THEME. Bare :root = dark; [data-theme=
-   "light"] overrides. A stored choice always wins; system
-   preference is never consulted.
-
-   Accent has two roles:
-   - --accent      text-role blue (links, kickers, icons) — must
-                   pass 4.5:1 as text on canvas/surface
-   - --cta         fill-role electric cobalt (buttons, brand
-                   mark) — carries --text-inverse labels
+   RULES OF THE IDENTITY
+   - This file is the ONLY place a raw color value may appear
+     (rgba() glows in styles.css derive from these values).
+   - One deliberate dark look. No theme toggle, no grids, no
+     paper textures.
+   - Rounded corners and soft elevation match the app's own UI,
+     so site chrome and product read as one system.
+   - Type: Archivo variable (display at width 125%, weight 800),
+     IBM Plex Mono for numbers, labels, and annotations.
    ============================================================ */
 
-:root {
-  /* surfaces — deep blue-black ink */
-  --canvas:        #0B0E14;
-  --surface:       #121722;
-  --surface-sunk:  #070A0F;
-  --border:        #242C3B;
-  --border-strong: #33405A;
-
-  /* text */
-  --text:          #F2F5F9;  /* 17.2:1 on canvas */
-  --text-muted:    #9AA6B8;  /*  7.7:1 on canvas */
-  --text-inverse:  #FFFFFF;
-
-  /* accent — text role (light cobalt) */
-  --accent:        #6EA8FE;  /*  8.0:1 on canvas, 7.4:1 on surface */
-  --accent-hover:  #96C0FF;
-  --accent-subtle: #14203B;
-
-  /* accent — fill role (electric cobalt) */
-  --cta:           #2563EB;  /* white label: 5.1:1 */
-  --cta-hover:     #1D4ED8;  /* white label: 6.7:1 */
-
-  /* material viewer backdrop — TRUE neutral, never tinted (kept from spec) */
-  --sample-tray:   #808080;
-  --sample-tray-light: #BFBFBF;
-
-  /* photography well — the site's photos are shot on near-black; this constant
-     dark backdrop hosts them in BOTH themes so they composite seamlessly */
-  --photo-well:    #070A0F;
-
-  /* status ramp — kept verbatim from the flooring-CRM spec.
-     Values are specified against LIGHT surfaces; in dark theme the
-     hue renders only in dots/icons (labels use --text/--text-muted). */
-  --st-lead:       #475467;
-  --st-quoted:     #175CD3;
-  --st-sold:       #6941C6;
-  --st-attention:  #B54708;
-  --st-complete:   #067647;
-  --st-problem:    #B42318;
-  --st-hold:       #667085;
+@font-face {
+  font-family: 'Archivo';
+  font-style: normal;
+  font-weight: 100 900;
+  font-stretch: 62.5% 125%;
+  font-display: swap;
+  src: url('../fonts/Archivo-var-latin.woff2') format('woff2');
+}
+@font-face {
+  font-family: 'IBM Plex Mono';
+  font-style: normal;
+  font-weight: 400;
+  font-display: swap;
+  src: url('../fonts/IBMPlexMono-400-latin.woff2') format('woff2');
+}
+@font-face {
+  font-family: 'IBM Plex Mono';
+  font-style: normal;
+  font-weight: 600;
+  font-display: swap;
+  src: url('../fonts/IBMPlexMono-600-latin.woff2') format('woff2');
 }
 
-[data-theme="light"] {
-  --canvas:        #F6F7F9;
-  --surface:       #FFFFFF;
-  --surface-sunk:  #EDEFF3;
-  --border:        #E1E4EA;
-  --border-strong: #C6CCD8;
+:root {
+  /* the dark stage */
+  --bg:         #080D1A;   /* page ground — near-black navy */
+  --panel:      #101A30;   /* raised surfaces, cards */
+  --panel-2:    #172741;   /* higher surfaces, hovers, table heads */
+  --line:       #22304F;   /* hairlines and card borders */
+  --line-soft:  #182642;   /* quieter separators */
 
-  --text:          #14181F;  /* 15.6:1 on canvas */
-  --text-muted:    #5B6472;  /*  5.2:1 on canvas */
-  --text-inverse:  #FFFFFF;
+  /* text on the stage */
+  --text:       #F2F6FF;
+  --text-soft:  #AAB8D4;
+  --text-faint: #8194B6;   /* AA at 12px on bg and panel-2 */
 
-  --accent:        #2563EB;  /*  4.8:1 on canvas, 5.2:1 on surface */
-  --accent-hover:  #1D4ED8;
-  --accent-subtle: #EAF1FE;
+  /* light */
+  --cobalt:     #2563EB;   /* the app's own blue — CTAs, focus, marks */
+  --cobalt-hi:  #3B82F6;   /* hover */
+  --sky:        #7FA8F2;   /* accent text, links, kickers */
+  --go:         #34D399;   /* positive text on dark */
+  --stop:       #F87171;   /* negative text on dark */
 
-  --cta:           #2563EB;  /* white label: 5.1:1 */
-  --cta-hover:     #1D4ED8;  /* white label: 6.7:1 */
+  /* stamps land ON the light app windows, so they keep deep inks */
+  --stamp-go:   #1F7A46;
+  --stamp-stop: #B3261E;
 
-  --sample-tray:   #808080;  /* unchanged in both themes — measurement reference */
-  --sample-tray-light: #BFBFBF;
-  --photo-well:    #070A0F;  /* unchanged in both themes — photo backdrop */
+  /* type */
+  --font-body: 'Archivo', 'Helvetica Neue', Arial, sans-serif;
+  --font-mono: 'IBM Plex Mono', 'Consolas', monospace;
+}
+
+/* ============================================================
+   APP SCOPE - verbatim palette of the product UI, used ONLY by
+   the .fl-quote builder recreation and app-window chrome. The
+   app window is always light and mirrors the product exactly
+   (same reason the real screenshots do), so it is exempt from
+   the site palette rules above. Values copied from the shipped
+   Lead Pipeline / New Quote mockup (main branch, owner-approved).
+   ============================================================ */
+:root {
+  --fl-bg: #F4F6F8; --fl-card: #FFFFFF; --fl-border: #E6E9EF; --fl-border-strong: #D6DBE4;
+  --fl-text: #151B26; --fl-muted: #69727F; --fl-faint: #98A1AE;
+  --fl-green: #10B981; --fl-navy: #1E3A8A; --fl-cta: #2563EB;
+  --fl-white: #FFFFFF;
+  --fl-access-bg: #FEFCE8; --fl-access-bd: #FDE68A; --fl-access-fg: #854D0E;
+  --fl-pdf-fg: #15803D; --fl-pdf-bg: #DCFCE7; --fl-pdf-bd: #BBF7D0;
+  --fl-band-bg: #EFF6FF; --fl-band-bd: #BFDBFE;
+  --fl-mat: #EA580C; --fl-lab: #475569;
+  --fl-hl-y: #FDE68A; --fl-hl-g: #BBF7D0; --fl-hl-b: #BFDBFE; --fl-hl-p: #FBCFE8;
 }
