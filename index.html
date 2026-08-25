@@ -127,7 +127,7 @@
       </a>
       <nav aria-label="Main">
         <a href="#app">The app</a>
-        <a href="#job">Follow the job</a>
+        <a href="#install">The install</a>
         <a href="#proof">Proof</a>
         <a href="#pricing">Pricing</a>
         <a href="#faq">FAQ</a>
@@ -141,14 +141,26 @@
 
   <main id="main">
 
-    <!-- ============ HERO — one screen glowing in a dark office (js/hero.js) ============ -->
-    <section class="hero" id="top">
-      <div class="wrap hero__grid">
-        <div class="hero__copy">
-          <p class="kicker">Flooring business software &middot; from a working store</p>
-          <h1>Watch a job<br><em>run itself.<svg viewBox="0 0 300 24" preserveAspectRatio="none" aria-hidden="true"><path id="hero-underline" d="M4,15 C70,21 170,5 296,12"/></svg></em></h1>
-          <p class="lead">Quote it with real roll math. Your customer taps Approve on their phone. The work order, the invoice, and the job costs write themselves &mdash; in the same system that runs Landmark Flooring in Carson City every day.</p>
-          <form class="signup" id="start" data-trial-form data-source="hero" novalidate>
+    <!-- ============ THE INSTALL — the whole page is one continuous 3D shot
+         (js/vendor/install3d.js renders the room; js/film.js scrubs it with
+         scroll). Without WebGL / under 880px / reduced motion / no JS the
+         .film-3d class never lands and everything below reads as a normal
+         static page over the poster render. ============ -->
+    <div class="film" id="film">
+      <div class="film__stage" id="film-stage" aria-hidden="true">
+        <canvas id="film-canvas"></canvas>
+        <div class="film__poster">
+          <img src="assets/room-poster.jpg" width="1440" height="900" alt="" fetchpriority="high">
+        </div>
+      </div>
+
+      <section class="act act--open" id="top">
+        <div class="wrap act__openwrap">
+          <div class="act__panel act__panel--intro">
+            <p class="kicker">Flooring business software &middot; built inside a working store</p>
+            <h1>The whole job.<br><em><span class="em-static">One system.</span><span class="em-film">One scroll.</span></em></h1>
+            <p class="lead"><span class="em-film">This page is a working install &mdash; scroll, and the floor goes down. Keep going and the quote approves itself into a work order, the invoice gets paid, and the margin lands. </span>FloorLogic runs the whole shop &mdash; the same system that runs Landmark Flooring in Carson City every day.</p>
+            <form class="signup" id="start" data-trial-form data-source="hero" novalidate>
             <div class="capture">
               <label class="visually-hidden" for="hero-email">Work email</label>
               <input id="hero-email" name="email" type="email" autocomplete="email" placeholder="Work email" required>
@@ -187,15 +199,38 @@
               <a class="hero__watch" href="https://floorlogicdemo.vercel.app" rel="noopener" target="_blank">Poke the live demo &rarr;</a>
             </div>
           </form>
+          </div>
+          <p class="scrollcue em-film" aria-hidden="true">&#9660; SCROLL &mdash; START THE INSTALL</p>
         </div>
-        <div class="hero__stagewrap">
-          <div class="board window" id="board" title="Replay the build">
-            <span class="board__hint" aria-hidden="true">Tap to replay</span>
-            <div class="window__bar" aria-hidden="true">
-              <span class="window__dots"><i></i><i></i><i></i></span>
-              <span class="window__url">app.floorlogic &mdash; quotes / new</span>
-            </div>
-            <svg width="0" height="0" style="position:absolute" aria-hidden="true"><defs><symbol id="i-doc" viewBox="0 0 24 24"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="16" y1="13" x2="8" y2="13"/><line x1="16" y1="17" x2="8" y2="17"/></symbol></defs></svg>
+        <ul class="legend" id="legend" aria-label="The seven FloorLogic modules">
+        <li><i>01</i><div><b>Sales</b><small>Pipeline &amp; win rate</small></div></li>
+        <li><i>02</i><div><b>Job Management</b><small>Crews &amp; schedules</small></div></li>
+        <li><i>03</i><div><b>Quotes</b><small>Roll-goods math</small></div></li>
+        <li><i>04</i><div><b>Work Orders</b><small>Written by approval</small></div></li>
+        <li><i>05</i><div><b>Invoices</b><small>Card pay on the link</small></div></li>
+        <li><i>06</i><div><b>Accounting</b><small>Bank feeds, reconciled</small></div></li>
+        <li><i>07</i><div><b>Job Costing</b><small>Estimate vs actual</small></div></li>
+      </ul>
+      </section>
+
+      <section class="act act--lay" id="install" aria-label="The floor installs as you scroll">
+        <div class="wrap">
+          <div class="cap cap--l"><div class="cap__box act__panel"><i>ROW 01 / 30</i><p>Real roll math lays the plan &mdash; cut cost and roll cost per square yard, priced per product, so the waste lives in the quote instead of your margin.</p></div></div>
+          <div class="cap cap--r"><div class="cap__box act__panel"><i>238 BOARDS</i><p>Random lengths, staggered joints, no gaps. The same way FloorLogic treats your paperwork.</p></div></div>
+          <div class="cap cap--l"><div class="cap__box act__panel"><i>FLOOR DOWN</i><p>Beautiful. Now watch the paperwork keep up.</p></div></div>
+        </div>
+      </section>
+
+      <section class="act act--quote" id="quote">
+        <div class="wrap">
+          <div class="qwin-wrap">
+            <p class="act__label">THE QUOTE WRITES ITSELF</p>
+            <div class="window qwin">
+              <div class="window__bar" aria-hidden="true">
+                <span class="window__dots"><i></i><i></i><i></i></span>
+                <span class="window__url">app.floorlogic &mdash; quotes / new</span>
+              </div>
+              <svg width="0" height="0" style="position:absolute" aria-hidden="true"><defs><symbol id="i-doc" viewBox="0 0 24 24"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="16" y1="13" x2="8" y2="13"/><line x1="16" y1="17" x2="8" y2="17"/></symbol></defs></svg>
             <div class="fl-quote" id="fl-quote">
               <div class="qb-title">
                 <h3><svg width="20" height="20" class="fl-ico" style="color:var(--fl-cta)"><use href="#i-doc"/></svg>New Quote</h3>
@@ -296,91 +331,72 @@
                 </aside>
               </div>
             </div>
-            <span class="stamp" id="tally-stamp">Approved</span>
+            <span class="stamp" id="quote-stamp">Approved</span>
+            </div>
           </div>
         </div>
-      </div>
-      <ul class="legend" id="legend" aria-label="The seven FloorLogic modules">
-        <li><i>01</i><div><b>Sales</b><small>Pipeline &amp; win rate</small></div></li>
-        <li><i>02</i><div><b>Job Management</b><small>Crews &amp; schedules</small></div></li>
-        <li><i>03</i><div><b>Quotes</b><small>Roll-goods math</small></div></li>
-        <li><i>04</i><div><b>Work Orders</b><small>Written by approval</small></div></li>
-        <li><i>05</i><div><b>Invoices</b><small>Card pay on the link</small></div></li>
-        <li><i>06</i><div><b>Accounting</b><small>Bank feeds, reconciled</small></div></li>
-        <li><i>07</i><div><b>Job Costing</b><small>Estimate vs actual</small></div></li>
-      </ul>
-      <p class="hero__cred">SEVEN MODULES &middot; ONE LOGIN &mdash; RUNNING A REAL STORE&rsquo;S REAL JOBS EVERY DAY</p>
-    </section>
+      </section>
 
-    <!-- ============ FOLLOW THE JOB (pinned scroll story — js/story.js) ============ -->
-    <section class="job" id="job">
-      <div class="wrap job__stage">
-        <div class="sheet-head">
-          <p class="kicker">Follow the job</p>
-          <h2>One tap sets the whole shop in motion.</h2>
-          <p class="lead">The same quote from above, followed through the system &mdash; approval to margin &mdash; with nothing re-typed anywhere.</p>
-        </div>
-        <div class="job__cols">
-          <ol class="job__rail" aria-hidden="true">
-            <li data-step="0" class="is-on"><i>01</i><span><b>The customer approves</b><small>on their phone &middot; 3:34 PM</small></span></li>
-            <li data-step="1"><i>02</i><span><b>Work order writes itself</b><small>scope, crew, schedule</small></span></li>
-            <li data-step="2"><i>03</i><span><b>Invoice collects the deposit</b><small>card, right on the link</small></span></li>
-            <li data-step="3"><i>04</i><span><b>The job knows its margin</b><small>estimate vs actual, live</small></span></li>
-          </ol>
-          <div class="job__windows">
-            <article class="job__win job__win--phone is-on" data-step="0">
-              <figure>
-                <div class="phone" aria-hidden="true">
-                  <div class="phone__screen">
-                    <div class="phone__head">quote.floorlogic &mdash; QT-322</div>
-                    <div class="phone__body">
-                      <div class="phone__title">Quote QT-322</div>
-                      <div class="phone__sub">CORDOVA BUILDERS &mdash; LOT 14 &middot; SPARKS, NV</div>
-                      <div class="phone__row"><span>Materials</span><b>$2,489.60</b></div>
-                      <div class="phone__row"><span>Labor</span><b>$1,920.00</b></div>
-                      <div class="phone__row phone__row--total"><span>Total</span><b>$4,615.37</b></div>
-                      <div class="phone__go" id="phone-go">Approve quote</div>
+      <section class="act act--ripple" id="job">
+        <div class="wrap">
+          <div class="ripple-wrap">
+            <p class="act__label">ONE TAP SETS THE WHOLE SHOP IN MOTION</p>
+            <div class="ripple-row">
+              <article class="ripple-card">
+                <figure>
+                  <div class="phone" aria-hidden="true">
+                    <div class="phone__screen">
+                      <div class="phone__head">quote.floorlogic &mdash; QT-322</div>
+                      <div class="phone__body">
+                        <div class="phone__title">Quote QT-322</div>
+                        <div class="phone__sub">CORDOVA BUILDERS &mdash; LOT 14</div>
+                        <div class="phone__row"><span>Materials</span><b>$2,489.60</b></div>
+                        <div class="phone__row"><span>Labor</span><b>$1,920.00</b></div>
+                        <div class="phone__row phone__row--total"><span>Total</span><b>$4,615.37</b></div>
+                        <div class="phone__go">Approve quote</div>
+                      </div>
+                      <span class="stamp">Approved</span>
                     </div>
-                    <span class="stamp" id="job-stamp-0">Approved</span>
                   </div>
-                </div>
-              </figure>
-              <p class="job__cap"><i>01</i><span>Approval lands on the audit trail with a timestamp, and the signed PDF emails your rep before the phone is back in their pocket.</span></p>
-            </article>
-            <article class="job__win" data-step="1">
-              <figure>
-                <div class="window">
-                  <div class="window__bar" aria-hidden="true"><span class="window__dots"><i></i><i></i><i></i></span><span class="window__url">app.floorlogic &mdash; work orders</span></div>
-                  <img src="assets/frag-workorder.webp" width="840" height="671" alt="FloorLogic work order generated automatically from an approved quote" loading="lazy">
-                </div>
-                <span class="stamp" id="job-stamp-1">Created</span>
-              </figure>
-              <p class="job__cap"><i>02</i><span>Scope, line items, and site details land on a work order the moment the quote is approved. Scheduling the crew is your whole job here.</span></p>
-            </article>
-            <article class="job__win" data-step="2">
-              <figure>
-                <div class="window">
-                  <div class="window__bar" aria-hidden="true"><span class="window__dots"><i></i><i></i><i></i></span><span class="window__url">app.floorlogic &mdash; invoices</span></div>
-                  <img src="assets/frag-invoice.webp" width="840" height="671" alt="FloorLogic invoice list with live balances: unpaid, deposit, and paid statuses" loading="lazy">
-                </div>
-                <span class="stamp" id="job-stamp-2">Paid</span>
-              </figure>
-              <p class="job__cap"><i>03</i><span>The deposit invoice follows your payment terms and takes cards right on the link &mdash; collected the minute they approve, not 45 days after the floor goes down.</span></p>
-            </article>
-            <article class="job__win" data-step="3">
-              <figure>
-                <div class="window">
-                  <div class="window__bar" aria-hidden="true"><span class="window__dots"><i></i><i></i><i></i></span><span class="window__url">app.floorlogic &mdash; accounting / job costing</span></div>
-                  <img src="assets/app-accounting.webp" width="1600" height="1067" alt="FloorLogic accounting overview with receivables and payables aging, monthly collected and spent totals, and spend by category" loading="lazy">
-                </div>
-                <span class="margin-badge" id="job-badge">36.5% MARGIN</span>
-              </figure>
-              <p class="job__cap"><i>04</i><span>Every cost lands against the estimate as it happens. You know what the job made before the last box of trim is swept up.</span></p>
-            </article>
+                </figure>
+                <p class="job__cap"><i>01</i><span>The customer taps Approve on their phone &mdash; timestamped on the audit trail.</span></p>
+              </article>
+              <article class="ripple-card">
+                <figure>
+                  <div class="window">
+                    <div class="window__bar" aria-hidden="true"><span class="window__dots"><i></i><i></i><i></i></span><span class="window__url">app.floorlogic &mdash; work orders</span></div>
+                    <img src="assets/frag-workorder.webp" width="840" height="671" alt="FloorLogic work order generated automatically from an approved quote" loading="lazy">
+                  </div>
+                  <span class="stamp">Created</span>
+                </figure>
+                <p class="job__cap"><i>02</i><span>The work order writes itself &mdash; scope, line items, site details. Scheduling the crew is your whole job.</span></p>
+              </article>
+              <article class="ripple-card">
+                <figure>
+                  <div class="window">
+                    <div class="window__bar" aria-hidden="true"><span class="window__dots"><i></i><i></i><i></i></span><span class="window__url">app.floorlogic &mdash; invoices</span></div>
+                    <img src="assets/frag-invoice.webp" width="840" height="671" alt="FloorLogic invoice list with live balances: unpaid, deposit, and paid statuses" loading="lazy">
+                  </div>
+                  <span class="stamp">Paid</span>
+                </figure>
+                <p class="job__cap"><i>03</i><span>The deposit invoice takes cards right on the link &mdash; collected before the van is loaded.</span></p>
+              </article>
+            </div>
           </div>
         </div>
-      </div>
-    </section>
+      </section>
+
+      <section class="act act--land" id="landed">
+        <div class="wrap">
+          <div class="act__center">
+            <p class="mono act__closeline">QT-322 CLOSED &middot; 36.5% MARGIN &middot; $1,610.88 &mdash; KNOWN BEFORE THE TRIM WAS SWEPT</p>
+            <h2>It already runs a real flooring store.</h2>
+            <p class="lead">Landmark Flooring, Carson City, Nevada &mdash; every quote, every install, every reconciled dollar, every day. No testimonials, no logo walls: one real store, and the numbers to show for it.</p>
+            <a class="btn btn--lg" href="#proof">See the proof &darr;</a>
+          </div>
+        </div>
+      </section>
+    </div>
 
     <!-- ============ SHEET 02 — THE ACTUAL SCREENS ============ -->
     <section id="app">
@@ -789,7 +805,7 @@
         <div class="footer__col">
           <b>Product</b>
           <a href="#app">The app</a>
-          <a href="#job">Follow the job</a>
+          <a href="#install">The install</a>
           <a href="#pricing">Pricing</a>
           <a href="#faq">FAQ</a>
           <a href="https://floorlogicdemo.vercel.app" rel="noopener">Live demo</a>
@@ -817,9 +833,8 @@
   <!-- vendored GSAP (the one motion library on this page) + choreography -->
   <script src="js/vendor/gsap.min.js" defer></script>
   <script src="js/vendor/ScrollTrigger.min.js" defer></script>
-  <script src="js/vendor/DrawSVGPlugin.min.js" defer></script>
-  <script src="js/hero.js" defer></script>
-  <script src="js/story.js" defer></script>
+  <script src="js/vendor/install3d.js" defer></script>
+  <script src="js/film.js" defer></script>
   <script src="js/scroll.js" defer></script>
 </body>
 </html>
