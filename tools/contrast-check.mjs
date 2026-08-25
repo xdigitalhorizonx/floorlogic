@@ -1,4 +1,4 @@
-// WCAG 2.x contrast audit for FloorLogic tokens.
+// WCAG 2.x contrast audit for FloorLogic tokens (v3 — Night Shift).
 // Usage: node tools/contrast-check.mjs
 // Exits 1 if any used text/background pairing fails its required ratio,
 // or if a hex literal appears outside css/tokens.css.
@@ -8,12 +8,13 @@ import { join, relative } from 'node:path';
 
 const root = new URL('..', import.meta.url).pathname.replace(/^\/([A-Za-z]:)/, '$1');
 
-function parseTokens(css, blockRe) {
-  const m = css.match(blockRe);
-  if (!m) throw new Error('token block not found: ' + blockRe);
+function parseTokens(css) {
+  // merge every :root block (site palette + the documented APP SCOPE block)
   const tokens = {};
-  for (const [, name, hex] of m[1].matchAll(/--([\w-]+):\s*(#[0-9A-Fa-f]{6})/g)) {
-    tokens[name] = hex;
+  for (const block of css.matchAll(/:root\s*\{([\s\S]*?)\}/g)) {
+    for (const [, name, hex] of block[1].matchAll(/--([\w-]+):\s*(#[0-9A-Fa-f]{6})/g)) {
+      tokens[name] = hex;
+    }
   }
   return tokens;
 }
@@ -29,43 +30,37 @@ function ratio(a, b) {
 }
 
 const css = readFileSync(join(root, 'css', 'tokens.css'), 'utf8');
-// Cobalt Ink structure: bare :root = DARK (the default), [data-theme="light"] overrides.
-const dark = parseTokens(css, /:root\s*\{([\s\S]*?)\}/);
-const light = { ...dark, ...parseTokens(css, /\[data-theme="light"\]\s*\{([\s\S]*?)\}/) };
+const tokens = parseTokens(css);
 
 // Every fg/bg pairing the site actually renders. min = required ratio.
-// Body copy (text on canvas/surface) is held to 7:1 per spec rule 8.
+// Body copy is held to 7:1; secondary/annotation text to 4.5:1; cobalt as a
+// non-text UI color (borders, underline, focus) to 3:1. Stamps land on the
+// light app windows, so they check against --fl-card.
 const pairs = [
-  ['text', 'canvas', 7], ['text', 'surface', 7], ['text', 'surface-sunk', 7],
-  ['text', 'accent-subtle', 7],
-  ['text-muted', 'canvas', 4.5], ['text-muted', 'surface', 4.5], ['text-muted', 'surface-sunk', 4.5],
-  ['accent', 'canvas', 4.5], ['accent', 'surface', 4.5], ['accent', 'accent-subtle', 4.5],
-  ['text-inverse', 'cta', 4.5],             // primary button label
-  ['text-inverse', 'cta-hover', 4.5],       // primary button label, hovered
-  ['st-lead', 'canvas', 4.5], ['st-lead', 'surface', 4.5],
-  ['st-quoted', 'canvas', 4.5], ['st-quoted', 'surface', 4.5],
-  ['st-sold', 'canvas', 4.5], ['st-sold', 'surface', 4.5],
-  ['st-attention', 'canvas', 4.5], ['st-attention', 'surface', 4.5],
-  ['st-complete', 'canvas', 4.5], ['st-complete', 'surface', 4.5],
-  ['st-problem', 'canvas', 4.5], ['st-problem', 'surface', 4.5],
-  ['st-hold', 'canvas', 4.5], ['st-hold', 'surface', 4.5], // 14px+ only, enforced in CSS
+  // dark stage
+  ['text', 'bg', 7], ['text', 'panel', 7], ['text', 'panel-2', 7],
+  ['text-soft', 'bg', 4.5], ['text-soft', 'panel', 4.5], ['text-soft', 'panel-2', 4.5],
+  ['text-faint', 'bg', 4.5], ['text-faint', 'panel', 4.5], ['text-faint', 'panel-2', 4.5],
+  ['sky', 'bg', 4.5], ['sky', 'panel', 4.5], ['sky', 'panel-2', 4.5],
+  ['go', 'bg', 4.5], ['go', 'panel', 4.5],
+  ['stop', 'bg', 4.5], ['stop', 'panel', 4.5],
+  ['fl-white', 'cobalt', 4.5],      // primary button label
+  ['cobalt', 'bg', 3],              // non-text UI: underline, focus, borders
+  // stamps on the light windows
+  ['stamp-go', 'fl-card', 4.5], ['stamp-stop', 'fl-card', 4.5],
+  // app scope core (the builder recreation)
+  ['fl-text', 'fl-bg', 7], ['fl-text', 'fl-card', 7],
+  ['fl-muted', 'fl-card', 4.5], ['fl-white', 'fl-cta', 4.5],
 ];
 
 let failures = 0;
-for (const [theme, tokens] of [['light', light], ['dark', dark]]) {
-  console.log(`\n=== ${theme} theme ===`);
-  for (const [fg, bg, min] of pairs) {
-    // The spec defines status hexes against light surfaces only. In dark
-    // theme, pill LABELS render in --text (passing) and the status hue is
-    // carried by the dot alone — meaning stays redundant via icon + label,
-    // so the dot is exempt from text-contrast minimums. Skip st-* here.
-    if (theme === 'dark' && fg.startsWith('st-')) continue;
-    if (!tokens[fg] || !tokens[bg]) { console.log(`SKIP ${fg}/${bg} (token missing)`); continue; }
-    const r = ratio(tokens[fg], tokens[bg]);
-    const ok = r >= min;
-    if (!ok) failures++;
-    console.log(`${ok ? 'PASS' : 'FAIL'}  --${fg} on --${bg}  ${r.toFixed(2)}:1  (min ${min}:1)`);
-  }
+console.log('=== Night Shift (single dark theme) + app scope ===');
+for (const [fg, bg, min] of pairs) {
+  if (!tokens[fg] || !tokens[bg]) { console.log(`SKIP ${fg}/${bg} (token missing)`); failures++; continue; }
+  const r = ratio(tokens[fg], tokens[bg]);
+  const ok = r >= min;
+  if (!ok) failures++;
+  console.log(`${ok ? 'PASS' : 'FAIL'}  --${fg} on --${bg}  ${r.toFixed(2)}:1  (min ${min}:1)`);
 }
 
 // Hex literals are only allowed in css/tokens.css.
@@ -73,16 +68,19 @@ console.log('\n=== hex-outside-tokens scan ===');
 const offenders = [];
 function walk(dir) {
   for (const name of readdirSync(dir)) {
-    if (name === '.git' || name === 'node_modules') continue;
+    if (name === '.git' || name === 'node_modules' || name === 'fonts') continue;
     const p = join(dir, name);
     if (statSync(p).isDirectory()) { walk(p); continue; }
     if (!/\.(css|html|js|mjs|svg)$/.test(name)) continue;
     const rel = relative(root, p).replaceAll('\\', '/');
     // favicon.svg is a standalone asset that cannot reference CSS custom
-    // properties; it carries sanctioned copies of --accent / --text-inverse.
-    if (rel === 'css/tokens.css' || rel === 'favicon.svg' || rel.startsWith('tools/')) continue;
+    // properties; js/vendor/ is minified third-party code (GSAP).
+    if (rel === 'css/tokens.css' || rel === 'favicon.svg' || rel.startsWith('tools/') || rel.startsWith('js/vendor/')) continue;
     const src = readFileSync(p, 'utf8');
-    for (const [hex] of src.matchAll(/#[0-9A-Fa-f]{3,8}\b/g)) {
+    // (?<!&) skips HTML numeric character references like &#128274;; the
+    // length alternation only matches valid CSS hex lengths (3/4/6/8), so
+    // prose like a license number "NV #0074221" does not false-positive.
+    for (const [hex] of src.matchAll(/(?<!&)#(?:[0-9A-Fa-f]{8}|[0-9A-Fa-f]{6}|[0-9A-Fa-f]{3,4})\b/g)) {
       offenders.push(`${rel}: ${hex}`);
     }
   }
