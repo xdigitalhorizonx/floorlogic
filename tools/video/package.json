@@ -1,0 +1,9 @@
+{
+  "name": "floorlogic-video-tools",
+  "private": true,
+  "type": "module",
+  "description": "Films the FloorLogic app offline (no database) and renders the site demo video. See README.md.",
+  "dependencies": {
+    "puppeteer-core": "^24.43.1"
+  }
+}

@@ -6,3 +6,10 @@ dist/
 *.log
 .DS_Store
 qa/
+# video tooling outputs (sources live in tools/video)
+tools/video/app-export/
+tools/video/capture/stills/
+tools/video/capture/manifest.json
+tools/video/capture/isolation.jsonl
+tools/video/frames/
+tools/video/out/
