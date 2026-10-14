@@ -1,0 +1,53 @@
+---
+// Six flooring-native capabilities, each verified in the demo build (brand.md §2 + demo main source).
+const cards = [
+  { img: 'vinyl', title: 'Cartons, counted for you', body: 'Type the room’s square feet. FloorLogic rounds up to whole cartons and shows the real coverage, like “39 cartons = 927.03 SqFt”.' },
+  { img: 'wool', title: 'Carpet by the roll', body: 'Enter the roll width and cut length; square yards fill in. Cut cost and roll cost per yard sit on every roll product.' },
+  { img: 'oak', title: 'Good, better, best', body: 'Put three floors in one “pick one” section. The customer chooses, and only their choice counts toward the total.' },
+  { img: 'rollgoods', title: 'Rolls and stock on hand', body: 'See on hand, allocated and available for every item, rolls included, with low-stock alerts and purchase orders.' },
+  { img: 'offcuts', title: 'Samples that come back', body: 'Check a sample out to a customer, set the due-back date, and see what’s out and what’s overdue.' },
+  { img: 'slate', title: 'Your catalog, your names', body: 'Keep vendor, SKU, cost and price on every product, plus your own private style and color names.' },
+];
+---
+<section class="section band-ice feat" id="flooring" aria-labelledby="feat-title">
+  <div class="planes tl" aria-hidden="true">
+    <svg viewBox="0 0 640 400"><polygon points="320,0 640,160 640,400 320,240" fill="#02315b" opacity=".035"/><polygon points="0,160 320,0 320,240 0,400" fill="#155488" opacity=".05"/></svg>
+  </div>
+  <div class="container">
+    <div class="sec-head reveal">
+      <p class="eyebrow">Built for flooring</p>
+      <h2 id="feat-title">Software that knows what a carton is.</h2>
+      <p class="lead">Field-service apps are built for every trade. FloorLogic is built for floors: cartons, rolls, samples, square yards and square feet.</p>
+    </div>
+    <ul class="feat-grid">
+      {cards.map((c, i) => (
+        <li class="feat-card reveal" style={`--d:${i * 60}ms`}>
+          <div class="feat-img">
+            <img src={`/img/material-${c.img}-640.webp`} srcset={`/img/material-${c.img}-640.webp 640w, /img/material-${c.img}-960.webp 960w`} sizes="(max-width: 700px) 92vw, (max-width: 1100px) 46vw, 380px" alt="" width="640" height="427" loading="lazy" decoding="async" />
+          </div>
+          <div class="feat-body">
+            <h3>{c.title}</h3>
+            <p>{c.body}</p>
+          </div>
+        </li>
+      ))}
+    </ul>
+  </div>
+</section>
+
+<style>
+  .sec-head { max-width: 760px; margin-bottom: clamp(32px, 4vw, 52px); }
+  .sec-head h2 { margin: 14px 0 14px; }
+  .feat-grid { list-style: none; margin: 0; padding: 0; display: grid; grid-template-columns: repeat(3, 1fr); gap: 20px; }
+  .feat-card { position: relative; background: #fff; border-radius: var(--r-card); overflow: hidden; box-shadow: 0 0 0 1px rgba(2,49,91,.07), var(--shadow-1); transition: transform .25s var(--ease-out), box-shadow .25s; transition-delay: var(--d); }
+  .feat-card:hover { transform: translateY(-4px); box-shadow: 0 0 0 1px rgba(2,49,91,.1), var(--shadow-2); }
+  .feat-img { aspect-ratio: 3 / 2; overflow: hidden; background: var(--grey-100); position: relative; }
+  .feat-img::after { content: ''; position: absolute; inset: auto 0 0 0; height: 40%; background: linear-gradient(0deg, rgba(2,49,91,.18), transparent); }
+  .feat-img img { width: 100%; height: 100%; object-fit: cover; transition: transform .8s var(--ease-out); }
+  .feat-card:hover .feat-img img { transform: scale(1.04); }
+  .feat-body { padding: 18px 20px 22px; }
+  .feat-body h3 { margin-bottom: 8px; }
+  .feat-body p { color: var(--grey-700); line-height: 1.5; }
+  @media (max-width: 1100px) { .feat-grid { grid-template-columns: repeat(2, 1fr); } }
+  @media (max-width: 700px) { .feat-grid { grid-template-columns: 1fr; } }
+</style>

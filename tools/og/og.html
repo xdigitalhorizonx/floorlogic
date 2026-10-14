@@ -1,0 +1,36 @@
+<!doctype html>
+<!-- OG card source (1200×630). Render: node <scratch>/tools/snap.mjs "file:///C:/dev/floorlogic/tools/og/og.html" C:/dev/floorlogic/public/og/floorlogic-og.png 1200 630 -->
+<html><head><meta charset="utf-8">
+<style>
+@font-face{font-family:Supreme;src:url(../../public/fonts/supreme-800.woff2) format('woff2');font-weight:800}
+@font-face{font-family:Satoshi;src:url(../../public/fonts/satoshi-500.woff2) format('woff2');font-weight:500}
+@font-face{font-family:Inter;src:url(../../public/fonts/inter-latin-400-800.woff2) format('woff2');font-weight:400 800}
+*{box-sizing:border-box}html,body{margin:0;width:1200px;height:630px;overflow:hidden}
+body{font-family:Satoshi,sans-serif;background:radial-gradient(900px 500px at 85% 0%,#d9e9fa,transparent 65%),linear-gradient(180deg,#f3f8fd,#fff 80%);position:relative}
+.walls{position:absolute;inset:0;opacity:.08}
+.logo{position:absolute;left:64px;top:56px;height:44px}
+h1{position:absolute;z-index:2;left:64px;top:132px;margin:0;width:540px;font:800 60px/1.02 Supreme,sans-serif;letter-spacing:-.02em;color:#02315b}
+h1 span{color:#1470d2}
+.sub{position:absolute;z-index:2;left:64px;top:350px;font-size:23px;color:#454b55;width:500px;line-height:1.4}
+.pill{position:absolute;left:64px;bottom:58px;display:inline-flex;gap:10px;align-items:center;background:#1470d2;color:#fff;font:700 22px/1 Satoshi,sans-serif;padding:16px 22px;border-radius:8px}
+.stage{position:absolute;left:640px;top:205px;width:700px;height:600px;perspective:1200px}
+.plane{position:absolute;left:0;top:0;width:820px;display:grid;grid-template-columns:repeat(5,1fr);gap:10px;padding:10px;background:#e3eaf2;border-radius:14px;transform-origin:50% 0;transform:rotateX(48deg) rotateZ(-16deg);box-shadow:0 60px 90px -40px rgba(2,49,91,.45)}
+.lane{background:#f3f4f6;border-radius:9px;min-height:620px}
+.h{padding:9px 10px;color:#fff;font:600 10px/1.2 Inter,sans-serif;text-transform:uppercase;letter-spacing:.3px;border-radius:9px 9px 0 0}
+.c{margin:7px;background:#fff;border-radius:7px;padding:9px;box-shadow:0 1px 2px rgba(15,23,42,.08),0 4px 0 -1px #cdd6e1;font-family:Inter,sans-serif}
+.c b{display:block;font-size:11px;color:#111827}.c i{display:block;font-style:normal;font-size:9px;color:#6b7280;margin-top:3px}
+.c s{display:inline-block;text-decoration:none;margin-top:7px;background:#047857;color:#fff;font-size:9px;padding:3px 7px;border-radius:6px}
+</style></head><body>
+<svg class="walls" viewBox="0 0 1200 630" preserveAspectRatio="none"><polygon points="760,0 300,230 300,630 760,400" fill="#02315b"/><polygon points="760,0 1200,220 1200,630 760,400" fill="#363a40"/></svg>
+<img class="logo" src="../../public/brand/floorlogic-lockup-horizontal.svg" alt="">
+<h1>Every flooring job, call to paid, <span>on one board.</span></h1>
+<p class="sub">Quotes in cartons and roll goods, online approval, work orders, invoices and job costing.</p>
+<div class="pill">Free for 14 days · No credit card</div>
+<div class="stage"><div class="plane">
+ <div class="lane"><div class="h" style="background:#2563eb">New</div><div class="c"><b>Hannah Brooks</b><i>LVP — main floor</i></div><div class="c"><b>Tom &amp; Reyna Castillo</b><i>Carpet — whole house</i></div></div>
+ <div class="lane"><div class="h" style="background:#4f46e5">Site Survey</div><div class="c"><b>Marcy Templeton</b><i>Hardwood — bedrooms</i></div></div>
+ <div class="lane"><div class="h" style="background:#b45309">Send Quote</div><div class="c"><b>Dev &amp; Anjali Prasad</b><i>LVP — great room</i><s>→ Follow-up</s></div></div>
+ <div class="lane"><div class="h" style="background:#be185d">Follow-up</div><div class="c"><b>Bill Hargrove</b><i>Laminate — rental</i><s>→ Approved</s></div></div>
+ <div class="lane"><div class="h" style="background:#047857">Approved</div></div>
+</div></div>
+</body></html>

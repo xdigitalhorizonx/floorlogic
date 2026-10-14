@@ -1,0 +1,70 @@
+---
+import BaseLayout from '../layouts/BaseLayout.astro';
+import FinalCta from '../components/site/FinalCta.astro';
+import { SITE, PROOF } from '../config/site';
+
+const title = 'About FloorLogic — Built Inside a Flooring Store';
+const description = 'FloorLogic was built inside Landmark Flooring in Carson City, Nevada, and runs that store every day. Made by Digital Horizon.';
+const n = (v: number) => v.toLocaleString('en-US');
+const ledger = [
+  { k: 'Customers', v: 'One: Landmark Flooring, the store that built it.' },
+  { k: 'Reviews and testimonials', v: 'None yet. We won’t write our own.' },
+  { k: 'Where it runs', v: 'In any web browser: phone, tablet or computer. No app to install.' },
+  { k: 'QuickBooks', v: 'No sync. Ledger has its own accounting.' },
+  { k: 'Prices', v: 'All on the pricing page. No setup fee.' },
+  { k: 'Who builds it', v: 'Digital Horizon, Carson City, Nevada.' },
+];
+---
+<BaseLayout title={title} description={description} path="/about" pageType="AboutPage" breadcrumbs={[{ name: 'Home', path: '/' }, { name: 'About', path: '/about' }]}>
+  <section class="section band-sky page-head">
+    <div class="container about-head">
+      <p class="eyebrow">About</p>
+      <h1>Made by people who sell, measure and install floors.</h1>
+      <p class="lead">FloorLogic started as the system Landmark Flooring built to run its own store in Carson City, Nevada. It still runs that store every day.</p>
+    </div>
+  </section>
+
+  <section class="section band-white" aria-labelledby="story-title">
+    <div class="container story">
+      <div class="story-text">
+        <h2 id="story-title">Software from the sales floor</h2>
+        <p>Jeff owns Landmark Flooring. Brandon runs its operations and marketing. FloorLogic is the system they built to run the store. Landmark keeps its leads, quotes, installs, invoices and books in it.</p>
+        <p>It follows the way a flooring job actually moves: a lead comes in, someone measures, a quote goes out, the customer approves, materials get ordered, the crew installs, the invoice gets paid, and the job’s real cost gets checked against the estimate.</p>
+        <p>On {new Date(`${PROOF.asOf}T12:00:00`).toLocaleDateString('en-US', { month: 'long', day: 'numeric', year: 'numeric' })}, Landmark’s copy held {n(PROOF.quotes)} quotes, {n(PROOF.jobs)} jobs, {n(PROOF.invoices)} invoices, {n(PROOF.bankTxns)} reconciled bank transactions and a {n(PROOF.catalogRows)}-product catalog.</p>
+        <p>FloorLogic is that system, offered to other flooring shops by <a href={SITE.maker.url} rel="noopener">Digital Horizon</a>, the Carson City company Jeff and Brandon run.</p>
+      </div>
+      <aside class="ledger" aria-labelledby="ledger-title">
+        <h2 id="ledger-title">The honest ledger</h2>
+        <dl>
+          {ledger.map((l) => <div><dt>{l.k}</dt><dd>{l.v}</dd></div>)}
+        </dl>
+      </aside>
+    </div>
+  </section>
+
+  <section class="section band-grey" aria-labelledby="contact-title">
+    <div class="container contact">
+      <h2 id="contact-title">Talk to a person</h2>
+      <p class="lead">Call <a href={SITE.phoneHref}>{SITE.phone}</a> or email <a href={`mailto:${SITE.email}`}>{SITE.email}</a>. Based in {SITE.locality}, Nevada.</p>
+    </div>
+  </section>
+
+  <FinalCta source="about-final" />
+</BaseLayout>
+
+<style>
+  .about-head h1 { margin: 14px 0 16px; max-width: 18ch; }
+  .story { display: grid; grid-template-columns: 1.3fr 1fr; gap: clamp(32px, 6vw, 96px); align-items: start; }
+  .story-text h2 { margin-bottom: 18px; }
+  .story-text p { color: var(--grey-700); line-height: 1.65; max-width: 62ch; }
+  .story-text p + p { margin-top: 14px; }
+  .ledger { background: #fff; border-radius: var(--r-panel); padding: 26px; box-shadow: 0 0 0 1px rgba(2,49,91,.08), var(--shadow-2); }
+  .ledger h2 { font-size: 1.4rem; margin-bottom: 14px; }
+  .ledger dl { margin: 0; display: grid; }
+  .ledger dl > div { display: grid; grid-template-columns: 9.5em 1fr; gap: 14px; padding: 12px 0; border-top: 1px dashed var(--grey-200); }
+  .ledger dt { font-weight: 700; color: var(--navy-900); }
+  .ledger dd { margin: 0; color: var(--grey-700); }
+  .contact h2 { margin-bottom: 12px; }
+  @media (max-width: 900px) { .story { grid-template-columns: 1fr; } }
+  @media (max-width: 480px) { .ledger dl > div { grid-template-columns: 1fr; gap: 2px; } }
+</style>

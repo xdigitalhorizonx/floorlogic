@@ -1,0 +1,9 @@
+2026-10-14  Fontshare: supreme@500,800
+  css: https://api.fontshare.com/v2/css?f[]=supreme%40500%2C800&display=swap
+  licence: see https://www.fontshare.com/fonts/supreme
+2026-10-14  Fontshare: satoshi@400,500,700
+  css: https://api.fontshare.com/v2/css?f[]=satoshi%40400%2C500%2C700&display=swap
+  licence: see https://www.fontshare.com/fonts/satoshi
+2026-10-14  Google Fonts: Inter:wght@400..800
+  css: https://fonts.googleapis.com/css2?family=Inter%3Awght%40400..800&display=swap
+  licence: see https://fonts.google.com/specimen/Inter

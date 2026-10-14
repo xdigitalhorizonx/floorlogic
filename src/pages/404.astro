@@ -1,0 +1,18 @@
+---
+import BaseLayout from '../layouts/BaseLayout.astro';
+---
+<BaseLayout title="Page not found — FloorLogic" description="This page doesn’t exist." path="/404" noindex>
+  <section class="section band-sky nf">
+    <div class="container">
+      <p class="eyebrow">404</p>
+      <h1>This board has an empty lane.</h1>
+      <p class="lead">The page you wanted isn’t here. Try one of these instead.</p>
+      <div class="nf-links"><a class="btn btn-primary" href="/">Go to the homepage</a><a class="btn btn-ghost" href="/pricing">See pricing</a><a class="btn btn-ghost" href="/start">Start free trial</a></div>
+    </div>
+  </section>
+</BaseLayout>
+<style>
+  .nf { min-height: 70svh; }
+  .nf h1 { margin: 14px 0 14px; font-size: clamp(2.2rem, 1.4rem + 3vw, 4rem); }
+  .nf-links { display: flex; flex-wrap: wrap; gap: 10px; margin-top: 26px; }
+</style>

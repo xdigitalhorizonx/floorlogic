@@ -1,0 +1,17 @@
+---
+import LegalLayout from '../layouts/LegalLayout.astro';
+import { SITE } from '../config/site';
+---
+<LegalLayout title="Privacy — FloorLogic" description="How the FloorLogic website handles information." path="/privacy" heading="Privacy notice" updated="October 14, 2026">
+  <p>This notice covers the FloorLogic website (this site). FloorLogic is made by Digital Horizon in Carson City, Nevada. Questions go to <a href={`mailto:${SITE.email}`}>{SITE.email}</a> or {SITE.phone}.</p>
+  <h2>What this site collects</h2>
+  <p>The free-trial form on this site does not send what you type anywhere. Online signup is not switched on yet. If you choose to email us, your own email app sends the message, and we receive what you put in it.</p>
+  <p>The interactive demos on this site run in your browser with sample data. Nothing you do in them is sent to us.</p>
+  <p>Your browser keeps the email you type in the trial form for this tab only (session storage), so the signup page can fill it in. Closing the tab clears it.</p>
+  <h2>Hosting and analytics</h2>
+  <p>This site is hosted by Vercel. Like any web host, Vercel processes basic request data (such as IP address and browser type) to serve pages and keep the service secure. If we turn on Vercel Web Analytics, it counts page views and simple events without cookies and without collecting names or emails.</p>
+  <h2>What we do with information you send us</h2>
+  <p>If you email or call us, we use what you share to answer you and to set up a trial. We don’t sell it.</p>
+  <h2>Changes</h2>
+  <p>When online signup opens, this notice will be updated before the form starts collecting information.</p>
+</LegalLayout>

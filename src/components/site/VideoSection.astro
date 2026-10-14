@@ -1,0 +1,67 @@
+---
+import { VIDEO } from '../../data/video';
+const mmss = (s: number) => `0:${String(s).padStart(2, '0')}`;
+---
+<section class="section band-white vid" id="video" aria-labelledby="vid-title">
+  <div class="container">
+    <div class="vid-head reveal">
+      <p class="eyebrow">See it first</p>
+      <h2 id="vid-title">Six everyday jobs. Forty-five seconds.</h2>
+      <p class="lead">The real FloorLogic app, filmed with sample data. Jump to the part you care about.</p>
+    </div>
+  </div>
+  <div class="container vid-in">
+    <ol class="vid-chapters reveal">
+      {VIDEO.chapters.map((c) => (
+        <li>
+          <button type="button" data-video-open data-video-at={c.at}>
+            <span class="vc-time num">{mmss(c.at)}</span>
+            <span class="vc-label">{c.label}</span>
+            <span class="vc-detail">{c.detail}</span>
+          </button>
+        </li>
+      ))}
+    </ol>
+    <button type="button" class="vid-frame reveal" data-video-open data-video-at="0" aria-label="Play the 45-second FloorLogic demo">
+      <img src={VIDEO.poster} alt="" width="1920" height="1080" loading="lazy" decoding="async" />
+      <span class="vid-play" aria-hidden="true"><svg viewBox="0 0 24 24" width="30" height="30"><path d="M8 5.5v13l11-6.5z" fill="currentColor"/></svg></span>
+      <span class="vid-len num" aria-hidden="true">0:45 · captions on</span>
+    </button>
+  </div>
+</section>
+
+<dialog class="vdlg" id="video-dialog" aria-label="FloorLogic demo video">
+  <div class="vdlg-in">
+    <button type="button" class="vdlg-x" data-video-close aria-label="Close video">×</button>
+    <video controls playsinline preload="none" poster={VIDEO.poster} width="1920" height="1080">
+      <source src={VIDEO.webm} type="video/webm" />
+      <source src={VIDEO.mp4} type="video/mp4" />
+      <track kind="descriptions" src={VIDEO.vtt} srclang="en" label="Descriptions" />
+    </video>
+  </div>
+</dialog>
+
+<style>
+  .vid-head { max-width: 760px; margin-bottom: clamp(24px, 3vw, 36px); }
+  .vid-head h2 { margin: 14px 0 14px; }
+  .vid-in { display: grid; grid-template-columns: minmax(260px, 0.7fr) 1.8fr; gap: clamp(24px, 4vw, 56px); align-items: center; }
+  .vid-chapters { list-style: none; margin: 0; padding: 0; display: grid; gap: 2px; counter-reset: c; }
+  .vid-chapters button { width: 100%; display: grid; grid-template-columns: 52px 1fr; grid-template-rows: auto auto; column-gap: 12px; text-align: left; background: none; border: 0; border-left: 2px solid var(--grey-200); padding: 9px 12px; cursor: pointer; border-radius: 0 var(--r-ui) var(--r-ui) 0; transition: background .15s, border-color .15s; }
+  .vid-chapters button:hover { background: var(--ice-100); border-left-color: var(--blue); }
+  .vc-time { grid-row: 1 / 3; align-self: center; font-weight: 700; color: var(--blue-ink); }
+  .vc-label { font-weight: 700; color: var(--navy-900); }
+  .vc-detail { font-size: var(--fs-small); color: var(--grey-600); }
+  .vid-frame { position: relative; display: block; padding: 0; border: 0; cursor: pointer; border-radius: var(--r-panel); overflow: hidden; background: #0f1a2e;
+    box-shadow: 0 0 0 1px rgba(2,49,91,.1), var(--shadow-3); aspect-ratio: 16 / 9; }
+  .vid-frame img { width: 100%; height: 100%; object-fit: cover; transition: transform .6s var(--ease-out); }
+  .vid-frame:hover img { transform: scale(1.02); }
+  .vid-play { position: absolute; left: 50%; top: 50%; transform: translate(-50%, -50%); width: 84px; height: 84px; border-radius: 50%; display: grid; place-items: center; background: var(--blue); color: #fff; box-shadow: 0 0 0 10px rgba(255,255,255,.35), 0 20px 40px -10px rgba(2,49,91,.6); transition: transform .2s var(--ease-out); }
+  .vid-frame:hover .vid-play { transform: translate(-50%, -50%) scale(1.06); }
+  .vid-len { position: absolute; right: 14px; bottom: 12px; background: rgba(15,26,46,.82); color: #fff; font-size: var(--fs-micro); font-weight: 700; padding: 6px 10px; border-radius: var(--r-pill); }
+  .vdlg { width: min(96vw, 1280px); padding: 0; border: 0; border-radius: 14px; background: #000; box-shadow: 0 40px 120px rgba(0,0,0,.5); }
+  .vdlg::backdrop { background: rgba(2, 20, 40, .78); }
+  .vdlg-in { position: relative; }
+  .vdlg video { width: 100%; height: auto; display: block; }
+  .vdlg-x { position: absolute; top: 8px; right: 8px; z-index: 2; width: 44px; height: 44px; border-radius: 50%; border: 0; background: rgba(255,255,255,.92); color: var(--navy-900); font-size: 28px; line-height: 1; cursor: pointer; }
+  @media (max-width: 900px) { .vid-in { grid-template-columns: 1fr; } .vid-frame { order: -1; } }
+</style>

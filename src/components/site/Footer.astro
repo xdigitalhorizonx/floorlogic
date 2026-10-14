@@ -1,0 +1,60 @@
+---
+import { SITE, TRIAL } from '../../config/site';
+const year = 2026;
+---
+<footer class="foot">
+  <div class="foot-in">
+    <div class="foot-brand">
+      <img src="/brand/floorlogic-lockup-horizontal-reversed.svg" alt="FloorLogic" width="229" height="40" loading="lazy" data-dye-tap />
+      <p>Flooring business software, built and used every day inside a working flooring store.</p>
+      <a class="btn btn-primary" href="/start">Start free trial</a>
+      <p class="foot-micro">{TRIAL.microcopy}</p>
+    </div>
+    <nav class="foot-cols" aria-label="Footer">
+      <div>
+        <h2>Product</h2>
+        <a href="/#product">Take the tour</a>
+        <a href="/#video">Watch the 45-second demo</a>
+        <a href="/pricing">Pricing</a>
+        <a href="/compare">Compare</a>
+      </div>
+      <div>
+        <h2>Company</h2>
+        <a href="/about">About</a>
+        <a href={SITE.maker.url} rel="noopener">Digital Horizon</a>
+        <a href="/privacy">Privacy</a>
+        <a href="/terms">Terms</a>
+      </div>
+      <div>
+        <h2>Talk to us</h2>
+        <a href={SITE.phoneHref}>{SITE.phone}</a>
+        <a href={`mailto:${SITE.email}`}>{SITE.email}</a>
+        <span>{SITE.locality}, Nevada</span>
+      </div>
+    </nav>
+  </div>
+  <div class="foot-base">
+    <span>© {year} Digital Horizon. FloorLogic is a Digital Horizon product.</span>
+    <span>Built inside Landmark Flooring, Carson City, NV.</span>
+  </div>
+</footer>
+
+<style>
+  .foot { position: relative; background: radial-gradient(900px 420px at 85% 0%, #0d4a86 0%, transparent 70%), linear-gradient(165deg, var(--navy-950), var(--navy-900) 55%, #0a3a68); color: #c9d6e6; overflow: hidden; }
+  .foot::before { content: ''; position: absolute; right: -120px; bottom: -160px; width: 560px; height: 420px; opacity: .09; pointer-events: none;
+    background: linear-gradient(135deg, #fff, transparent 70%);
+    clip-path: polygon(50% 0, 100% 25%, 50% 50%, 0 25%, 0 60%, 50% 85%, 100% 60%, 100% 25%); }
+  .foot-in { position: relative; display: grid; grid-template-columns: minmax(260px, 1.1fr) 2fr; gap: clamp(32px, 6vw, 96px); width: min(100% - 2 * var(--gutter), var(--container)); margin-inline: auto; padding-block: clamp(56px, 7vw, 96px) 48px; }
+  .foot-brand img { height: 40px; width: auto; }
+  .foot-brand p { margin-top: 16px; max-width: 36ch; line-height: 1.55; }
+  .foot-brand .btn { margin-top: 22px; }
+  .foot-micro { font-size: var(--fs-micro); color: #a9bcd3; margin-top: 10px !important; }
+  .foot-cols { display: grid; grid-template-columns: repeat(3, 1fr); gap: 24px; }
+  .foot-cols h2 { font-family: var(--font-body); font-size: var(--fs-micro); letter-spacing: .14em; text-transform: uppercase; color: #fff; margin-bottom: 14px; font-weight: 700; }
+  .foot-cols div { display: grid; align-content: start; gap: 2px; }
+  .foot-cols a, .foot-cols span { color: #d5e1ef; text-decoration: none; padding: 8px 0; font-size: .98rem; }
+  .foot-cols a:hover { color: #fff; text-decoration: underline; }
+  .foot-base { position: relative; display: flex; justify-content: space-between; gap: 16px; flex-wrap: wrap; width: min(100% - 2 * var(--gutter), var(--container)); margin-inline: auto; padding: 22px 0 32px; border-top: 1px solid rgba(255,255,255,.12); font-size: var(--fs-small); color: #a9bcd3; }
+  @media (max-width: 860px) { .foot-in { grid-template-columns: 1fr; } }
+  @media (max-width: 560px) { .foot-cols { grid-template-columns: 1fr 1fr; } .foot-cols div:last-child { grid-column: 1 / -1; } }
+</style>

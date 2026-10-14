@@ -1,0 +1,201 @@
+---
+import TrialCapture from './TrialCapture.astro';
+import { leads, incomingLeads, reps, counters, DEMO_TODAY } from '../../data/sample-data';
+import { BOARD_STATUSES, LEAD_LABELS, LEAD_COLORS } from '../../lib/logic/lead-pipeline';
+import { leadCardHTML } from '../../lib/board/card-html';
+
+const lanes = BOARD_STATUSES;
+// In the app an approved lead becomes a customer and leaves the board, so the Approved lane
+// starts empty here and acts as the drop target.
+const onBoard = leads.filter((l) => l.status !== 'approved' && l.status !== 'lost');
+const repName = (id: string | null | undefined) => reps.find((r) => r.id === id)?.name ?? '';
+const state = JSON.stringify({ leads: onBoard, incoming: incomingLeads, reps, counters, today: DEMO_TODAY });
+---
+<section class="hero" data-hero aria-labelledby="hero-title">
+  <div class="hero-bg" aria-hidden="true">
+    <svg class="hero-walls" viewBox="0 0 1200 520" preserveAspectRatio="xMidYMin slice">
+      <defs>
+        <linearGradient id="hw-l" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="#00224f"/><stop offset="1" stop-color="#155488"/></linearGradient>
+        <linearGradient id="hw-r" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="#464c54"/><stop offset="1" stop-color="#34383d"/></linearGradient>
+      </defs>
+      <!-- The logo's room corner, enormous and faint: plank wall left, plain wall right -->
+      <g opacity=".07">
+        <polygon points="600,40 0,340 0,520 600,220" fill="url(#hw-l)"/>
+        <polygon points="600,40 1200,340 1200,520 600,220" fill="url(#hw-r)"/>
+      </g>
+      <g opacity=".09" fill="#fff">
+        <polygon points="600,98 0,398 0,404 600,104"/>
+        <polygon points="600,156 0,456 0,462 600,162"/>
+      </g>
+    </svg>
+  </div>
+
+  <div class="hero-copy">
+    <p class="eyebrow">Flooring business software</p>
+    <h1 id="hero-title">Every flooring job,<br class="br-d" /> call to paid, <span class="hl">on one board.</span></h1>
+    <p class="lead hero-lead">Quote in cartons and roll goods. Your customer approves from their phone. The work order and invoice are already waiting.</p>
+    <TrialCapture id="hero" source="home-hero" />
+    <div class="hero-alt">
+      <button type="button" class="btn btn-text" data-video-open data-video-at="0"><span class="play" aria-hidden="true"><svg viewBox="0 0 12 12" width="12" height="12"><path d="M3 1.8v8.4L10 6z" fill="currentColor"/></svg></span>Watch the 45-second demo</button>
+      <a class="btn btn-text" href="#product">Take the tour <span aria-hidden="true">↓</span></a>
+    </div>
+  </div>
+
+  <aside class="hero-feed" data-feed aria-label="What the board just did">
+    <div class="lb-hud">
+      <p class="lb-hint" data-hint><span class="lb-hint-dot" aria-hidden="true"></span><span>Live board, sample data. Try it: drag a lead to <strong>Approved</strong>.</span></p>
+      <button type="button" class="lb-pause" data-pause aria-pressed="false">Pause</button>
+    </div>
+    <div class="lb-feed" data-toast role="log" aria-live="polite" aria-label="Board activity"></div>
+    <div class="lb-docs" data-docs aria-hidden="true"></div>
+  </aside>
+
+  <div class="lb" data-board role="region" aria-label="Try it: FloorLogic's lead board with sample leads" aria-describedby="lb-help">
+    <p id="lb-help" class="sr-only">A working copy of the FloorLogic lead board with fictional sample leads. Use the buttons on each card, or focus a card and press the left and right arrow keys to move it between stages. Moving a lead to Approved creates its work order and invoice, like the real app.</p>
+    <div class="lb-stage" data-stage>
+      <div class="lb-plane" data-plane>
+        {lanes.map((st) => (
+          <div class="lb-lane" data-lane={st} style={`--c:${LEAD_COLORS[st]}`}>
+            <div class="lb-head"><span>{LEAD_LABELS[st]}</span><span class="lb-count" data-count>{onBoard.filter((l) => l.status === st).length}</span></div>
+            <div class="lb-cards" data-cards>
+              {onBoard.filter((l) => l.status === st).map((l) => <Fragment set:html={leadCardHTML(l, repName(l.salesRepId), DEMO_TODAY)} />)}
+              {st === 'approved' && <p class="lb-drop" aria-hidden="true">Drop a lead here.<br />It becomes a customer, with a work order and an invoice.</p>}
+            </div>
+          </div>
+        ))}
+      </div>
+    </div>
+    <div class="lb-end" data-end>
+      <p><span class="lb-hint-dot" aria-hidden="true"></span><span>Drag a lead to <strong>Approved</strong>, or use the green → buttons.</span></p>
+      <button type="button" class="lb-pause" data-pause aria-pressed="false">Pause</button>
+    </div>
+    <div class="lb-confirm" data-confirm role="alertdialog" aria-modal="true" aria-labelledby="lb-confirm-msg" hidden>
+      <p id="lb-confirm-msg" data-confirm-msg></p>
+      <div class="lb-confirm-btns"><button type="button" class="btn btn-ghost" data-confirm-no>Cancel</button><button type="button" class="btn btn-primary" data-confirm-yes>OK</button></div>
+    </div>
+    <script type="application/json" data-board-state set:html={state}></script>
+  </div>
+</section>
+
+<script>
+  import { initLivingBoard } from '../../islands/living-board';
+  initLivingBoard();
+</script>
+
+<style is:global>
+  .hero { position: relative; isolation: isolate; overflow: clip; min-height: max(640px, calc(100svh - 72px));
+    background: radial-gradient(1200px 640px at 82% 0%, #d9e9fa 0%, transparent 65%), radial-gradient(700px 400px at 0% 100%, #eef5fc, transparent 70%), linear-gradient(180deg, var(--ice-100), var(--white) 78%); }
+  .hero-bg { position: absolute; inset: 0; z-index: -1; pointer-events: none; }
+  .hero-walls { position: absolute; left: 50%; top: 0; width: max(1400px, 115vw); height: auto; transform: translateX(-46%); }
+  .hero-copy { position: relative; z-index: 3; width: min(100% - 2 * var(--gutter), 1240px); margin-inline: auto; padding-top: clamp(24px, 4.5vh, 56px); }
+  @media (min-width: 1200px) { .hero-copy > :not(h1):not(.eyebrow) { max-width: min(640px, calc(100% - 400px)); } }
+  @media (max-width: 1199px) {
+    .hero { display: flex; flex-direction: column; }
+    .hero-copy { padding-right: 0; order: 1; }
+    .lb { order: 2; }
+    .hero-feed { position: static; order: 3; width: min(100% - 2 * var(--gutter), 720px); margin: 16px auto 24px; }
+  }
+  .hero-copy h1 { margin-top: 16px; max-width: 24ch; font-size: clamp(2.5rem, 1.25rem + 4vw, 4.9rem); }
+  @media (max-width: 899px) { .br-d { display: none; } }
+  .hero-copy .hl { color: var(--blue); }
+  .hero-lead { margin: 18px 0 26px; max-width: 44ch; }
+  .hero-alt { display: flex; flex-wrap: wrap; gap: 4px 18px; margin-top: 10px; margin-left: -4px; }
+  .hero-alt .btn-text { font-weight: 700; }
+
+  /* ---------------- Living board ---------------- */
+  .lb { position: relative; z-index: 2; height: var(--lb-h, 520px); margin-top: clamp(-8px, -1vw, 0px); }
+  .lb-stage { position: absolute; inset: 0; perspective: var(--persp, 1250px); perspective-origin: 55% 0%; overflow: visible; }
+  .lb-plane { --tilt: 56deg; --twist: -3deg; --scale: 1; --base: 1; position: absolute; left: 50%; top: 0; width: 1480px; display: grid; grid-template-columns: repeat(5, 1fr); gap: 14px; padding: 14px;
+    background: linear-gradient(180deg, #e7edf4, #dfe7f0); border-radius: 18px;
+    box-shadow: 0 0 0 1px rgba(2,49,91,.07), 0 80px 120px -50px rgba(2,49,91,.42);
+    transform-origin: 50% 0; transform: translateX(-47%) rotateX(var(--tilt, 56deg)) rotateZ(var(--twist, -5deg)) scale(calc(var(--base, 1) * var(--scale, 1)));
+    transform-style: preserve-3d; will-change: transform; }
+  .lb-lane { background: #f3f4f6; border-radius: 12px; display: flex; flex-direction: column; min-height: 980px; transition: background .15s, box-shadow .15s; }
+  .lb-lane.is-over { background: #eaf2fd; box-shadow: inset 0 0 0 2px var(--c); }
+  .lb-head { display: flex; align-items: center; justify-content: space-between; padding: 12px 16px; border-radius: 12px 12px 0 0; background: var(--c); color: #fff;
+    font: 600 13px/1.2 var(--font-app); text-transform: uppercase; letter-spacing: .3px; }
+  .lb-count { font-size: 11px; background: rgba(255,255,255,.28); padding: 1px 8px; border-radius: 10px; font-weight: 700; }
+  .lb-cards { padding: 8px; display: flex; flex-direction: column; gap: 8px; flex: 1; }
+  .lb-drop { margin: 4px 0 0; padding: 22px 14px; border: 2px dashed rgba(4,120,87,.35); border-radius: 10px; text-align: center; font: 600 13px/1.45 var(--font-app); color: #047857; background: rgba(16,185,129,.06); }
+  .lb-lane.is-over .lb-drop { background: rgba(16,185,129,.14); border-color: #047857; }
+
+  /* The app's card (Inter, white, 8px radius) + a plank edge so it reads as a floor tile */
+  .kc { position: relative; background: #fff; border-radius: 8px; padding: 11px 12px 10px; display: flex; flex-direction: column; gap: 7px; font-family: var(--font-app); color: #111827;
+    box-shadow: 0 1px 2px rgba(15,23,42,.06), 0 0 0 1px rgba(15,23,42,.05), 0 5px 0 -1px #cdd6e1, 0 8px 14px -6px rgba(2,49,91,.25);
+    border-left: 3px solid transparent; cursor: grab; touch-action: none; user-select: none; -webkit-user-select: none; }
+  .kc:focus-visible { outline: 3px solid var(--dot); outline-offset: 2px; }
+  .kc.is-lifted { visibility: hidden; }
+  .kc-cat { font-size: 10px; font-weight: 700; color: var(--app-primary); text-transform: uppercase; letter-spacing: .06em; line-height: 1.2; }
+  .kc-name-row { display: flex; justify-content: space-between; align-items: flex-start; gap: 8px; }
+  .kc-name { font-weight: 700; font-size: 14px; line-height: 1.3; flex: 1; min-width: 0; }
+  .kc-age { font-size: 10.5px; color: #6b7280; font-weight: 600; padding-top: 2px; font-variant-numeric: tabular-nums; }
+  .kc-tags { font-size: 11.5px; color: #6b7280; display: flex; gap: 6px; flex-wrap: wrap; margin-top: -3px; line-height: 1.4; }
+  .kc-sep { color: #e5e7eb; font-weight: 700; }
+  .kc-chips { display: flex; gap: 4px; }
+  .kc-pill { display: inline-flex; align-items: center; gap: 3px; padding: 2px 8px; border-radius: 20px; font: 600 10.5px/1.5 var(--font-app); text-transform: uppercase; letter-spacing: .3px; }
+  .kc-pill-indigo { background: rgba(99,102,241,.1); color: #4f46e5; }
+  .kc-pill-purple { background: rgba(139,92,246,.12); color: #6d28d9; }
+  .kc-pill-red { background: rgba(239,68,68,.1); color: #c81e1e; }
+  .kc-pill-green { background: rgba(16,185,129,.12); color: #047857; }
+  .kc-meta { display: flex; flex-direction: column; gap: 2px; }
+  .kc-line { font-size: 11.5px; line-height: 1.35; }
+  .kc-muted { color: #6b7280; font-size: 11px; }
+  .kc .lf-icon { flex: none; width: 1.05em; height: 1.05em; vertical-align: -0.16em; }
+  .kc-line, .kc-tags span, .kc-cat { display: inline-flex; align-items: center; gap: 5px; }
+  .kc-dot { display: inline-block; width: 7px; height: 7px; border-radius: 50%; margin-right: 6px; vertical-align: middle; }
+  .kc-dot-green { background: #10b981; } .kc-dot-amber { background: #f59e0b; } .kc-dot-red { background: #ef4444; }
+  .kc-actions { display: flex; gap: 6px; align-items: center; padding-top: 8px; border-top: 1px solid #e5e7eb; }
+  .kc-spacer { flex: 1; }
+  .kc-adv, .kc-survey { flex: 1; display: inline-flex; align-items: center; gap: 6px; border: 0; cursor: pointer; border-radius: 8px; padding: 6px 10px; font: 600 12.5px/1.2 var(--font-app); text-align: left; }
+  .kc-adv { background: linear-gradient(180deg, #059669, #047857); color: #fff; box-shadow: 0 1px 2px rgba(4,120,87,.3); }
+  .kc-adv:hover { background: #065f46; }
+  .kc-survey { background: rgba(37,99,235,.08); border: 1px solid rgba(37,99,235,.25); color: #1d4ed8; font-size: 11.5px; padding: 5px 8px; border-radius: 6px; }
+  .kc-ic { flex: none; width: 30px; height: 28px; display: grid; place-items: center; font-size: 14px; border-radius: 8px; border: 1px solid #e5e7eb; background: #fff; color: #374151; }
+  .kc-ic-primary { background: #2563eb; border-color: #2563eb; color: #fff; }
+
+  /* Lifted card (dragging) — flat, readable, follows the pointer */
+  .lb-ghost { position: fixed; z-index: 80; pointer-events: none; width: 260px; transform-origin: 50% 50%; box-shadow: 0 30px 60px -20px rgba(2,49,91,.45), 0 0 0 1px rgba(2,49,91,.08) !important; cursor: grabbing; }
+
+  .hero-feed { display: grid; gap: 10px; }
+  @media (min-width: 1200px) { .hero-feed { position: absolute; z-index: 4; top: var(--feed-top, 330px); right: max(var(--gutter), calc((100vw - 1240px) / 2)); width: 340px; } }
+  .lb-hud { display: flex; gap: 8px; align-items: center; justify-content: space-between; }
+  .lb-hint { display: flex; align-items: center; gap: 10px; background: rgba(255,255,255,.94); border: 1px solid var(--grey-200); border-radius: 10px; padding: 9px 12px; font-size: .9rem; font-weight: 600; color: var(--navy-900); box-shadow: var(--shadow-1); line-height: 1.35; }
+  .lb-hint strong { color: #047857; }
+  .lb-hint a { font-weight: 700; }
+  .lb-hint-dot { flex: none; width: 9px; height: 9px; border-radius: 50%; background: #10b981; box-shadow: 0 0 0 4px rgba(16,185,129,.18); }
+  .lb-pause { flex: none; min-height: 40px; border-radius: 10px; border: 1px solid var(--grey-200); background: rgba(255,255,255,.94); padding: 0 12px; font-weight: 700; color: var(--grey-700); cursor: pointer; box-shadow: var(--shadow-1); }
+  .lb-pause[aria-pressed='true'] { color: var(--blue-ink); }
+  .lb-feed { display: grid; gap: 8px; }
+  .lb-feed p { background: #111827; color: #fff; font: 500 13px/1.4 var(--font-app); padding: 10px 14px; border-radius: 10px; box-shadow: 0 14px 30px -14px rgba(0,0,0,.45); }
+  .lb-feed p:not(:first-child) { display: none; }
+  .lb-docs { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; }
+  .lb-doc { background: #fff; border-radius: 10px; padding: 11px 12px; font-family: var(--font-app); box-shadow: 0 16px 34px -16px rgba(2,49,91,.4), 0 0 0 1px rgba(2,49,91,.08); }
+  .lb-doc-top { display: flex; align-items: center; justify-content: space-between; gap: 6px; }
+  .lb-doc .kc-pill { font-size: 9.5px; padding: 2px 7px; white-space: nowrap; }
+  @media (min-width: 1200px) { .lb-doc-line { display: none; } }
+  .lb-doc-num { font: 700 13px/1 var(--font-app); color: #111827; white-space: nowrap; }
+  .lb-doc-line { margin-top: 6px; font-size: 11.5px; color: #4b5563; }
+
+  .lb-end { position: absolute; z-index: 5; left: 50%; bottom: 22px; transform: translateX(-50%); display: none; gap: 8px; align-items: center; }
+  .lb-end p { display: flex; align-items: center; gap: 10px; margin: 0; background: rgba(255,255,255,.96); border: 1px solid var(--grey-200); border-radius: 999px; padding: 10px 16px; font-weight: 600; color: var(--navy-900); box-shadow: var(--shadow-2); white-space: nowrap; }
+  .lb-end strong { color: #047857; }
+  @media (min-width: 900px) and (prefers-reduced-motion: no-preference) { .js .lb-end { display: flex; visibility: hidden; opacity: 0; } }
+  .lb-confirm { position: absolute; z-index: 7; left: 50%; top: 30%; transform: translateX(-50%); width: min(92vw, 440px); background: #fff; border-radius: 12px; padding: 20px; box-shadow: 0 30px 80px -20px rgba(2,49,91,.5), 0 0 0 1px rgba(2,49,91,.1); font-family: var(--font-app); color: #111827; }
+  .lb-confirm p { font-size: 15px; line-height: 1.45; }
+  .lb-confirm-btns { display: flex; justify-content: flex-end; gap: 8px; margin-top: 16px; }
+  .lb-confirm .btn { --bh: 40px; font-size: .95rem; }
+
+  /* ---------- Phone + tablet: a flat, swipeable board ---------- */
+  @media (max-width: 899px) {
+    .hero { min-height: 0; padding-bottom: 28px; }
+    .hero-copy h1 { max-width: 16ch; }
+    .lb { height: auto; margin-top: 28px; }
+    .lb-stage { position: relative; perspective: none; overflow-x: auto; scroll-snap-type: x mandatory; -webkit-overflow-scrolling: touch; padding: 0 var(--gutter) 12px; scrollbar-width: none; }
+    .lb-stage::-webkit-scrollbar { display: none; }
+    .lb-plane { position: relative; left: 0; transform: none; width: max-content; grid-template-columns: repeat(5, 78vw); padding: 10px; gap: 10px; box-shadow: 0 0 0 1px rgba(2,49,91,.07), 0 30px 50px -30px rgba(2,49,91,.35); }
+    .lb-lane { min-height: 0; scroll-snap-align: center; }
+    .kc { cursor: default; touch-action: auto; }
+    .hero-feed { margin-top: 14px; }
+    .lb-confirm { position: fixed; top: 30%; }
+  }
+</style>

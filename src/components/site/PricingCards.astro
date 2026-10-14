@@ -1,0 +1,66 @@
+---
+import { TIERS, TRIAL } from '../../config/site';
+interface Props { id?: string; compact?: boolean; level?: 'h2' | 'h3' }
+const { id = 'plans', compact = false, level = 'h3' } = Astro.props;
+const H = level;
+const money = (n: number) => `$${n.toLocaleString('en-US')}`;
+---
+<div class:list={['plans', { 'plans--compact': compact }]} id={id}>
+  <fieldset class="billing">
+    <legend class="sr-only">Billing period</legend>
+    <input type="radio" name={`${id}-period`} id={`${id}-m`} value="monthly" checked />
+    <label for={`${id}-m`}>Monthly</label>
+    <input type="radio" name={`${id}-period`} id={`${id}-y`} value="yearly" />
+    <label for={`${id}-y`}>Yearly <span class="save">2 months free</span></label>
+  </fieldset>
+  <ul class="tiers">
+    {TIERS.map((t) => (
+      <li class:list={['tier', { 'tier--rec': t.recommended }]}>
+        {t.recommended && <p class="tier-flag">Recommended</p>}
+        <H class="tier-name">{t.name}</H>
+        <p class="tier-blurb">{t.blurb}</p>
+        <p class="tier-price num">
+          <span class="p-m"><b>{money(t.monthly)}</b><span>/month</span></span>
+          <span class="p-y"><b>{money(t.yearly)}</b><span>/year</span></span>
+        </p>
+        <p class="tier-seats">{t.seats} · no setup fee</p>
+        <a class:list={['btn', t.recommended ? 'btn-primary' : 'btn-ghost']} href="/start">Start free trial</a>
+        {!compact && (
+          <ul class="tier-list">
+            {t.includes.map((f) => <li>{f}</li>)}
+          </ul>
+        )}
+      </li>
+    ))}
+  </ul>
+  <p class="plans-note">{TRIAL.microcopy}. Card payments from your customers go through Stripe at Stripe’s standard rate.</p>
+</div>
+
+<style>
+  .billing { display: inline-flex; border: 0; padding: 4px; margin: 0 0 22px; background: var(--grey-100); border-radius: var(--r-pill); gap: 2px; }
+  .billing input { position: absolute; opacity: 0; pointer-events: none; }
+  .billing label { padding: 10px 18px; border-radius: var(--r-pill); font-weight: 700; color: var(--grey-700); cursor: pointer; display: inline-flex; align-items: center; gap: 8px; transition: background .15s, color .15s; }
+  .billing input:checked + label { background: #fff; color: var(--navy-900); box-shadow: var(--shadow-1); }
+  .billing input:focus-visible + label { outline: 3px solid var(--dot); outline-offset: 2px; }
+  .save { font-size: var(--fs-micro); color: #047857; background: #d1fae5; padding: 2px 8px; border-radius: var(--r-pill); }
+  .tiers { list-style: none; margin: 0; padding: 0; display: grid; grid-template-columns: repeat(3, 1fr); gap: 18px; align-items: stretch; }
+  .tier { position: relative; display: flex; flex-direction: column; background: #fff; border-radius: var(--r-panel); padding: 26px 24px 28px; box-shadow: 0 0 0 1px rgba(2,49,91,.09), var(--shadow-1); }
+  .tier--rec { box-shadow: 0 0 0 2px var(--blue), var(--shadow-2); }
+  .tier-flag { position: absolute; top: -13px; left: 24px; background: var(--blue); color: #fff; font-size: var(--fs-micro); font-weight: 700; padding: 4px 10px; border-radius: var(--r-pill); letter-spacing: .02em; }
+  .tier-name { font-size: 1.5rem; }
+  .tier-blurb { color: var(--grey-600); margin-top: 6px; min-height: 3em; }
+  .tier-price { margin-top: 18px; color: var(--navy-900); }
+  .tier-price b { font-family: var(--font-display); font-weight: 800; font-size: 2.6rem; letter-spacing: -0.02em; }
+  .tier-price span span { color: var(--grey-600); font-weight: 600; margin-left: 4px; }
+  .p-y { display: none; }
+  .plans:has(input[value='yearly']:checked) .p-y { display: inline; }
+  .plans:has(input[value='yearly']:checked) .p-m { display: none; }
+  .tier-seats { margin-top: 4px; color: var(--grey-700); font-weight: 600; font-size: var(--fs-small); }
+  .tier .btn { margin-top: 20px; width: 100%; }
+  .tier-list { list-style: none; margin: 22px 0 0; padding: 18px 0 0; border-top: 1px solid var(--grey-100); display: grid; gap: 10px; }
+  .tier-list li { display: grid; grid-template-columns: 18px 1fr; gap: 10px; color: var(--grey-700); line-height: 1.4; }
+  .tier-list li::before { content: ''; width: 14px; height: 7px; margin-top: 6px; background: linear-gradient(135deg, var(--navy-900), var(--navy-700)); clip-path: polygon(0 50%, 50% 0, 100% 0, 50% 100%, 0 100%); }
+  .tier-list li:first-child { font-weight: 700; color: var(--navy-900); }
+  .plans-note { margin-top: 18px; font-size: var(--fs-small); color: var(--grey-600); }
+  @media (max-width: 960px) { .tiers { grid-template-columns: 1fr; max-width: 520px; } .tier-blurb { min-height: 0; } }
+</style>

@@ -1,0 +1,15 @@
+---
+import LegalLayout from '../layouts/LegalLayout.astro';
+import { SITE } from '../config/site';
+---
+<LegalLayout title="Website terms — FloorLogic" description="Terms for using the FloorLogic website." path="/terms" heading="Website terms" updated="October 14, 2026">
+  <p>These terms cover your use of this website. They are not the subscription agreement for the FloorLogic software, which you will see before you start a paid plan.</p>
+  <h2>Demos and sample data</h2>
+  <p>The interactive demos and the demo video use made-up sample data: fictional customers, phone numbers, products and prices. They show how FloorLogic works; they are not quotes, prices or advice for your jobs.</p>
+  <h2>Prices and comparisons</h2>
+  <p>FloorLogic prices on this site are current as of the date above. Facts about other companies’ products come from their own websites on the dates shown next to them and may have changed since.</p>
+  <h2>Trademarks</h2>
+  <p>FloorLogic and its logo belong to Digital Horizon. Other product names belong to their owners and are used only to identify those products.</p>
+  <h2>Contact</h2>
+  <p>Digital Horizon, {SITE.locality}, Nevada · {SITE.phone} · <a href={`mailto:${SITE.email}`}>{SITE.email}</a></p>
+</LegalLayout>

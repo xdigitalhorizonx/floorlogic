@@ -1,0 +1,31 @@
+---
+import { PROOF } from '../../config/site';
+const n = (v: number) => v.toLocaleString('en-US');
+---
+<section class="proof" aria-label="Where FloorLogic comes from">
+  <div class="container proof-in">
+    <p class="proof-lede"><strong>Built inside a working flooring store.</strong> FloorLogic runs Landmark Flooring in Carson City, Nevada, every day.</p>
+    <p class="proof-ledger">
+      <span>On Aug 14, 2026 its database held</span>
+      <span class="num"><b>{n(PROOF.quotes)}</b> quotes</span>
+      <span class="num"><b>{n(PROOF.jobs)}</b> jobs</span>
+      <span class="num"><b>{n(PROOF.invoices)}</b> invoices</span>
+      <span class="num"><b>{n(PROOF.bankTxns)}</b> reconciled bank transactions</span>
+      <span class="num">and a <b>{n(PROOF.catalogRows)}</b>-product catalog.</span>
+    </p>
+    <p class="proof-honest">Customers so far: one, the store that built it. You won't find made-up reviews here.</p>
+  </div>
+</section>
+
+<style>
+  .proof { position: relative; background: linear-gradient(180deg, #fff, var(--ice-50)); border-block: 1px solid var(--grey-200); }
+  .proof-in { display: grid; grid-template-columns: 1.1fr 1.4fr; gap: 12px 48px; padding-block: 34px; align-items: start; }
+  .proof-lede { font-size: 1.15rem; color: var(--navy-900); line-height: 1.45; }
+  .proof-lede strong { font-family: var(--font-display); font-weight: 800; }
+  .proof-ledger { display: flex; flex-wrap: wrap; gap: 4px 14px; color: var(--grey-700); line-height: 1.6; }
+  .proof-ledger b { color: var(--navy-900); font-weight: 700; }
+  .proof-ledger span + span::before { content: ''; display: inline-block; width: 5px; height: 5px; margin-right: 12px; vertical-align: middle; background: var(--sky); transform: rotate(45deg) skew(-10deg, -10deg); }
+  .proof-ledger span:nth-child(2)::before { display: none; }
+  .proof-honest { grid-column: 2; font-size: var(--fs-small); color: var(--grey-600); }
+  @media (max-width: 860px) { .proof-in { grid-template-columns: 1fr; } .proof-honest { grid-column: 1; } }
+</style>

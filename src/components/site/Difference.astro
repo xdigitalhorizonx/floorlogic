@@ -1,0 +1,75 @@
+---
+import { CENSUS } from '../../config/site';
+// Facts only, each dated. "Flooring systems" = flooring-native BUSINESS MANAGEMENT software.
+type Cell = { t: string; ok: boolean | null };
+const rows: { label: string; fl: Cell; floor: Cell; generic: Cell }[] = [
+  { label: 'Try it free before talking to sales', fl: { t: '14 days, no card', ok: true }, floor: { t: `None of the ${CENSUS.count} we checked`, ok: false }, generic: { t: '14-day trials', ok: true } },
+  { label: 'Every price on the website', fl: { t: '$149 · $299 · $549 a month', ok: true }, floor: { t: 'No full price lists', ok: false }, generic: { t: 'Yes', ok: true } },
+  { label: 'Cartons, rolls and square yards in the quote', fl: { t: 'Built in', ok: true }, floor: { t: 'Yes', ok: true }, generic: { t: 'Made for every trade', ok: false } },
+  { label: 'A demo you can click on the website', fl: { t: 'You’re looking at it', ok: true }, floor: { t: 'Book a call', ok: false }, generic: { t: 'Some have guided tours', ok: null } },
+];
+const fmt = (iso: string) => new Date(`${iso}T12:00:00`).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' });
+---
+<section class="section band-white diff" id="different" aria-labelledby="diff-title">
+  <div class="planes br" aria-hidden="true">
+    <svg viewBox="0 0 640 400"><polygon points="320,60 640,220 320,380 0,220" fill="#02315b" opacity=".04"/><polygon points="320,120 520,220 320,320 120,220" fill="#1679e2" opacity=".05"/></svg>
+  </div>
+  <div class="container">
+    <div class="diff-head reveal">
+      <p class="eyebrow">What’s different</p>
+      <h2 id="diff-title">The flooring systems make you book a call. We hand you the keys.</h2>
+      <p class="lead">Here is how FloorLogic compares with the flooring-specific systems and with the big general field-service apps, from their own websites.</p>
+    </div>
+    <div class="diff-table reveal" role="table" aria-label="FloorLogic compared with flooring systems and general field-service apps">
+      <div class="dt-row dt-headrow" role="row">
+        <span role="columnheader" class="dt-label"><span class="sr-only">Feature</span></span>
+        <span role="columnheader" class="dt-fl"><img src="/brand/floorlogic-mark.svg" alt="" width="22" height="22" />FloorLogic</span>
+        <span role="columnheader">Flooring systems<small>FloorZap, QFloors, RFMS, RollMaster and others</small></span>
+        <span role="columnheader">General field-service apps<small>Jobber, Housecall Pro</small></span>
+      </div>
+      {rows.map((r) => (
+        <div class="dt-row" role="row">
+          <span role="rowheader" class="dt-label">{r.label}</span>
+          {[r.fl, r.floor, r.generic].map((c, i) => (
+            <span role="cell" class:list={['dt-cell', { 'dt-fl': i === 0, yes: c.ok === true, no: c.ok === false }]}>
+              <span class="dt-mark" aria-hidden="true">{c.ok === true ? '✓' : c.ok === false ? '–' : '·'}</span>{c.t}
+            </span>
+          ))}
+        </div>
+      ))}
+    </div>
+    <p class="diff-note">
+      Flooring systems checked: {CENSUS.vendors.join(', ')}. Trials and prices checked on their websites {fmt(CENSUS.firstChecked)}; all but Pacific Solutions re-checked {fmt(CENSUS.lastChecked)}. Field-service apps checked {fmt('2026-10-13')}. <a href="/compare">See the full comparison</a>.
+    </p>
+  </div>
+</section>
+
+<style>
+  .diff-head { max-width: 780px; margin-bottom: 36px; }
+  .diff-head h2 { margin: 14px 0; }
+  .diff-table { border-radius: var(--r-panel); overflow: hidden; background: #fff; box-shadow: 0 0 0 1px rgba(2,49,91,.08), var(--shadow-2); }
+  .dt-row { display: grid; grid-template-columns: 1.25fr 1fr 1fr 1fr; align-items: stretch; border-top: 1px solid var(--grey-100); }
+  .dt-row > span { padding: 18px 20px; display: flex; align-items: center; gap: 10px; }
+  .dt-headrow { border-top: 0; background: var(--grey-50); }
+  .dt-headrow > span { flex-direction: column; align-items: flex-start; justify-content: center; gap: 2px; font-weight: 800; color: var(--navy-900); font-family: var(--font-display); font-size: 1.05rem; }
+  .dt-headrow small { font-family: var(--font-body); font-weight: 500; font-size: var(--fs-micro); color: var(--grey-600); }
+  .dt-headrow .dt-fl { flex-direction: row; align-items: center; gap: 8px; color: #fff; background: linear-gradient(160deg, var(--navy-950), var(--navy-900)); }
+  .dt-label { font-weight: 700; color: var(--navy-900); }
+  .dt-cell { color: var(--grey-700); }
+  .dt-cell.dt-fl { background: var(--ice-100); color: var(--navy-900); font-weight: 700; }
+  .dt-mark { flex: none; width: 24px; height: 24px; border-radius: 50%; display: grid; place-items: center; font-size: 13px; font-weight: 800; }
+  .yes .dt-mark { background: #d1fae5; color: #047857; }
+  .no .dt-mark { background: var(--grey-100); color: var(--grey-600); }
+  .diff-note { margin-top: 16px; font-size: var(--fs-small); color: var(--grey-600); max-width: 90ch; }
+  @media (max-width: 860px) {
+    .dt-headrow { display: none; }
+    .dt-row { grid-template-columns: 1fr; padding: 14px 0; }
+    .dt-row > span { padding: 6px 18px; }
+    .dt-label { font-size: 1.05rem; padding-bottom: 8px !important; }
+    .dt-cell::before { font-size: var(--fs-micro); font-weight: 700; color: var(--grey-600); min-width: 112px; text-transform: uppercase; letter-spacing: .06em; }
+    .dt-cell:nth-child(2)::before { content: 'FloorLogic'; color: var(--navy-700); }
+    .dt-cell:nth-child(3)::before { content: 'Flooring systems'; }
+    .dt-cell:nth-child(4)::before { content: 'Field-service apps'; }
+    .dt-cell.dt-fl { background: none; }
+  }
+</style>

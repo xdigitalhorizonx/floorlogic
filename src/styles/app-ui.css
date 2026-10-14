@@ -1,0 +1,66 @@
+/* Product UI recreations (the live app = demo main: Inter, primary #0074D3, 8px radius buttons,
+   12px cards, uppercase pill badges). Everything is scoped under .app so it never leaks into the
+   marketing styles. Status/lane colors use the AA-safe site variants from tokens.css. */
+
+.app { font-family: var(--font-app); font-size: 14px; line-height: 1.45; color: var(--app-text); -webkit-font-smoothing: antialiased; }
+.app *, .app *::before, .app *::after { box-sizing: border-box; }
+
+/* Window chrome: navy sidebar strip + white top bar, like the real app */
+.app-frame { position: relative; display: grid; grid-template-columns: 56px 1fr; background: var(--app-bg); border-radius: 14px; overflow: hidden;
+  box-shadow: 0 0 0 1px rgba(2,49,91,.1), 0 30px 70px -30px rgba(2,49,91,.45); }
+.app-rail { background: var(--app-sidebar); display: flex; flex-direction: column; align-items: center; gap: 14px; padding: 14px 0; }
+.app-rail img { width: 30px; height: 30px; }
+.app-rail span { width: 22px; height: 22px; border-radius: 6px; background: rgba(255,255,255,.12); }
+.app-rail span.on { background: rgba(59,130,246,.55); box-shadow: inset 3px 0 0 #3b82f6; }
+.app-main { min-width: 0; display: flex; flex-direction: column; }
+.app-top { height: 48px; flex: none; display: flex; align-items: center; gap: 10px; padding: 0 16px; background: #fff; border-bottom: 1px solid var(--app-border); }
+.app-top h4 { font: 700 15px/1 var(--font-app); color: var(--app-text); letter-spacing: 0; }
+.app-top .app-crumb { color: var(--app-muted); font-size: 12px; }
+.app-body { padding: 16px; min-width: 0; }
+
+/* Cards / tables */
+.app-card { background: #fff; border-radius: 12px; box-shadow: 0 1px 2px rgba(15,23,42,.06), 0 0 0 1px rgba(15,23,42,.05); }
+.app-table { width: 100%; border-collapse: collapse; font-size: 13px; }
+.app-table th { text-align: left; font-size: 11px; font-weight: 600; text-transform: uppercase; letter-spacing: .3px; color: var(--app-muted); padding: 8px 10px; border-bottom: 1px solid var(--app-border); }
+.app-table td { padding: 9px 10px; border-bottom: 1px solid #f1f2f4; vertical-align: middle; }
+.app-table .r { text-align: right; font-variant-numeric: tabular-nums; }
+
+/* Buttons (app: .btn padding 8px 16px, radius 8px, weight 500; .btn-sm 5px 10px / 12px) */
+.a-btn { display: inline-flex; align-items: center; justify-content: center; gap: 6px; min-height: 36px; padding: 8px 16px; border-radius: 8px; border: 1px solid transparent; font: 500 14px/1.2 var(--font-app); cursor: pointer; white-space: nowrap; transition: background .15s, border-color .15s, color .15s; }
+.a-btn:disabled { opacity: .55; cursor: not-allowed; }
+.a-btn-sm { min-height: 30px; padding: 5px 10px; font-size: 12px; }
+.a-primary { background: var(--app-primary); color: #fff; }
+.a-primary:hover:not(:disabled) { background: #005ba8; }
+.a-success { background: #047857; color: #fff; }
+.a-success:hover:not(:disabled) { background: #065f46; }
+.a-warning { background: #b45309; color: #fff; }
+.a-outline { background: #fff; border-color: var(--app-border); color: var(--app-text); }
+.a-outline:hover:not(:disabled) { border-color: var(--app-primary); color: var(--app-primary); }
+
+/* Badges (app .badge-pill: uppercase, 11px, 600, 20px radius, tinted bg) */
+.a-pill { display: inline-flex; align-items: center; gap: 4px; padding: 2px 10px; border-radius: 20px; font: 600 11px/1.6 var(--font-app); text-transform: uppercase; letter-spacing: .3px; white-space: nowrap; }
+.a-blue { background: rgba(59,130,246,.1); color: #2563eb; }
+.a-indigo { background: rgba(99,102,241,.1); color: #4f46e5; }
+.a-purple { background: rgba(139,92,246,.12); color: #6d28d9; }
+.a-amber { background: rgba(245,158,11,.14); color: #92400e; }
+.a-orange { background: rgba(249,115,22,.14); color: #9a3412; }
+.a-pink { background: rgba(236,72,153,.1); color: #be185d; }
+.a-green { background: rgba(16,185,129,.12); color: #047857; }
+.a-red { background: rgba(239,68,68,.1); color: #c81e1e; }
+.a-gray { background: rgba(107,114,128,.12); color: #374151; }
+
+/* Inputs */
+.a-input, .a-select { min-height: 34px; padding: 6px 10px; border: 1px solid var(--app-border); border-radius: 8px; background: #fff; font: 400 13px/1.3 var(--font-app); color: var(--app-text); }
+.a-input:focus, .a-select:focus { outline: none; border-color: var(--app-primary); box-shadow: 0 0 0 3px rgba(0,116,211,.18); }
+.a-label { font: 600 11px/1.2 var(--font-app); text-transform: uppercase; letter-spacing: .3px; color: var(--app-muted); }
+
+/* Privacy Mode (app: html[data-privacy=on] .qb-private { filter: blur(6px) }) */
+.app[data-privacy='on'] .is-private { filter: blur(6px); user-select: none; transition: filter .2s; }
+.app[data-privacy='on'] .is-private:hover { filter: none; }
+
+/* Toast like the app's (dark, bottom) */
+.a-toast { position: absolute; left: 50%; bottom: 14px; transform: translate(-50%, 8px); background: #111827; color: #fff; font: 500 13px/1.35 var(--font-app); padding: 10px 14px; border-radius: 10px; box-shadow: 0 16px 36px -12px rgba(0,0,0,.45); opacity: 0; pointer-events: none; transition: opacity .25s, transform .25s; max-width: calc(100% - 28px); z-index: 5; }
+.a-toast.is-on { opacity: 1; transform: translate(-50%, 0); }
+
+.app :focus-visible { outline: 3px solid var(--dot); outline-offset: 2px; }
+.app .num { font-variant-numeric: tabular-nums; }

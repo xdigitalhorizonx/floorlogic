@@ -1,0 +1,49 @@
+---
+// The app's real sidebar (demo main): Company / Clients / Documents / Finances / Inventory groups.
+const groups = [
+  { h: 'Company', items: ['Dashboard', 'People'] },
+  { h: 'Clients', items: ['Leads', 'Customers', 'Samples'] },
+  { h: 'Documents', items: ['Projects', 'Quotes', 'Work Orders', 'Invoices'] },
+  { h: 'Finances', items: ['Accounting', 'Job Costing'] },
+  { h: 'Inventory', items: ['Inventory', 'Orders', 'Product List'] },
+];
+---
+<section class="section band-sky origin" id="story" aria-labelledby="origin-title">
+  <div class="container origin-in">
+    <div class="origin-copy reveal">
+      <p class="eyebrow">Where it comes from</p>
+      <h2 id="origin-title">Built in a flooring store, not a boardroom.</h2>
+      <p class="lead">FloorLogic started as the system Landmark Flooring built to run its own store in Carson City, Nevada.</p>
+      <p>Jeff owns the store. Brandon runs its operations. FloorLogic is where Landmark keeps its leads, quotes, installs, invoices and books, and it still runs the store every day.</p>
+      <a class="btn btn-ghost" href="/about">Read the story</a>
+    </div>
+    <div class="origin-app reveal" aria-label="FloorLogic's menu: everything in one place">
+      <div class="oa-side">
+        <img src="/brand/floorlogic-lockup-horizontal-reversed.svg" alt="FloorLogic" width="206" height="36" loading="lazy" />
+        {groups.map((g) => (
+          <div class="oa-group">
+            <p>{g.h}</p>
+            <ul>{g.items.map((i) => <li class:list={{ on: i === 'Leads' }}>{i}</li>)}</ul>
+          </div>
+        ))}
+      </div>
+      <p class="oa-cap">One login, one menu. From the first call to the bank reconciliation.</p>
+    </div>
+  </div>
+</section>
+
+<style>
+  .origin-in { display: grid; grid-template-columns: 1.1fr 0.9fr; gap: clamp(32px, 6vw, 96px); align-items: center; }
+  .origin-copy h2 { margin: 14px 0 16px; }
+  .origin-copy p + p { margin-top: 14px; color: var(--grey-700); max-width: 60ch; }
+  .origin-copy .btn { margin-top: 26px; }
+  .origin-app { justify-self: center; display: grid; gap: 14px; }
+  .oa-side { width: 290px; padding: 20px 14px 18px; border-radius: 16px; background: var(--app-sidebar); color: #cbd5e1; font-family: var(--font-app); box-shadow: 0 40px 80px -30px rgba(2,49,91,.55), 0 0 0 1px rgba(255,255,255,.06) inset; transform: rotate(-2deg); }
+  .oa-side img { height: 34px; width: auto; margin: 2px 8px 16px; }
+  .oa-group p { font-size: 10.5px; letter-spacing: .1em; text-transform: uppercase; color: #8aa0bf; margin: 12px 10px 6px; font-weight: 700; }
+  .oa-group ul { list-style: none; margin: 0; padding: 0; }
+  .oa-group li { font-size: 13.5px; padding: 7px 10px; border-radius: 8px; border-left: 3px solid transparent; }
+  .oa-group li.on { background: rgba(59,130,246,.18); color: #fff; border-left-color: #3b82f6; font-weight: 600; }
+  .oa-cap { font-size: var(--fs-small); color: var(--grey-700); text-align: center; max-width: 30ch; justify-self: center; }
+  @media (max-width: 860px) { .origin-in { grid-template-columns: 1fr; } .oa-side { transform: none; } }
+</style>

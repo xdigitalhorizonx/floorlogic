@@ -1,0 +1,129 @@
+/* Self-hosted fonts — no CDN request at runtime. Built from: inter.css, satoshi.css, supreme.css */
+/* Google Fonts: Inter:wght@400..800 — self-hosted by the fonts skill. Source: https://fonts.googleapis.com/css2?family=Inter%3Awght%40400..800&display=swap */
+/* latin */
+@font-face {
+  font-family: 'Inter';
+  font-style: normal;
+  font-weight: 400 800;
+  font-display: swap;
+  src: url(/fonts/inter-latin-400-800.woff2) format('woff2');
+  unicode-range: U+0000-00FF, U+0131, U+0152-0153, U+02BB-02BC, U+02C6, U+02DA, U+02DC, U+0304, U+0308, U+0329, U+2000-206F, U+20AC, U+2122, U+2191, U+2193, U+2212, U+2215, U+FEFF, U+FFFD;
+}
+
+/* Fontshare: satoshi@400,500,700 — self-hosted by the fonts skill. Source: https://api.fontshare.com/v2/css?f[]=satoshi%40400%2C500%2C700&display=swap */
+@font-face {
+  font-family: 'Satoshi';
+  src: url('/fonts/satoshi-400.woff2') format('woff2');
+  font-weight: 400;
+  font-display: swap;
+  font-style: normal;
+}
+@font-face {
+  font-family: 'Satoshi';
+  src: url('/fonts/satoshi-500.woff2') format('woff2');
+  font-weight: 500;
+  font-display: swap;
+  font-style: normal;
+}
+@font-face {
+  font-family: 'Satoshi';
+  src: url('/fonts/satoshi-700.woff2') format('woff2');
+  font-weight: 700;
+  font-display: swap;
+  font-style: normal;
+}
+
+/* Fontshare: supreme@500,800 — self-hosted by the fonts skill. Source: https://api.fontshare.com/v2/css?f[]=supreme%40500%2C800&display=swap */
+@font-face {
+  font-family: 'Supreme';
+  src: url('/fonts/supreme-500.woff2') format('woff2');
+  font-weight: 500;
+  font-display: swap;
+  font-style: normal;
+}
+@font-face {
+  font-family: 'Supreme';
+  src: url('/fonts/supreme-800.woff2') format('woff2');
+  font-weight: 800;
+  font-display: swap;
+  font-style: normal;
+}
+
+/* FloorLogic site tokens — light theme (owner, 2026-10-13: white, light blue, greys).
+   Brand colors sampled from the 2026-10 logo PNG. CTA blue darkened from the logo dot for AA. */
+:root {
+  /* Brand */
+  --navy-950: #00224f;
+  --navy-900: #02315b;   /* wordmark "Floor" — headings */
+  --navy-700: #155488;   /* mark gradient light end */
+  --charcoal: #363a40;   /* wordmark "Logic" — body text */
+  --charcoal-2: #464c54;
+  --dot: #1679e2;        /* logo dot — large accents only (4.3:1 on white) */
+  --blue: #1470d2;       /* CTA (4.9:1 with white) */
+  --blue-hover: #105fb8;
+  --blue-ink: #0f5bb0;   /* links / small blue text on white (6:1) */
+
+  /* Grounds */
+  --white: #ffffff;
+  --ice-50: #f8fbfe;
+  --ice-100: #f3f8fd;
+  --ice-200: #e8f1fb;
+  --ice-300: #d5e5f6;
+  --sky: #a9cbee;
+  --grey-50: #f6f7f9;
+  --grey-100: #eef0f3;
+  --grey-200: #e2e6eb;
+  --grey-300: #cbd2da;
+  --grey-500: #7f8894;
+  --grey-600: #5b6270;   /* muted text (6.2:1 on white) */
+  --grey-700: #454b55;
+
+  /* Product (live app main: Inter, primary #0074D3) — used only inside product frames */
+  --app-primary: #0074d3;
+  --app-bg: #f8f9fb;
+  --app-text: #111827;
+  --app-muted: #6b7280;
+  --app-border: #e5e7eb;
+  --app-sidebar: linear-gradient(180deg, #0f1a2e 0%, #1a2d4d 55%, #1e3a5f 100%);
+  /* App lane/status hues, darkened one step so white text passes AA */
+  --st-blue: #2563eb;
+  --st-indigo: #4f46e5;
+  --st-amber: #b45309;
+  --st-pink: #be185d;
+  --st-green: #047857;
+  --st-purple: #7c3aed;
+  --st-red: #dc2626;
+  --st-gray: #4b5563;
+  --approved: #059669;   /* the app's APPROVED stamp (large bold text) */
+
+  /* Type */
+  --font-display: 'Supreme', 'Satoshi', ui-sans-serif, system-ui, sans-serif;
+  --font-body: 'Satoshi', ui-sans-serif, system-ui, -apple-system, 'Segoe UI', sans-serif;
+  --font-app: 'Inter', system-ui, -apple-system, 'Segoe UI', sans-serif;
+
+  --fs-hero: clamp(2.5rem, 1.35rem + 4.4vw, 5.25rem);
+  --fs-h2: clamp(2rem, 1.35rem + 2.3vw, 3.35rem);
+  --fs-h3: clamp(1.2rem, 1.05rem + 0.55vw, 1.5rem);
+  --fs-lead: clamp(1.08rem, 1rem + 0.35vw, 1.28rem);
+  --fs-body: 1.0625rem;
+  --fs-small: 0.9rem;
+  --fs-micro: 0.8125rem;
+
+  /* Space (8px rhythm) */
+  --s-1: 0.25rem; --s-2: 0.5rem; --s-3: 0.75rem; --s-4: 1rem; --s-5: 1.5rem;
+  --s-6: 2rem; --s-7: 3rem; --s-8: 4rem; --s-9: 6rem;
+  --section-pad: clamp(4rem, 2.6rem + 5.5vw, 8rem);
+  --gutter: clamp(1rem, 0.4rem + 2.6vw, 2.5rem);
+  --container: 1240px;
+
+  /* Shape + depth */
+  --r-ui: 6px;
+  --r-card: 10px;
+  --r-panel: 16px;
+  --r-pill: 999px;
+  --shadow-1: 0 1px 2px rgba(2, 49, 91, 0.06), 0 2px 6px rgba(2, 49, 91, 0.05);
+  --shadow-2: 0 2px 4px rgba(2, 49, 91, 0.05), 0 12px 32px -8px rgba(2, 49, 91, 0.16);
+  --shadow-3: 0 4px 10px rgba(2, 49, 91, 0.06), 0 30px 60px -18px rgba(2, 49, 91, 0.28);
+
+  --ease-out: cubic-bezier(0.22, 1, 0.36, 1);
+}

@@ -1,0 +1,60 @@
+---
+import BaseLayout from '../layouts/BaseLayout.astro';
+import PricingCards from '../components/site/PricingCards.astro';
+import Faq from '../components/site/Faq.astro';
+import FinalCta from '../components/site/FinalCta.astro';
+import { PRICING_FAQ } from '../data/faq';
+import { faqNode } from '../lib/schema';
+
+const title = 'FloorLogic Pricing — Flooring Software Prices, No Setup Fee';
+const description = 'FloorLogic flooring software pricing: Crew $149/month, Shop $299/month, Ledger $549/month. Two months free on yearly plans. No setup fee, no per-user charges, 14-day free trial with no credit card.';
+const everyPlan = [
+  'Lead board with follow-ups and survey dates',
+  'Quote builder with cartons, roll goods and pick-one options',
+  'Live quote link: customer picks options and approves',
+  'Approval creates the work order and invoice',
+  'Work orders, scheduling and calendar',
+  'Invoices with card payment and payment terms',
+  'Email and text delivery',
+  'Privacy Mode and roles',
+];
+---
+<BaseLayout title={title} description={description} path="/pricing" breadcrumbs={[{ name: 'Home', path: '/' }, { name: 'Pricing', path: '/pricing' }]} schema={[faqNode('/pricing', PRICING_FAQ)]}>
+  <section class="section band-sky page-head">
+    <div class="container">
+      <p class="eyebrow">Pricing</p>
+      <h1>Flooring software pricing, out in the open.</h1>
+      <p class="lead">Three plans, every price on this page. No setup fee, no per-user charges inside a plan, and a 14-day free trial with no credit card.</p>
+      <div class="ph-plans"><PricingCards id="pricing-plans" level="h2" /></div>
+    </div>
+  </section>
+
+  <section class="section band-white" aria-labelledby="every-title">
+    <div class="container every">
+      <div>
+        <p class="eyebrow">In every plan</p>
+        <h2 id="every-title">The whole job, even on Crew.</h2>
+        <p class="lead">The smallest plan still runs the full loop from lead to paid invoice.</p>
+      </div>
+      <ul class="every-list">
+        {everyPlan.map((f) => <li>{f}</li>)}
+      </ul>
+    </div>
+  </section>
+
+  <Faq items={PRICING_FAQ} title="Pricing questions" id="pricing-faq" />
+  <FinalCta source="pricing-final" title="Try it on a real job first." />
+</BaseLayout>
+
+<style>
+  .page-head h1 { margin: 14px 0 16px; max-width: 18ch; }
+  .page-head .lead { max-width: 62ch; }
+  .ph-plans { margin-top: 40px; }
+  .every { display: grid; grid-template-columns: 0.9fr 1.1fr; gap: clamp(28px, 5vw, 80px); align-items: start; }
+  .every h2 { margin: 14px 0; }
+  .every-list { list-style: none; margin: 0; padding: 0; display: grid; grid-template-columns: 1fr 1fr; gap: 12px 24px; }
+  .every-list li { display: grid; grid-template-columns: 18px 1fr; gap: 10px; padding: 14px 16px; background: var(--ice-50); border: 1px solid var(--ice-200); border-radius: var(--r-ui); color: var(--navy-900); font-weight: 600; line-height: 1.4; }
+  .every-list li::before { content: ''; width: 14px; height: 7px; margin-top: 7px; background: linear-gradient(135deg, var(--navy-900), var(--navy-700)); clip-path: polygon(0 50%, 50% 0, 100% 0, 50% 100%, 0 100%); }
+  @media (max-width: 900px) { .every { grid-template-columns: 1fr; } }
+  @media (max-width: 560px) { .every-list { grid-template-columns: 1fr; } }
+</style>

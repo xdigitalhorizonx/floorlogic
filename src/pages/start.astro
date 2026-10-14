@@ -1,0 +1,49 @@
+---
+import BaseLayout from '../layouts/BaseLayout.astro';
+import TrialCapture from '../components/site/TrialCapture.astro';
+import { SITE, TRIAL } from '../config/site';
+
+const title = 'Start Your Free FloorLogic Trial — 14 Days, No Credit Card';
+const description = 'Start a 14-day free trial of FloorLogic flooring business software. No credit card, no setup fee, no sales call to get started.';
+const steps = [
+  { h: 'Tell us about your shop', p: 'Your email, company and name. Phone and team size are optional.' },
+  { h: 'Add your floors and labor', p: 'Your products, cartons, rolls and labor rates, the way you price them today.' },
+  { h: 'Quote a real job', p: 'Send the customer a live link. When they approve, the work order and invoice are made for you.' },
+];
+---
+<BaseLayout title={title} description={description} path="/start" pageType="WebPage" breadcrumbs={[{ name: 'Home', path: '/' }, { name: 'Start free trial', path: '/start' }]}>
+  <section class="section band-sky start" id="signup">
+    <div class="container start-in">
+      <div class="start-copy">
+        <p class="eyebrow">Free trial</p>
+        <h1>Run your shop on FloorLogic free for {TRIAL.days} days.</h1>
+        <p class="lead">No credit card. No setup fee. No sales call to get started.</p>
+        <ol class="start-steps">
+          {steps.map((s) => <li><h2>{s.h}</h2><p>{s.p}</p></li>)}
+        </ol>
+      </div>
+      <div class="start-card">
+        <h2 class="start-card-title">Start your free trial</h2>
+        <p class="start-note"><strong>Heads up:</strong> online signup opens soon. Fill this in and we’ll show you how to save your spot. Nothing is saved or sent until you choose to send it.</p>
+        <TrialCapture id="start" source="start-page" variant="page" />
+        <p class="start-alt">Questions first? Call <a href={SITE.phoneHref}>{SITE.phone}</a> or email <a href={`mailto:${SITE.email}`}>{SITE.email}</a>.</p>
+      </div>
+    </div>
+  </section>
+</BaseLayout>
+
+<style>
+  .start { min-height: calc(100svh - 72px); }
+  .start-in { display: grid; grid-template-columns: 1fr minmax(320px, 520px); gap: clamp(32px, 6vw, 96px); align-items: start; }
+  .start-copy h1 { margin: 14px 0 16px; font-size: clamp(2.2rem, 1.4rem + 3vw, 4rem); max-width: 16ch; }
+  .start-steps { list-style: none; counter-reset: s; margin: 34px 0 0; padding: 0; display: grid; gap: 18px; max-width: 520px; }
+  .start-steps li { counter-increment: s; display: grid; grid-template-columns: 40px 1fr; column-gap: 14px; }
+  .start-steps li::before { content: counter(s); grid-row: 1 / 3; width: 36px; height: 36px; border-radius: 50%; display: grid; place-items: center; background: #fff; color: var(--navy-900); font-weight: 800; box-shadow: 0 0 0 1px var(--ice-300); }
+  .start-steps h2 { font-size: 1.15rem; }
+  .start-steps p { color: var(--grey-700); margin-top: 2px; }
+  .start-card { background: #fff; border-radius: var(--r-panel); padding: clamp(22px, 3vw, 34px); box-shadow: 0 0 0 1px rgba(2,49,91,.08), var(--shadow-3); }
+  .start-card-title { font-size: 1.5rem; }
+  .start-note { margin: 10px 0 18px; font-size: var(--fs-small); color: var(--grey-700); background: var(--ice-100); border: 1px solid var(--ice-300); border-radius: var(--r-ui); padding: 10px 12px; }
+  .start-alt { margin-top: 18px; font-size: var(--fs-small); color: var(--grey-600); }
+  @media (max-width: 900px) { .start-in { grid-template-columns: 1fr; } .start-card { order: -1; } }
+</style>

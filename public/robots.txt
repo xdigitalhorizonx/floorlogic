@@ -1,0 +1,4 @@
+User-agent: *
+Allow: /
+
+Sitemap: https://floorlogic.vercel.app/sitemap.xml

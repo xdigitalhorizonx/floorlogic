@@ -1,0 +1,44 @@
+---
+import BaseLayout from '../layouts/BaseLayout.astro';
+import HeroBoard from '../components/site/HeroBoard.astro';
+import ProofStrip from '../components/site/ProofStrip.astro';
+import VideoSection from '../components/site/VideoSection.astro';
+import TryIt from '../components/site/TryIt.astro';
+import FeatureCards from '../components/site/FeatureCards.astro';
+import Difference from '../components/site/Difference.astro';
+import PricingCards from '../components/site/PricingCards.astro';
+import Origin from '../components/site/Origin.astro';
+import Faq from '../components/site/Faq.astro';
+import FinalCta from '../components/site/FinalCta.astro';
+import { HOME_FAQ } from '../data/faq';
+import { faqNode, videoNode } from '../lib/schema';
+
+const title = 'FloorLogic — Flooring Business Software with a Free Trial';
+const description = 'Flooring business management software for dealers and installers: quotes in cartons and roll goods, online approval, work orders, invoices and job costing. Prices on the page. 14-day free trial, no credit card.';
+---
+<BaseLayout title={title} description={description} path="/" schema={[faqNode('/', HOME_FAQ), videoNode('/')]}>
+  <HeroBoard />
+  <ProofStrip />
+  <VideoSection />
+  <TryIt />
+  <FeatureCards />
+  <Difference />
+  <section class="section band-ice home-pricing" id="pricing" aria-labelledby="hp-title">
+    <div class="container">
+      <div class="hp-head reveal">
+        <p class="eyebrow">Pricing</p>
+        <h2 id="hp-title">Every price, right here.</h2>
+        <p class="lead">Three plans. No setup fee. No per-user charges inside a plan. <a href="/pricing">Compare plans in detail</a>.</p>
+      </div>
+      <PricingCards id="home-plans" compact />
+    </div>
+  </section>
+  <Origin />
+  <Faq items={HOME_FAQ} />
+  <FinalCta source="home-final" />
+</BaseLayout>
+
+<style>
+  .hp-head { max-width: 700px; margin-bottom: 28px; }
+  .hp-head h2 { margin: 14px 0; }
+</style>

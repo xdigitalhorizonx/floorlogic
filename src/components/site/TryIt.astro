@@ -1,0 +1,100 @@
+---
+import '../../styles/app-ui.css';
+import QuoteModule from '../modules/QuoteModule.astro';
+import WorkOrderModule from '../modules/WorkOrderModule.astro';
+import InvoiceModule from '../modules/InvoiceModule.astro';
+import CostingModule from '../modules/CostingModule.astro';
+
+const tabs = [
+  { id: 'quote', kicker: 'Quote a job', line: 'Cartons, rolls, customer approval' },
+  { id: 'install', kicker: 'Run the install', line: 'One button, start to finish' },
+  { id: 'paid', kicker: 'Get paid', line: 'Deposits, terms, payments' },
+  { id: 'profit', kicker: 'Know the profit', line: 'Estimate vs actual' },
+];
+---
+<section class="section band-ice tryit" id="product" aria-labelledby="try-title">
+  <div class="planes br" aria-hidden="true">
+    <svg viewBox="0 0 640 400"><polygon points="320,0 640,160 640,400 320,240" fill="#363a40" opacity=".04"/><polygon points="0,160 320,0 320,240 0,400" fill="#02315b" opacity=".045"/></svg>
+  </div>
+  <div class="container">
+    <div class="try-head reveal">
+      <p class="eyebrow">Try it yourself</p>
+      <h2 id="try-title">Click around. It’s the real workflow.</h2>
+      <p class="lead">Working copies of FloorLogic screens, running on sample data in your browser. Nothing here is saved or sent, so you can’t break anything.</p>
+    </div>
+
+    <div class="try-tabs" role="tablist" aria-label="Pick a job to try" data-try-tabs>
+      {tabs.map((t, i) => (
+        <button type="button" role="tab" class="try-tab" id={`tab-${t.id}`} aria-controls={`panel-${t.id}`} aria-selected={i === 0 ? 'true' : 'false'} tabindex={i === 0 ? 0 : -1} data-tab={t.id}>
+          <span class="try-tab-k">{t.kicker}</span>
+          <span class="try-tab-l">{t.line}</span>
+        </button>
+      ))}
+    </div>
+
+    <div class="try-panels">
+      <div class="try-panel" role="tabpanel" id="panel-quote" aria-labelledby="tab-quote" data-panel="quote"><QuoteModule /></div>
+      <div class="try-panel" role="tabpanel" id="panel-install" aria-labelledby="tab-install" data-panel="install"><WorkOrderModule /></div>
+      <div class="try-panel" role="tabpanel" id="panel-paid" aria-labelledby="tab-paid" data-panel="paid"><InvoiceModule /></div>
+      <div class="try-panel" role="tabpanel" id="panel-profit" aria-labelledby="tab-profit" data-panel="profit"><CostingModule /></div>
+    </div>
+  </div>
+</section>
+
+<script>
+  import { track } from '../../lib/analytics';
+  // Tabs (WAI-ARIA pattern). Without JS every panel simply shows, stacked.
+  const list = document.querySelector<HTMLElement>('[data-try-tabs]');
+  if (list) {
+    const tabs = Array.from(list.querySelectorAll<HTMLButtonElement>('[role="tab"]'));
+    const panels = Array.from(document.querySelectorAll<HTMLElement>('[data-panel]'));
+    const select = (id: string, focus = false) => {
+      tabs.forEach((t) => {
+        const on = t.dataset.tab === id;
+        t.setAttribute('aria-selected', String(on));
+        t.tabIndex = on ? 0 : -1;
+        if (on && focus) t.focus();
+      });
+      panels.forEach((p) => { p.hidden = p.dataset.panel !== id; });
+    };
+    select(tabs[0].dataset.tab!);
+    tabs.forEach((t, i) => {
+      t.addEventListener('click', () => { select(t.dataset.tab!); track('try_tab', { tab: t.dataset.tab! }); });
+      t.addEventListener('keydown', (e) => {
+        const k = e.key;
+        let j = -1;
+        if (k === 'ArrowRight') j = (i + 1) % tabs.length;
+        if (k === 'ArrowLeft') j = (i - 1 + tabs.length) % tabs.length;
+        if (k === 'Home') j = 0;
+        if (k === 'End') j = tabs.length - 1;
+        if (j >= 0) { e.preventDefault(); select(tabs[j].dataset.tab!, true); }
+      });
+    });
+  }
+</script>
+
+<style is:global>
+  .try-head { max-width: 760px; margin-bottom: clamp(24px, 3vw, 36px); }
+  .try-head h2 { margin: 14px 0; }
+  .try-tabs { display: grid; grid-template-columns: repeat(4, 1fr); gap: 10px; margin-bottom: 24px; }
+  .try-tab { display: grid; gap: 4px; text-align: left; padding: 14px 16px 15px; border-radius: var(--r-card); border: 1px solid var(--ice-300); background: rgba(255,255,255,.7); cursor: pointer; transition: background .15s, border-color .15s, box-shadow .15s, transform .15s; }
+  .try-tab:hover { background: #fff; border-color: var(--sky); }
+  .try-tab[aria-selected='true'] { background: #fff; border-color: var(--blue); box-shadow: 0 0 0 1px var(--blue), var(--shadow-2); }
+  .try-tab-k { font: 800 1.05rem/1.2 var(--font-display); color: var(--navy-900); }
+  .try-tab-l { font-size: var(--fs-small); color: var(--grey-600); }
+  .try-tab[aria-selected='true'] .try-tab-k { color: var(--blue-ink); }
+  /* Module wrapper shared by every module */
+  .mod { position: relative; display: grid; gap: 16px; }
+  .mod-head { display: flex; flex-wrap: wrap; align-items: baseline; justify-content: space-between; gap: 6px 20px; }
+  .mod-head h3 { font-size: clamp(1.25rem, 1.05rem + .6vw, 1.6rem); }
+  .mod-kicker { display: block; font: 700 var(--fs-micro)/1.2 var(--font-body); letter-spacing: .14em; text-transform: uppercase; color: var(--navy-700); margin-bottom: 6px; }
+  .mod-task { display: inline-flex; align-items: center; gap: 8px; font-size: var(--fs-small); font-weight: 600; color: var(--navy-900); background: #fff; border: 1px solid var(--ice-300); border-radius: var(--r-pill); padding: 7px 12px; }
+  .mod-task::before { content: ''; width: 8px; height: 8px; border-radius: 50%; background: #10b981; box-shadow: 0 0 0 3px rgba(16,185,129,.2); flex: none; }
+  .mod-task.is-done { background: #ecfdf5; border-color: #a7f3d0; color: #065f46; }
+  .mod-foot { font-size: var(--fs-small); color: var(--grey-600); }
+  @media (max-width: 900px) {
+    .try-tabs { grid-template-columns: repeat(4, minmax(168px, 1fr)); overflow-x: auto; scroll-snap-type: x mandatory; scrollbar-width: none; margin-inline: calc(-1 * var(--gutter)); padding-inline: var(--gutter); }
+    .try-tabs::-webkit-scrollbar { display: none; }
+    .try-tab { scroll-snap-align: start; }
+  }
+</style>

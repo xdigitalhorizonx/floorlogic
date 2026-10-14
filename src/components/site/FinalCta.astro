@@ -1,0 +1,34 @@
+---
+import TrialCapture from './TrialCapture.astro';
+import { SITE } from '../../config/site';
+interface Props { source: string; title?: string }
+const { source, title = 'Run your next job on FloorLogic.' } = Astro.props;
+---
+<section class="section band-navy final" aria-labelledby="final-title">
+  <div class="final-floor" aria-hidden="true">
+    <svg viewBox="0 0 1200 300" preserveAspectRatio="none"><polygon points="0,300 600,60 1200,300" fill="#ffffff" opacity=".05"/><polygon points="160,300 600,124 1040,300" fill="#ffffff" opacity=".04"/><polygon points="330,300 600,192 870,300" fill="#ffffff" opacity=".04"/></svg>
+  </div>
+  <div class="container final-in">
+    <div>
+      <h2 id="final-title">{title}</h2>
+      <p class="final-lead">Set up your shop, quote a real job, and send your customer a link they can approve tonight.</p>
+    </div>
+    <div class="final-form">
+      <TrialCapture id={`final-${source}`} source={source} variant="band" dark />
+      <p class="final-alt">Rather talk first? Call <a href={SITE.phoneHref}>{SITE.phone}</a>.</p>
+    </div>
+  </div>
+</section>
+
+<style>
+  .final { overflow: hidden; }
+  .final-floor { position: absolute; inset: auto 0 0 0; height: 60%; z-index: 0; pointer-events: none; }
+  .final-floor svg { width: 100%; height: 100%; }
+  .final-in { display: grid; grid-template-columns: 1fr 1fr; gap: clamp(28px, 5vw, 80px); align-items: center; }
+  .final h2 { color: #fff; }
+  .final-lead { margin-top: 16px; font-size: var(--fs-lead); color: #d5e1ef; max-width: 40ch; }
+  .final-form { background: rgba(255,255,255,.06); border: 1px solid rgba(255,255,255,.12); border-radius: var(--r-panel); padding: 24px; }
+  .final-alt { margin-top: 14px; color: #c9d6e6; font-size: var(--fs-small); }
+  .final-alt a { color: #fff; font-weight: 700; }
+  @media (max-width: 900px) { .final-in { grid-template-columns: 1fr; } }
+</style>

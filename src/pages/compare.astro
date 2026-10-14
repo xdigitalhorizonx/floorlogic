@@ -1,0 +1,107 @@
+---
+import BaseLayout from '../layouts/BaseLayout.astro';
+import Difference from '../components/site/Difference.astro';
+import FinalCta from '../components/site/FinalCta.astro';
+import { CENSUS } from '../config/site';
+
+const title = 'Flooring Software Free Trial — FloorLogic vs FloorZap, RFMS';
+const description = 'How FloorLogic compares with FloorZap, QFloors, RFMS, RollMaster and other flooring business software: free trials, published prices and setup fees, checked on each vendor’s own website and dated.';
+const fmt = (iso: string) => new Date(`${iso}T12:00:00`).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' });
+
+// Facts read on each vendor's own website. Every row carries the date it was checked.
+const vendors = [
+  { name: 'FloorZap', url: 'https://www.floorzap.com/pricing/', trial: 'No free trial on its website', price: '“Starting at $399 / per month + one time setup fee”', path: 'Book a demo', checked: '2026-10-13' },
+  { name: 'QFloors', url: 'https://www.qfloors.com/pricing/', trial: 'No free trial', price: 'No current prices on its pricing page', path: 'Request a free demo', checked: '2026-10-14' },
+  { name: 'RFMS', url: 'https://www.rfms.com/', trial: 'No free trial', price: 'No published prices', path: 'Request a demo', checked: '2026-10-13' },
+  { name: 'RollMaster / Broadlume', url: 'https://www.broadlume.com/products/flooring-software', trial: 'No free trial', price: 'No published prices', path: 'Get a demo', checked: '2026-10-13' },
+  { name: 'Comp-U-Floor', url: 'https://comp-u-floor.com/', trial: 'No free trial', price: 'No published prices; mentions setup fees', path: 'Book a demo', checked: '2026-10-14' },
+  { name: 'Service Buddy', url: 'https://www.servicebuddy.io/', trial: 'No free trial', price: 'No prices shown', path: 'Schedule or book a demo', checked: '2026-10-14' },
+  { name: 'Pacific Solutions', url: '', trial: 'No free trial', price: 'No published prices', path: 'Demo', checked: '2026-08-15' },
+];
+const notPick = [
+  { h: 'You need QuickBooks sync', p: 'FloorLogic has no QuickBooks sync. Ledger has its own receivables, payables and bank reconciliation instead.' },
+  { h: 'You want a native phone app', p: 'FloorLogic runs in the browser on phones, tablets and computers. There’s nothing to install, and nothing in the app stores.' },
+  { h: 'You want takeoffs from blueprints', p: 'FloorLogic quotes from the area you measure. Takeoff tools like MeasureSquare are a different kind of software, and they do offer a trial.' },
+  { h: 'You want lots of customer reviews', p: 'FloorLogic has one customer so far: Landmark Flooring, the store that built it. Try it yourself instead.' },
+];
+---
+<BaseLayout title={title} description={description} path="/compare" breadcrumbs={[{ name: 'Home', path: '/' }, { name: 'Compare', path: '/compare' }]}>
+  <section class="section band-sky page-head">
+    <div class="container">
+      <p class="eyebrow">Compare</p>
+      <h1>Flooring software you can try before a sales call.</h1>
+      <p class="lead">We checked {CENSUS.count} flooring business systems on their own websites. None of them offers a free trial. Every one starts with a demo call. FloorLogic gives you 14 days on your own jobs, no credit card.</p>
+    </div>
+  </section>
+
+  <Difference />
+
+  <section class="section band-ice" aria-labelledby="vendors-title">
+    <div class="container">
+      <div class="cmp-head">
+        <p class="eyebrow">Vendor by vendor</p>
+        <h2 id="vendors-title">What each website says, and when we checked.</h2>
+        <p class="lead">Flooring business management systems only. Takeoff tools are a different category.</p>
+      </div>
+      <div class="vtable" role="table" aria-label="Flooring software vendors: trial, prices and how to start">
+        <div class="vrow vhead" role="row">
+          <span role="columnheader">Vendor</span><span role="columnheader">Free trial</span><span role="columnheader">Prices on the website</span><span role="columnheader">How you start</span><span role="columnheader">Checked</span>
+        </div>
+        <div class="vrow vfl" role="row">
+          <span role="rowheader"><strong>FloorLogic</strong></span><span role="cell">14 days, no credit card</span><span role="cell">$149, $299 and $549 a month; no setup fee</span><span role="cell">Start the trial yourself</span><span role="cell">This page</span>
+        </div>
+        {vendors.map((v) => (
+          <div class="vrow" role="row">
+            <span role="rowheader">{v.url ? <a href={v.url} rel="nofollow noopener">{v.name}</a> : v.name}</span>
+            <span role="cell">{v.trial}</span>
+            <span role="cell">{v.price}</span>
+            <span role="cell">{v.path}</span>
+            <span role="cell" class="num">{fmt(v.checked)}</span>
+          </div>
+        ))}
+      </div>
+      <p class="cmp-note">General field-service apps such as Jobber and Housecall Pro do publish prices and offer 14-day trials (checked Oct 13, 2026). They are built for every trade, so cartons, rolls and square yards aren’t part of the quote. Next full re-check of this page is due {fmt(CENSUS.nextDue)}.</p>
+    </div>
+  </section>
+
+  <section class="section band-white" aria-labelledby="notpick-title">
+    <div class="container">
+      <div class="cmp-head">
+        <p class="eyebrow">Honest fit</p>
+        <h2 id="notpick-title">When FloorLogic isn’t the right pick.</h2>
+      </div>
+      <ul class="notpick">
+        {notPick.map((n) => <li><h3>{n.h}</h3><p>{n.p}</p></li>)}
+      </ul>
+    </div>
+  </section>
+
+  <FinalCta source="compare-final" title="See for yourself. It’s free for 14 days." />
+</BaseLayout>
+
+<style>
+  .page-head h1 { margin: 14px 0 16px; max-width: 20ch; }
+  .page-head .lead { max-width: 64ch; }
+  .cmp-head { max-width: 760px; margin-bottom: 28px; }
+  .cmp-head h2 { margin: 14px 0; }
+  .vtable { background: #fff; border-radius: var(--r-panel); overflow: hidden; box-shadow: 0 0 0 1px rgba(2,49,91,.08), var(--shadow-2); }
+  .vrow { display: grid; grid-template-columns: 1.1fr 1fr 1.5fr 1fr 0.8fr; border-top: 1px solid var(--grey-100); }
+  .vrow > span { padding: 15px 18px; color: var(--grey-700); line-height: 1.4; }
+  .vhead { background: var(--grey-50); border-top: 0; }
+  .vhead > span { font-weight: 800; color: var(--navy-900); font-size: var(--fs-small); text-transform: uppercase; letter-spacing: .06em; }
+  .vfl { background: var(--ice-100); }
+  .vfl > span { color: var(--navy-900); font-weight: 700; }
+  .vrow a { font-weight: 700; }
+  .cmp-note { margin-top: 16px; font-size: var(--fs-small); color: var(--grey-600); max-width: 90ch; }
+  .notpick { list-style: none; margin: 0; padding: 0; display: grid; grid-template-columns: repeat(2, 1fr); gap: 16px; }
+  .notpick li { background: var(--grey-50); border: 1px solid var(--grey-200); border-radius: var(--r-card); padding: 22px 24px; }
+  .notpick h3 { margin-bottom: 8px; }
+  .notpick p { color: var(--grey-700); }
+  @media (max-width: 900px) {
+    .vhead { display: none; }
+    .vrow { grid-template-columns: 1fr 1fr; padding: 8px 0; }
+    .vrow > span { padding: 6px 16px; }
+    .vrow > span:first-child { grid-column: 1 / -1; font-size: 1.05rem; }
+  }
+  @media (max-width: 640px) { .notpick { grid-template-columns: 1fr; } }
+</style>
