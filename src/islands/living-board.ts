@@ -34,6 +34,7 @@ export function initLivingBoard() {
   const root: HTMLElement = rootEl;
   const hero = root.closest<HTMLElement>('[data-hero]')!;
   const plane = root.querySelector<HTMLElement>('[data-plane]')!;
+  const pivot = root.querySelector<HTMLElement>('[data-pivot]')!;
   const stage = root.querySelector<HTMLElement>('[data-stage]')!;
   const toastEl = hero.querySelector<HTMLElement>('[data-toast]')!;
   const docsEl = hero.querySelector<HTMLElement>('[data-docs]')!;
@@ -236,15 +237,16 @@ export function initLivingBoard() {
       const ghost = drag.el.cloneNode(true) as HTMLElement;
       ghost.classList.add('lb-ghost');
       ghost.removeAttribute('tabindex');
-      // The ghost lives outside the (possibly zoomed) board, at the card's true 1:1 size.
-      drag.gw = Math.round(r.width / zoom);
+      // The ghost lives outside the (possibly zoomed, possibly tilted) board, at the card's true size.
+      drag.gw = Math.round(drag.el.offsetWidth);
       ghost.style.setProperty('--gw', `${drag.gw}px`);
       ghost.style.left = `${Math.round(e.clientX - drag.gw / 2)}px`;
       ghost.style.top = `${Math.round(e.clientY - 40)}px`;
       document.body.appendChild(ghost);
       drag.ghost = ghost;
       drag.el.classList.add('is-lifted');
-      if (zoom < 1) anim(ghost, [{ transform: `scale(${zoom})` }, { transform: 'none' }], { duration: 220 });
+      const from = r.width / drag.gw;
+      if (from < 0.98) anim(ghost, [{ transform: `scale(${from})` }, { transform: 'none' }], { duration: 220 });
       document.body.style.cursor = 'grabbing';
     }
     drag.ghost.style.left = `${Math.round(e.clientX - drag.gw / 2)}px`;
@@ -321,11 +323,15 @@ export function initLivingBoard() {
   const BOARD_MIN = 5 * LANE_MIN + 4 * GAP + 2 * PAD;
   const BOARD_MAX = 5 * LANE_MAX + 4 * GAP + 2 * PAD;
   let zoom = 1;
+  // Flat board size on screen (layout px; unaffected by the pivot transform).
+  let boardW = 0, boardH = 0;
   function fitBoard() {
     if (!desktop.matches) {
       zoom = 1;
       root.style.removeProperty('--lb-h');
       for (const k of ['--z', '--pw']) plane.style.removeProperty(k);
+      pivot.style.transform = '';
+      stage.style.transform = '';
       return;
     }
     // Fill exactly the rest of the first screen (not the hero's own height — that includes this
@@ -344,9 +350,41 @@ export function initLivingBoard() {
     const width = Math.floor(Math.min(BOARD_MAX, avail / zoom));
     plane.style.setProperty('--z', zoom.toFixed(4));
     plane.style.setProperty('--pw', `${width}px`);
+    boardW = pivot.offsetWidth;
+    boardH = pivot.offsetHeight;
   }
   fitBoard();
   window.addEventListener('resize', fitBoard);
+
+  // ---------- the pivot: laid back like a floor at the top, flat when it arrives ----------
+  // Hinged on the board's bottom edge, the far (top) edge leans away from you. Everything sits at or
+  // behind the screen plane, so it is only ever drawn at true size or smaller: sharp, never blown up.
+  // Symmetric: no twist, vanishing point dead center. At rest the transform is removed entirely.
+  const PIVOT_DEG = 38;
+  const snap = (v: number) => { const d = window.devicePixelRatio || 1; return Math.round(v * d) / d; };
+  let riseDist = 0;
+  function pose(p: number) {
+    // The board finishes pivoting at 85% of the scroll, then glides the last bit flat.
+    const k = Math.min(1, p / 0.85);
+    const theta = PIVOT_DEG * (1 - (0.5 - 0.5 * Math.cos(Math.PI * k)));
+    let drop = 0;
+    if (theta > 0.01 && boardH) {
+      const persp = Math.round(boardW * 1.1);
+      const r = (theta * Math.PI) / 180;
+      const s = persp / (persp + boardH * Math.sin(r));
+      // Tilting lowers the far edge on screen; lift the board by the same amount so its top
+      // edge travels in a straight line from under the headline to its resting place.
+      drop = boardH - boardH * Math.cos(r) * s;
+      pivot.style.transform = `perspective(${persp}px) rotateX(${theta.toFixed(3)}deg)`;
+    } else {
+      pivot.style.transform = '';
+    }
+    const y = snap(-riseDist * p - drop);
+    stage.style.transform = y ? `translateY(${y}px)` : '';
+  }
+  const wantPivot = () => desktop.matches && !reduce.matches;
+  // Start laid back right away (the lanes fade in on top of it), before the scroll code arrives.
+  if (wantPivot()) pose(0);
 
   // Lay the board: lanes settle in from the center outward, evenly on both sides.
   if (desktop.matches) {
@@ -362,37 +400,45 @@ export function initLivingBoard() {
       const { desk, motion } = ctx.conditions as { desk: boolean; motion: boolean };
       if (!desk || !motion) return;
       const mastH = () => document.querySelector<HTMLElement>('[data-mast]')?.offsetHeight ?? 72;
-      // Whole device pixels only, so the board's text is never resampled between pixels.
-      const crisp = gsap.utils.unitize((v: number) => { const d = window.devicePixelRatio || 1; return Math.round(v * d) / d; });
-      const tl = gsap.timeline({
-        scrollTrigger: { trigger: hero, start: () => `top ${mastH()}px`, end: '+=70%', scrub: 0.6, pin: true, anticipatePin: 1, invalidateOnRefresh: true },
-      });
       // Where the board comes to rest. If the whole board plus its hint pill fits, the pair sits
       // centered on the screen, pill just under the board. If not, the board stops 24px under the
       // masthead and its lower edge fades off the bottom, with the pill floating over it.
       const endEl = root.querySelector<HTMLElement>('[data-end]')!;
-      const restTop = () => {
+      const measure = () => {
+        fitBoard();
         const avail = window.innerHeight - mastH();
-        const boardH = plane.getBoundingClientRect().height;
-        const group = boardH + 16 + (endEl.offsetHeight || 48);
-        if (group + 48 > avail) { endEl.classList.remove('is-docked'); return 24; }
-        const top = Math.round((avail - group) / 2);
         const lbTop = root.getBoundingClientRect().top - hero.getBoundingClientRect().top;
-        endEl.style.setProperty('--end-top', `${Math.round(top + boardH + 16 - lbTop)}px`);
-        endEl.classList.add('is-docked');
-        return top;
+        const group = boardH + 16 + (endEl.offsetHeight || 48);
+        let top = 24;
+        if (group + 48 <= avail) {
+          top = Math.round((avail - group) / 2);
+          endEl.style.setProperty('--end-top', `${Math.round(top + boardH + 16 - lbTop)}px`);
+          endEl.classList.add('is-docked');
+        } else {
+          endEl.classList.remove('is-docked');
+        }
+        riseDist = lbTop - top;
       };
-      // Copy and feed clear out first; the board rises, level, and settles.
+      measure();
+      const drive = { p: 0 };
+      const tl = gsap.timeline({
+        scrollTrigger: {
+          trigger: hero, start: () => `top ${mastH()}px`, end: '+=70%', scrub: 0.6, pin: true, anticipatePin: 1, invalidateOnRefresh: true,
+          onRefresh: () => { measure(); pose(drive.p); },
+        },
+      });
+      // Copy and feed clear out first; the board pivots up flat, rises and settles.
       tl.to(hero.querySelector('.hero-copy'), { autoAlpha: 0, y: -70, duration: 0.32, ease: 'power1.in' }, 0)
         .to(hero.querySelector('.hero-feed'), { autoAlpha: 0, y: -40, duration: 0.32, ease: 'power1.in' }, 0)
-        .to(stage, { y: () => -(root.getBoundingClientRect().top - hero.getBoundingClientRect().top - restTop()), duration: 1, ease: 'none', modifiers: { y: crisp } }, 0)
-        .to(root.querySelector('[data-end]'), { autoAlpha: 1, duration: 0.2, ease: 'none' }, 0.8);
-      return () => { tl.scrollTrigger?.kill(); tl.kill(); };
+        .to(drive, { p: 1, duration: 1, ease: 'none', onUpdate: () => pose(drive.p) }, 0)
+        .to(endEl, { autoAlpha: 1, duration: 0.2, ease: 'none' }, 0.8);
+      pose(drive.p);
+      return () => { tl.scrollTrigger?.kill(); tl.kill(); pivot.style.transform = ''; stage.style.transform = ''; };
     });
   }
-  const wantScene = () => desktop.matches && !reduce.matches;
   let sceneLoaded = false;
-  const loadScene = () => { if (!sceneLoaded && wantScene()) { sceneLoaded = true; scrollScene(); } };
+  // If the scroll code can't load, lay the board flat rather than leave it tilted.
+  const loadScene = () => { if (!sceneLoaded && wantPivot()) { sceneLoaded = true; scrollScene().catch(() => { pivot.style.transform = ''; stage.style.transform = ''; }); } };
   if (document.readyState === 'complete') setTimeout(loadScene, 0);
   else window.addEventListener('load', () => setTimeout(loadScene, 0), { once: true });
   desktop.addEventListener('change', loadScene);

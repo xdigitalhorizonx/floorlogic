@@ -35,6 +35,7 @@ const state = JSON.stringify({ leads: onBoard, incoming: incomingLeads, reps, co
   <div class="lb" data-board role="region" aria-label="Try it: FloorLogic's lead board with sample leads" aria-describedby="lb-help">
     <p id="lb-help" class="sr-only">A working copy of the FloorLogic lead board with fictional sample leads. Use the buttons on each card, or focus a card and press the left and right arrow keys to move it between stages. Moving a lead to Approved creates its work order and invoice, like the real app.</p>
     <div class="lb-stage" data-stage>
+      <div class="lb-pivot" data-pivot>
       <div class="lb-plane" data-plane>
         {lanes.map((st) => (
           <div class="lb-lane" data-lane={st} style={`--c:${LEAD_COLORS[st]}`}>
@@ -45,6 +46,7 @@ const state = JSON.stringify({ leads: onBoard, incoming: incomingLeads, reps, co
             </div>
           </div>
         ))}
+      </div>
       </div>
     </div>
     <div class="lb-end" data-end>
@@ -68,6 +70,19 @@ const state = JSON.stringify({ leads: onBoard, incoming: incomingLeads, reps, co
   /* Owner 2026-10-14: level, symmetric, crisp. Blues centered and a touch stronger. */
   .hero { position: relative; isolation: isolate; overflow: clip; min-height: max(640px, calc(100svh - 72px));
     background: radial-gradient(1500px 640px at 50% 0%, var(--glow), transparent 72%), linear-gradient(180deg, var(--ice-200), var(--ice-100) 48%, var(--ice-50) 82%, var(--white)); }
+  /* Background: a bright, empty room with a new plank floor, mirrored so it is exactly symmetric
+     (tools/hero-photo). A light-blue wash keeps the copy readable; the board lies on its floor. */
+  .hero::before { content: ''; position: absolute; z-index: 0; inset: 0; pointer-events: none;
+    --wash: linear-gradient(180deg, rgba(226,237,250,.56) 0%, rgba(231,240,251,.46) 42%, rgba(238,245,253,.5) 72%, rgba(255,255,255,.92) 100%);
+    background: var(--wash), url(/img/hero-room-2400.webp) 50% 0 / cover no-repeat;
+    background-image: var(--wash), image-set(url(/img/hero-room-2400.webp) 1x, url(/img/hero-room-3144.webp) 2x); }
+  @media (min-width: 1921px) { .hero::before { background-image: var(--wash), url(/img/hero-room-3144.webp); } }
+  @media (max-width: 899px) {
+    .hero::before { inset: 0 0 auto 0; height: 720px;
+      --wash: linear-gradient(180deg, rgba(226,237,250,.66) 0%, rgba(233,241,251,.6) 50%, rgba(240,246,253,.66) 100%);
+      background-image: var(--wash), url(/img/hero-room-m.webp);
+      -webkit-mask-image: linear-gradient(180deg, #000 72%, transparent); mask-image: linear-gradient(180deg, #000 72%, transparent); }
+  }
   .hero-copy { position: relative; z-index: 3; width: min(100% - 2 * var(--gutter), 1240px); margin-inline: auto; padding-top: clamp(24px, 4.5vh, 56px); }
   @media (min-width: 1024px) { .hero-copy > :not(h1):not(.eyebrow) { max-width: min(640px, calc(100% - 400px)); } }
   @media (max-width: 1023px) {
@@ -91,12 +106,15 @@ const state = JSON.stringify({ leads: onBoard, incoming: incomingLeads, reps, co
   }
 
   /* ---------------- Living board ----------------
-     Flat and front-on, drawn at the app's real size (lanes 240–280px, like the app). Narrow
-     screens shrink it with CSS zoom, which re-lays out the text instead of stretching pixels,
-     so it stays sharp at every size. Nothing here is rotated, skewed or scaled up. */
+     Drawn at the app's real size (lanes 240–280px, like the app). Narrow screens shrink it with
+     CSS zoom, which re-lays out the text instead of stretching pixels. On desktop it starts laid
+     back like a floor and pivots up flat as you scroll (symmetric, never scaled above 1). */
   .lb { position: relative; z-index: 2; height: var(--lb-h, 520px); margin-top: clamp(20px, 3.5vh, 44px); clip-path: inset(-300vh -50vw 0 -50vw); }
   .lb::after { content: ''; position: absolute; z-index: 4; left: 0; right: 0; bottom: 0; height: clamp(56px, 10vh, 112px); pointer-events: none; background: linear-gradient(180deg, rgba(255,255,255,0), var(--white)); }
   .lb-stage { position: absolute; inset: 0; display: flex; justify-content: center; align-items: flex-start; }
+  /* Desktop scroll pivot hinges on the board's bottom edge: the far edge leans away, nothing ever
+     comes closer than true size, so no part is ever drawn bigger than its pixels (no blur). */
+  .lb-pivot { flex: none; transform-origin: 50% 100%; }
   .lb-plane { --z: 1; zoom: var(--z); flex: none; position: relative; width: var(--pw, min(1476px, calc(100vw - 2 * var(--gutter))));
     display: grid; grid-template-columns: repeat(5, minmax(0, 1fr)); gap: 12px; padding: 14px;
     background: var(--app-bg); border-radius: 16px;
@@ -186,6 +204,7 @@ const state = JSON.stringify({ leads: onBoard, incoming: incomingLeads, reps, co
     .lb::after { display: none; }
     .lb-stage { position: relative; display: block; overflow-x: auto; scroll-snap-type: x mandatory; -webkit-overflow-scrolling: touch; padding: 0 var(--gutter) 12px; scrollbar-width: none; }
     .lb-stage::-webkit-scrollbar { display: none; }
+    .lb-pivot { display: contents; }
     .lb-plane { zoom: 1; width: max-content; grid-template-columns: repeat(5, 78vw); padding: 10px; gap: 10px; box-shadow: 0 0 0 1px rgba(2,49,91,.07), 0 30px 50px -30px rgba(2,49,91,.35); }
     .lb-lane { min-height: 0; scroll-snap-align: center; }
     .kc { cursor: default; touch-action: auto; }

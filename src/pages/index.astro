@@ -17,6 +17,8 @@ const title = 'FloorLogic — Flooring Business Software with a Free Trial';
 const description = 'Flooring business management software for dealers and installers: quotes in cartons and roll goods, online approval, work orders, invoices and job costing. Prices on the page. 14-day free trial, no credit card.';
 ---
 <BaseLayout title={title} description={description} path="/" schema={[faqNode('/', HOME_FAQ), videoNode('/')]}>
+  <link slot="head" rel="preload" as="image" href="/img/hero-room-2400.webp" imagesrcset="/img/hero-room-2400.webp 1x, /img/hero-room-3144.webp 2x" media="(min-width: 900px) and (max-width: 1920px)" type="image/webp" fetchpriority="high" />
+  <link slot="head" rel="preload" as="image" href="/img/hero-room-m.webp" media="(max-width: 899px)" type="image/webp" fetchpriority="high" />
   <HeroBoard />
   <ProofStrip />
   <VideoSection />
