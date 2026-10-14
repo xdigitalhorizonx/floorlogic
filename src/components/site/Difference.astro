@@ -11,9 +11,6 @@ const rows: { label: string; fl: Cell; floor: Cell; generic: Cell }[] = [
 const fmt = (iso: string) => new Date(`${iso}T12:00:00`).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' });
 ---
 <section class="section band-white diff" id="different" aria-labelledby="diff-title">
-  <div class="planes br" aria-hidden="true">
-    <svg viewBox="0 0 640 400"><polygon points="320,60 640,220 320,380 0,220" fill="#02315b" opacity=".04"/><polygon points="320,120 520,220 320,320 120,220" fill="#1679e2" opacity=".05"/></svg>
-  </div>
   <div class="container">
     <div class="diff-head reveal">
       <p class="eyebrow">What’s different</p>
@@ -60,6 +57,7 @@ const fmt = (iso: string) => new Date(`${iso}T12:00:00`).toLocaleDateString('en-
   .dt-mark { flex: none; width: 24px; height: 24px; border-radius: 50%; display: grid; place-items: center; font-size: 13px; font-weight: 800; }
   .yes .dt-mark { background: #d1fae5; color: #047857; }
   .no .dt-mark { background: var(--grey-100); color: var(--grey-600); }
+  .dt-cell:not(.yes):not(.no):not(.dt-fl) .dt-mark { background: var(--ice-200); color: var(--navy-700); }
   .diff-note { margin-top: 16px; font-size: var(--fs-small); color: var(--grey-600); max-width: 90ch; }
   @media (max-width: 860px) {
     .dt-headrow { display: none; }

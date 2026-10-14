@@ -94,7 +94,7 @@ export function initLivingBoard() {
     const animate = opts.animate !== false && !reduce.matches;
     if (old) old.replaceWith(fresh);
     target.prepend(fresh);
-    // Local-space entrance only: FLIP across a 3D-tilted parent would jump.
+    // Local entrance: the card settles into its lane.
     if (animate) anim(fresh, [{ transform: 'translateY(-18px) scale(0.97)', opacity: 0 }, { transform: 'none', opacity: 1 }], { duration: 500 });
     counts();
     if (opts.focus) fresh.focus({ preventScroll: true });
@@ -218,14 +218,14 @@ export function initLivingBoard() {
     }
   });
 
-  // Drag: lift the card off the tilted floor into a flat, readable "ghost", drop on a lane.
-  let drag: null | { id: string; el: HTMLElement; ghost: HTMLElement; sx: number; sy: number; started: boolean; over: HTMLElement | null; pid: number } = null;
+  // Drag: lift the card into a level, full-size "ghost" that follows the pointer; drop on a lane.
+  let drag: null | { id: string; el: HTMLElement; ghost: HTMLElement; gw: number; sx: number; sy: number; started: boolean; over: HTMLElement | null; pid: number } = null;
   plane.addEventListener('pointerdown', (e) => {
     if (!desktop.matches || e.button !== 0) return;
     const el = (e.target as HTMLElement).closest<HTMLElement>('.kc');
     if (!el || (e.target as HTMLElement).closest('button')) return;
     userTouched();
-    drag = { id: el.dataset.id!, el, ghost: el, sx: e.clientX, sy: e.clientY, started: false, over: null, pid: e.pointerId };
+    drag = { id: el.dataset.id!, el, ghost: el, gw: 260, sx: e.clientX, sy: e.clientY, started: false, over: null, pid: e.pointerId };
   });
   window.addEventListener('pointermove', (e) => {
     if (!drag || e.pointerId !== drag.pid) return;
@@ -236,16 +236,19 @@ export function initLivingBoard() {
       const ghost = drag.el.cloneNode(true) as HTMLElement;
       ghost.classList.add('lb-ghost');
       ghost.removeAttribute('tabindex');
-      ghost.style.left = `${e.clientX - 130}px`;
-      ghost.style.top = `${e.clientY - 40}px`;
+      // The ghost lives outside the (possibly zoomed) board, at the card's true 1:1 size.
+      drag.gw = Math.round(r.width / zoom);
+      ghost.style.setProperty('--gw', `${drag.gw}px`);
+      ghost.style.left = `${Math.round(e.clientX - drag.gw / 2)}px`;
+      ghost.style.top = `${Math.round(e.clientY - 40)}px`;
       document.body.appendChild(ghost);
       drag.ghost = ghost;
       drag.el.classList.add('is-lifted');
-      anim(ghost, [{ transform: `scale(${Math.max(0.5, r.width / 260)}) rotate(-4deg)` }, { transform: 'scale(1.04) rotate(-2deg)' }], { duration: 250, fill: 'forwards' });
+      if (zoom < 1) anim(ghost, [{ transform: `scale(${zoom})` }, { transform: 'none' }], { duration: 220 });
       document.body.style.cursor = 'grabbing';
     }
-    drag.ghost.style.left = `${e.clientX - 130}px`;
-    drag.ghost.style.top = `${e.clientY - 40}px`;
+    drag.ghost.style.left = `${Math.round(e.clientX - drag.gw / 2)}px`;
+    drag.ghost.style.top = `${Math.round(e.clientY - 40)}px`;
     const lane = document.elementsFromPoint(e.clientX, e.clientY).map((n) => (n as HTMLElement).closest?.('[data-lane]') as HTMLElement | null).find(Boolean) ?? null;
     if (lane !== drag.over) { drag.over?.classList.remove('is-over'); lane?.classList.add('is-over'); drag.over = lane; }
   });
@@ -264,7 +267,7 @@ export function initLivingBoard() {
     else {
       const r = d.el.getBoundingClientRect();
       const g = d.ghost.getBoundingClientRect();
-      const ret = anim(d.ghost, [{ transform: 'scale(1.04) rotate(-2deg)', opacity: 1 }, { transform: `translate(${r.left - g.left}px, ${r.top - g.top}px) scale(${r.width / 260})`, opacity: 0.4 }], { duration: 300, easing: 'ease-in', fill: 'forwards' });
+      const ret = anim(d.ghost, [{ transform: 'none', opacity: 1 }, { transform: `translate(${r.left - g.left}px, ${r.top - g.top}px) scale(${r.width / g.width})`, opacity: 0.4 }], { duration: 300, easing: 'ease-in', fill: 'forwards' });
       if (ret) ret.onfinish = back; else back();
     }
     if (to) track('board_drag', { to });
@@ -311,27 +314,43 @@ export function initLivingBoard() {
   if (reduce.matches) pauseBtns.forEach((b) => { b.hidden = true; });
   new IntersectionObserver(([en]) => { visible = en.isIntersecting; }, { threshold: 0.15 }).observe(root);
 
-  // ---------- desktop scroll scene: the floor tilts up to meet you ----------
+  // ---------- desktop: size the board, then let it rise to meet you on scroll ----------
+  // Lanes match the app (240-280px wide, 12px apart). Below that, CSS zoom shrinks the whole
+  // board evenly; zoom re-lays out text rather than scaling pixels, so it never goes soft.
+  const LANE_MIN = 240, LANE_MAX = 280, GAP = 12, PAD = 14;
+  const BOARD_MIN = 5 * LANE_MIN + 4 * GAP + 2 * PAD;
+  const BOARD_MAX = 5 * LANE_MAX + 4 * GAP + 2 * PAD;
+  let zoom = 1;
   function fitBoard() {
-    if (!desktop.matches) { root.style.removeProperty('--lb-h'); return; }
-    // Fill the rest of the first screen (not the hero's own height — that includes this box).
+    if (!desktop.matches) {
+      zoom = 1;
+      root.style.removeProperty('--lb-h');
+      for (const k of ['--z', '--pw']) plane.style.removeProperty(k);
+      return;
+    }
+    // Fill exactly the rest of the first screen (not the hero's own height — that includes this
+    // box), so the pinned hero ends at the screen's bottom edge and the fade + hint stay in view.
     const mast = document.querySelector<HTMLElement>('[data-mast]')?.offsetHeight ?? 72;
     const top = root.getBoundingClientRect().top - hero.getBoundingClientRect().top;
-    root.style.setProperty('--lb-h', `${Math.max(320, window.innerHeight - mast - top)}px`);
+    root.style.setProperty('--lb-h', `${Math.max(160, window.innerHeight - mast - top)}px`);
     // Desktop: the activity feed sits beside the paragraph + form, just under the headline.
     const h1 = hero.querySelector('h1');
     const feed = hero.querySelector<HTMLElement>('.hero-feed');
     if (h1 && feed) feed.style.setProperty('--feed-top', `${Math.round(h1.getBoundingClientRect().bottom - hero.getBoundingClientRect().top + 22)}px`);
-    // Keep the floor wider than the window on big screens so it always bleeds off both edges.
-    plane.style.setProperty('--base', String(Math.min(1.5, Math.max(0.62, window.innerWidth / 1400))));
+    // Same side margin as the page gutter; centered; never wider than the app's own board.
+    const gutter = Math.min(40, Math.max(16, 6.4 + 0.026 * window.innerWidth));
+    const avail = stage.clientWidth - 2 * gutter;
+    zoom = Math.max(0.6, Math.min(1, avail / BOARD_MIN));
+    const width = Math.floor(Math.min(BOARD_MAX, avail / zoom));
+    plane.style.setProperty('--z', zoom.toFixed(4));
+    plane.style.setProperty('--pw', `${width}px`);
   }
   fitBoard();
   window.addEventListener('resize', fitBoard);
 
-  // Lay the floor: lanes click in like planks (desktop, motion allowed).
+  // Lay the board: lanes settle in from the center outward, evenly on both sides.
   if (desktop.matches) {
-    plane.querySelectorAll('.lb-lane').forEach((lane, i) => anim(lane, [{ transform: 'translateY(60px)', opacity: 0 }, { transform: 'none', opacity: 1 }], { duration: 700, delay: 150 + i * 80, fill: 'backwards' }));
-    if (reduce.matches) { plane.style.setProperty('--tilt', '30deg'); plane.style.setProperty('--twist', '-3deg'); }
+    plane.querySelectorAll('.lb-lane').forEach((lane, i) => anim(lane, [{ transform: 'translateY(48px)', opacity: 0 }, { transform: 'none', opacity: 1 }], { duration: 700, delay: 150 + Math.abs(i - 2) * 110, fill: 'backwards' }));
   }
 
   // The scroll scene needs GSAP + ScrollTrigger: desktop only, loaded after the page has painted.
@@ -342,14 +361,31 @@ export function initLivingBoard() {
     mm.add({ desk: '(min-width: 900px)', motion: '(prefers-reduced-motion: no-preference)' }, (ctx) => {
       const { desk, motion } = ctx.conditions as { desk: boolean; motion: boolean };
       if (!desk || !motion) return;
+      const mastH = () => document.querySelector<HTMLElement>('[data-mast]')?.offsetHeight ?? 72;
+      // Whole device pixels only, so the board's text is never resampled between pixels.
+      const crisp = gsap.utils.unitize((v: number) => { const d = window.devicePixelRatio || 1; return Math.round(v * d) / d; });
       const tl = gsap.timeline({
-        scrollTrigger: { trigger: hero, start: () => `top ${document.querySelector<HTMLElement>('[data-mast]')?.offsetHeight ?? 72}px`, end: '+=70%', scrub: 0.6, pin: true, anticipatePin: 1, invalidateOnRefresh: true },
+        scrollTrigger: { trigger: hero, start: () => `top ${mastH()}px`, end: '+=70%', scrub: 0.6, pin: true, anticipatePin: 1, invalidateOnRefresh: true },
       });
-      // Copy and feed clear out first, then the floor tilts up and rises to fill the screen.
+      // Where the board comes to rest. If the whole board plus its hint pill fits, the pair sits
+      // centered on the screen, pill just under the board. If not, the board stops 24px under the
+      // masthead and its lower edge fades off the bottom, with the pill floating over it.
+      const endEl = root.querySelector<HTMLElement>('[data-end]')!;
+      const restTop = () => {
+        const avail = window.innerHeight - mastH();
+        const boardH = plane.getBoundingClientRect().height;
+        const group = boardH + 16 + (endEl.offsetHeight || 48);
+        if (group + 48 > avail) { endEl.classList.remove('is-docked'); return 24; }
+        const top = Math.round((avail - group) / 2);
+        const lbTop = root.getBoundingClientRect().top - hero.getBoundingClientRect().top;
+        endEl.style.setProperty('--end-top', `${Math.round(top + boardH + 16 - lbTop)}px`);
+        endEl.classList.add('is-docked');
+        return top;
+      };
+      // Copy and feed clear out first; the board rises, level, and settles.
       tl.to(hero.querySelector('.hero-copy'), { autoAlpha: 0, y: -70, duration: 0.32, ease: 'power1.in' }, 0)
         .to(hero.querySelector('.hero-feed'), { autoAlpha: 0, y: -40, duration: 0.32, ease: 'power1.in' }, 0)
-        .to(plane, { '--tilt': '18deg', '--twist': '-1.5deg', '--scale': 0.86, duration: 1, ease: 'none' }, 0)
-        .to(stage, { y: () => -Math.min(window.innerHeight * 0.5, root.getBoundingClientRect().top - hero.getBoundingClientRect().top - 24), duration: 1, ease: 'none' }, 0)
+        .to(stage, { y: () => -(root.getBoundingClientRect().top - hero.getBoundingClientRect().top - restTop()), duration: 1, ease: 'none', modifiers: { y: crisp } }, 0)
         .to(root.querySelector('[data-end]'), { autoAlpha: 1, duration: 0.2, ease: 'none' }, 0.8);
       return () => { tl.scrollTrigger?.kill(); tl.kill(); };
     });

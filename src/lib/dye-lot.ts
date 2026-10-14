@@ -4,8 +4,8 @@
 
 const LOTS = [
   { id: '4471-A', vars: {} as Record<string, string> },
-  { id: '4471-B', vars: { '--blue': '#3550c4', '--blue-hover': '#2a41a3', '--blue-ink': '#2f48b8', '--dot': '#4a63e0', '--ice-100': '#f4f5fe', '--ice-200': '#e9ebfb', '--ice-300': '#d6dbf6', '--navy-700': '#26408f' } },
-  { id: '4471-C', vars: { '--blue': '#0b6f8f', '--blue-hover': '#095a74', '--blue-ink': '#0a6582', '--dot': '#0e86ab', '--ice-100': '#f1f8fa', '--ice-200': '#e3f1f5', '--ice-300': '#cbe5ec', '--navy-700': '#0f5870' } },
+  { id: '4471-B', vars: { '--blue': '#3550c4', '--blue-hover': '#2a41a3', '--blue-ink': '#2f48b8', '--dot': '#4a63e0', '--ice-50': '#f6f7fe', '--ice-100': '#eef0fd', '--ice-200': '#e3e6fa', '--ice-300': '#d6dbf6', '--glow': '#d9ddf8', '--navy-700': '#26408f' } },
+  { id: '4471-C', vars: { '--blue': '#0b6f8f', '--blue-hover': '#095a74', '--blue-ink': '#0a6582', '--dot': '#0e86ab', '--ice-50': '#f5fafb', '--ice-100': '#eaf5f8', '--ice-200': '#dbedf2', '--ice-300': '#cbe5ec', '--glow': '#d2e9ef', '--navy-700': '#0f5870' } },
 ];
 const SEQ_KONAMI = ['ArrowUp', 'ArrowUp', 'ArrowDown', 'ArrowDown', 'ArrowLeft', 'ArrowRight', 'ArrowLeft', 'ArrowRight', 'b', 'a'];
 

@@ -59,7 +59,7 @@ const money = (n: number) => `$${n.toLocaleString('en-US')}`;
   .tier .btn { margin-top: 20px; width: 100%; }
   .tier-list { list-style: none; margin: 22px 0 0; padding: 18px 0 0; border-top: 1px solid var(--grey-100); display: grid; gap: 10px; }
   .tier-list li { display: grid; grid-template-columns: 18px 1fr; gap: 10px; color: var(--grey-700); line-height: 1.4; }
-  .tier-list li::before { content: ''; width: 14px; height: 7px; margin-top: 6px; background: linear-gradient(135deg, var(--navy-900), var(--navy-700)); clip-path: polygon(0 50%, 50% 0, 100% 0, 50% 100%, 0 100%); }
+  .tier-list li::before { content: ''; width: 14px; height: 8px; margin-top: 7px; background: linear-gradient(180deg, var(--navy-700), var(--navy-900)); clip-path: polygon(50% 0, 100% 50%, 50% 100%, 0 50%); }
   .tier-list li:first-child { font-weight: 700; color: var(--navy-900); }
   .plans-note { margin-top: 18px; font-size: var(--fs-small); color: var(--grey-600); }
   @media (max-width: 960px) { .tiers { grid-template-columns: 1fr; max-width: 520px; } .tier-blurb { min-height: 0; } }

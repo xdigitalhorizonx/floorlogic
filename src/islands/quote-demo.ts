@@ -477,7 +477,7 @@ export function initQuoteDemo(): void {
       fx.hide = (els) => { gsap.set(els, { autoAlpha: 0 }); };
       fx.stamp = (el) => {
         gsap.timeline()
-          .fromTo(el, { scale: 2.6, rotation: -18, autoAlpha: 0 }, { scale: 1, rotation: -4, autoAlpha: 0.85, duration: 0.36, ease: 'power4.in' })
+          .fromTo(el, { scale: 2.6, autoAlpha: 0 }, { scale: 1, autoAlpha: 0.85, duration: 0.36, ease: 'power4.in' })
           .fromTo(paper, { y: 0 }, { y: 4, duration: 0.07, yoyo: true, repeat: 1, ease: 'power1.out' })
           .set([el, paper], { clearProps: 'transform,opacity,visibility' });
       };

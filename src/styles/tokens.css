@@ -65,10 +65,12 @@
 
   /* Grounds */
   --white: #ffffff;
-  --ice-50: #f8fbfe;
-  --ice-100: #f3f8fd;
-  --ice-200: #e8f1fb;
-  --ice-300: #d5e5f6;
+  /* Owner 2026-10-14: blues a touch more visible, still light. */
+  --ice-50: #f4f8fe;
+  --ice-100: #edf4fd;
+  --ice-200: #e2edfa;
+  --ice-300: #d0e2f6;
+  --glow: #d3e5f9;       /* soft background glow, always centered */
   --sky: #a9cbee;
   --grey-50: #f6f7f9;
   --grey-100: #eef0f3;
