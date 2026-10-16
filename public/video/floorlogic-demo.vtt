@@ -6,11 +6,11 @@ FloorLogic demo — descriptions. The real FloorLogic app, filmed with fictional
 the real clicks, taps and dates made while filming. Written by tools/video/comp/publish-meta.mjs.
 
 1
-00:00:00.300 --> 00:00:03.230
-Pick a survey date — the lead moves itself. On the lead pipeline, a site-survey date (10/16/2026) is typed on Hannah Brooks's card in New; the app moves the lead to Site Survey Scheduled and adds a survey task. 1 click · 1 date.
+00:00:00.300 --> 00:00:02.830
+Pick a survey date — the lead moves itself. On the Leads list, new lead Hannah Brooks is open in the side panel. A site-survey date (10/16/2026) is typed in the panel; the app moves the lead to Site Survey Scheduled — the panel's stage, the lead's status in the list and the stage counts below (New 2, Site Survey Scheduled 4) — and adds a survey task. 1 click · 1 date.
 
 2
-00:00:03.300 --> 00:00:05.730
+00:00:03.800 --> 00:00:05.730
 And it’s on your phone. The FloorLogic phone app's Today screen lists Hannah Brooks under Surveys coming up.
 
 3

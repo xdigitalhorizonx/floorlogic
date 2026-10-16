@@ -54,11 +54,11 @@ Other tools: `node capture/screens.mjs` (reference screenshots of every key scre
 `out/screens/` + `INDEX.md`), `node harness/devshot.mjs leads lead-detail/ld-16 /mobile --phone`
 (quick screenshots of any route into `out/dev/`).
 
-## The film (cut of 2026-10-16, 45.4 s, 6 chapters)
+## The film (cut of 2026-10-16, 45.4 s, 6 chapters; chapter 1 re-filmed on the List View the same day)
 | Time | Chapter (site chip) | What is filmed (all real input in the current app) | Caption |
 |---|---|---|---|
-| 0.0–3.0 | 0:00 Leads move themselves | Pipeline tab: a survey date typed on Hannah Brooks's New card → the app moves her to Site Survey Scheduled (+ survey task) | 01 Pick a survey date — the lead moves itself · 1 click · 1 date |
-| 3.0–5.6 | (same) | the /mobile phone app's Today screen: Surveys coming up lists her | 01 And it's on your phone |
+| 0.0–3.55 | 0:00 Leads move themselves | Leads List View (what `#leads` opens): Hannah Brooks (LD-051, New) in the side panel; a survey date typed in the panel's Site Survey Date → the app moves her to Site Survey Scheduled: the panel's stage, her row's status and the stage cards below (New 3 → 2, Site Survey Scheduled 3 → 4) (+ survey task) | 01 Pick a survey date — the lead moves itself · 1 click · 1 date |
+| 3.55–5.6 | (same) | the /mobile phone app's Today screen: Surveys coming up lists her | 01 And it's on your phone |
 | 5.6–15.6 | 0:06 Quote the job | QT-330 draft: Mark as Pick One, Show Job Area, 912, Apply → "39 Cartons = 927.03 SqFt"; scroll to the optional carpet stairs (19.33 SqYd → 14' 6" × 12' roll); QUOTE TOTAL card (Tax 8.265%, $7,571.93); Privacy Mode | 02 Type the area — whole cartons, carpet cuts and tax figured for you · 7 clicks · typed 912 |
 | 15.6–23.6 | 0:16 Customer approves | q.html on a phone: tap Better, "Add to my quote" (stairs), total $8,624.70, ✓ Approve Quote → toast → APPROVED (level) | 03 They pick Better, add the stairs and approve — from their phone · 3 taps |
 | 23.6–26.1 | 0:24 Work order & invoice | the office: 🔨 Create WO & Invoice → the app's confirm → Create Work Order & Invoice | 04 One click makes the work order and invoice · 2 clicks |
@@ -67,7 +67,7 @@ Other tools: `node capture/screens.mjs` (reference screenshots of every key scre
 | 38.6–42.55 | 0:39 Know the profit | Job Costing → WO-330: metric strip (margin 38.0% before commission, profit $2,862.25 after) | 06 Estimate vs actual, margin and profit — ready when the job is · 1 click |
 | 42.55–45.4 | — | end card: logo, "Start your free 14-day trial", "No credit card · No setup fee", floorlogic.vercel.app | — |
 
-Story clock (harness time, America/Los_Angeles): Wed Oct 14 (board, phone app, quote) → Thu Oct 15
+Story clock (harness time, America/Los_Angeles): Wed Oct 14 (Leads list, phone app, quote) → Thu Oct 15
 (customer approves 12:20, office converts 13:05) → Fri Oct 16 (order + schedule) → Fri Oct 23
 (balance by check) → Mon Oct 26 (job costing). Off camera, between scenes, rows are written from
 the dataset into the offline store while no app tab is open: the quote's Save / Mark Sent / customer
@@ -80,14 +80,17 @@ How it is built:
   a drawn status bar. Typing is a still per key. Scrolls are captured frame by frame.
 - **Camera** (`comp/engine.js`): zoom ≤ each still's pixel density (2.0 desktop), shots framed from
   the measured boxes in the manifest; left edges sit on the content (not the sidebar), right edges in
-  gaps between buttons; document screens share one framing so their cross-fades line up.
+  gaps between buttons; document screens share one framing so their cross-fades line up. Chapter 1
+  goes wide → close → wide: the whole List View under its stats line (the cards' edges 12 px in on
+  both sides), in to the panel at ×1.82 (left edge as far from the phone column as the panel card is
+  from the window's edge; the filter row's Rep box shows its last few px there), back out.
 - **Counts** in the caption chips come only from the actions the capture recorded.
 - **Captions / chapters**: written in `comp/timeline.js` (texts) and exported to the `.vtt` and
   `src/data/video.ts` by `publish-meta.mjs`, so they always match the burned-in captions.
 - **Frame QA** (every rendered frame): no image drawn above its captured pixels, nothing on the stage
   turned off 0/90/180°, no keep-out box in frame (margin 6 css px).
 - **Keep-out boxes** (recorded with each still by `capture/lib.mjs`): any `$-0.00` text (automatic);
-  the board's stats line (0 won · Win Rate 0%); the quote's totals card in the convert scene.
+  the Leads stats line (0 won · Win Rate 0%); the quote's totals card in the convert scene.
 
 Harness-side measures the film relies on (all documented in code, none changes app logic):
 - `transformQ` levels q.html's APPROVED stamp (the app turns it −8°, −4° under 760 px).
@@ -109,6 +112,10 @@ Found in the app while filming (reported, worked around by framing only):
   so the conversion's toast (which sits on that card) is not filmed; the confirm dialog names WO-330
   and IN-330 instead.
 - The Order Materials window prefills PO numbers WO-330-1…4; the POs it writes are JPO-1193…1196.
+- The survey task the date makes shows one day late in the List View panel's Open Tasks ("Site
+  survey: Hannah Brooks · Oct 17" for an Oct 16 survey): `setLeadSurveyDate` stores the due time as
+  `new Date(d+'T17:00:00').toISOString()` (5 PM Pacific = next day in UTC) and the panel prints the
+  first 10 characters. Open Tasks sits below every chapter-1 frame.
 
 ## What the harness serves (`harness/server.mjs`)
 - `/`, `/index.html` and `/mobile` → the exported index.html (the app switches to the phone app on
@@ -162,6 +169,10 @@ controls visible, every phone number on screen a fictional 555-01xx / 555-05xx, 
 ## Notes on the current app (vs the August film)
 - `#leads` opens the List View; the kanban is `#leads?leadView=pipeline`. A lead can't be dragged to
   Approved any more ("Approve the lead's quote…"); picking a survey date is what moves a New lead.
+  The List View selects its top row (the newest lead) on load; its panel's Site Survey Date runs the
+  same `setLeadSurveyDate` as the board's cards and redraws the whole list (row, panel, stage cards).
+  Hovered rows and stage-card buckets light up, so the capture rests the pointer in the content's
+  left margin before each still.
 - Approved quotes are NOT converted on load: press `#convert-approved-quote` ("Create WO &
   Invoice") then `#confirm-convert-quote` on the quote.
 - Order Materials for every line moves the WO straight to Ready to Schedule (not Materials

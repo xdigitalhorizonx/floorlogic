@@ -47,47 +47,69 @@
   const WIDE = (() => { const x0 = SIDEBAR, x1 = 1910, z = 1920 / (x1 - x0); return { cx: (x0 + x1) / 2, cy: 540 / z, z }; })();
 
   // ========================================================== 1 · LEADS (0 – 5.62)
-  // A survey date typed on a New card: the app moves the lead to Site Survey Scheduled.
-  // The board's stats line (0 won · win rate) stays out of frame: every shot keeps y >= 153.
+  // The Leads List View (what #leads opens): a site-survey date typed in the selected New lead's
+  // side panel; the app moves the lead to Site Survey Scheduled — the panel's stage, the lead's row
+  // and the stage cards below all follow. The stats line (0 won · win rate) stays out of frame:
+  // every shot keeps its top edge below it.
   const L = new Desktop({ css });
-  const b0 = st('leads', 'board'), bm = st('leads', 'moved');
+  const l0 = st('leads', 'list'), lm = st('leads', 'moved');
+  const f0 = l0.focus, fm = lm.focus, s1 = lm.onScreen;
+  if (!f0.quick || !f0.list || !f0.panel || !f0.phoneText || !fm.pill || !fm.onBtn || !fm.sssHead || !s1) throw new Error('leads stills: missing focus boxes (re-run capture/run.mjs)');
   const clickDate = act('leads', 'Survey date');
   const dateAct = acts('leads').find((x) => x.type === 'date');
+  const lead = SC.leads.lead;
   const cap1 = new Caption({ num: '01', label: 'Leads', date: day(SC.leads.day), text: 'Pick a survey date —<br>the lead moves itself',
-    describe: `On the lead pipeline, a site-survey date (${dateAct.text}) is typed on ${SC.leads.lead.name}'s card in New; the app moves the lead to Site Survey Scheduled and adds a survey task.` });
-  L.still(0, b0, 0);
-  gsap.set(L.layer, { opacity: 1 });                                        // first frame is the real board
-  L.camera(0, 0, 560, 520, 1.5);
-  L.camera(0.3, 1.0, 470, 475, 1.78);
+    describe: `On the Leads list, new lead ${lead.name} is open in the side panel. A site-survey date (${dateAct.text}) is typed in the panel; the app moves the lead to Site Survey Scheduled — the panel's stage, the lead's status in the list and the stage counts below (New ${s1.counts.new}, Site Survey Scheduled ${s1.counts.site_survey_scheduled}) — and adds a survey task.` });
+  // Wide: the whole List View below its stats line, the cards' outer edges 12 px in on both sides.
+  const koBottom = Math.max(...l0.keepOut.map((k) => k.y + k.h));
+  const WL = (() => {
+    const x0 = f0.quick.x - 12, x1 = f0.quick.x + f0.quick.w + 12;
+    const z = Math.max(W / (x1 - x0), H / (css.h - (koBottom + 8)));
+    return { cx: (x0 + x1) / 2, cy: css.h - H / z / 2, z };
+  })();
+  // Close: the panel (name, stage, its buttons, the survey date) beside the selected row. The left
+  // edge sits as far left of the phone column as the panel card sits in from the window's right
+  // edge; the top edge in the gap between the quick-add bar and the list.
+  const PZ = (() => {
+    const m = css.w - (f0.panel.x + f0.panel.w), x0 = f0.phoneText.x - m, z = Math.min(2.0, W / (css.w - x0));
+    const top = (f0.quick.y + f0.quick.h + f0.list.y) / 2;
+    return { cx: (x0 + css.w) / 2, cy: top + H / z / 2, z };
+  })();
+  L.still(0, l0, 0);
+  gsap.set(L.layer, { opacity: 1 });                                        // first frame is the real List View
+  L.camera(0, 0, WL.cx, WL.cy, WL.z);
+  L.camera(0.28, 0.7, PZ.cx, PZ.cy, PZ.z);                                  // in to the panel
   cap1.inAt(0.3);
-  L.cursorIn(0.55, clickDate.x + 210, clickDate.y + 190);
-  L.move(0.6, 0.48, clickDate.x, clickDate.y);
-  L.click(1.1); cap1.count(1.1, ctr({ click: 1 }));
-  ['date-1', 'date-2', 'date-3', 'date-4'].forEach((nm, i) => L.still(1.22 + i * 0.11, st('leads', nm), 0));
-  L.still(1.72, bm, 0.16);                                                  // the board re-rendered: card moved
-  cap1.count(1.72, ctr({ click: 1, dates: 1 }));
-  const card = bm.focus.card;
-  L.camera(1.85, 0.75, SIDEBAR + 8 + 540, 480, 1.78);                         // left edge on the content, not the sidebar
-  L.move(1.9, 0.6, card.x + card.w * 0.62, card.y + card.h + 58);
-  L.ring(2.15, card, 0.9, 5);
-  L.cursorOut(2.55);
-  cap1.outAt(2.95);
-  L.hide(3.0, 0.35);
+  L.cursorIn(0.5, clickDate.x + 160, clickDate.y + 200);
+  L.move(0.55, 0.41, clickDate.x, clickDate.y);
+  L.click(0.98); cap1.count(0.98, ctr({ click: 1 }));
+  L.move(1.04, 0.55, clickDate.x + 120, clickDate.y + 170);                 // the hand leaves the mouse: the digits stay readable
+  ['date-1', 'date-2', 'date-3', 'date-4'].forEach((nm, i) => L.still(1.1 + i * 0.11, st('leads', nm), 0));
+  L.still(1.58, lm, 0.16);                                                  // the app re-drew the list: the lead moved
+  cap1.count(1.58, ctr({ click: 1, dates: 1 }));
+  L.cursorOut(1.62);
+  L.ring(1.74, fm.onBtn, 0.7, 4);                                           // the panel's stage: Site Survey Scheduled
+  cap1.outAt(2.55);
+  L.camera(2.5, 0.65, WL.cx, WL.cy, WL.z);                                  // back out: the row and the stage counts agree
+  L.ring(3.0, fm.pill, 0.55, 4);
+  L.ring(3.0, fm.sssHead, 0.55, 5);
+  L.hide(3.55, 0.35);
 
   // ---- the phone app (still chapter 1): its Today screen lists the new survey
   const mob = SC.mobile;
   const PA = new Phone({ cssW: mob.css.w, viewH: mob.css.h, barH: 47, x: 1190, y: 70, time: mob.clock.replace(/^0/, ''), barBg: '#f3f5f9', pageBg: '#f3f5f9' });
   const today = st('mobile', 'today');
   const cap1b = new Caption({ num: '01', label: 'Leads', date: day(mob.day), text: 'And it’s on<br>your phone', big: true,
-    describe: `The FloorLogic phone app's Today screen lists ${SC.leads.lead.name} under Surveys coming up.` });
-  PA.tall(3.0, today, 0); PA.scrollTo(3.0, 0, 0);
-  PA.show(3.05, 0.35);
-  tl.fromTo(PA.body, { y: 90 }, { y: 0, duration: 0.8, ease: 'flOut', immediateRender: false }, 3.05);
-  cap1b.inAt(3.3);
+    describe: `The FloorLogic phone app's Today screen lists ${lead.name} under Surveys coming up.` });
+  const tP = 3.55;
+  PA.tall(tP, today, 0); PA.scrollTo(tP, 0, 0);
+  PA.show(tP + 0.05, 0.35);
+  tl.fromTo(PA.body, { y: 90 }, { y: 0, duration: 0.8, ease: 'flOut', immediateRender: false }, tP + 0.05);
+  cap1b.inAt(tP + 0.25);
   const lr = today.focus.lead, sv = today.focus.surveys;
   const rowBox = { x: sv.x, y: lr.y, w: sv.w, h: lr.h };
-  PA.zoomTo(3.55, 1.0, 1.07, PA.centre, PA.centre.x, PA.centre.y);            // the whole phone stays in frame
-  PA.ring(4.05, rowBox, 1.25, 5);
+  PA.zoomTo(tP + 0.45, 0.9, 1.07, PA.centre, PA.centre.x, PA.centre.y);       // the whole phone stays in frame
+  PA.ring(tP + 0.85, rowBox, 0.95, 5);
   cap1b.outAt(5.45);
   PA.hide(5.62, 0.3);
 

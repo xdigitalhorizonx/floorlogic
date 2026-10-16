@@ -1,6 +1,6 @@
 // Film the CURRENT FloorLogic app (app-export/: demo origin/main index.html / q.html) offline,
 // scene by scene, for the ~45 s site video. Story (README "The film"):
-//   leads    Pipeline board: a survey date typed on a New card moves it to Site Survey Scheduled
+//   leads    Leads List View: a survey date typed in the New lead's side panel moves it to Site Survey Scheduled
 //   mobile   the /mobile phone app's Today screen lists that survey
 //   quote    QT-330: Pick One, job area 912 → whole cartons, carpet stairs, totals, Privacy Mode
 //   approve  the customer picks Better + the stairs and approves on a phone (q.html)
@@ -163,32 +163,77 @@ async function typeDate(page, sel, iso, label, { name, stillEach = true, focusSp
   return shots;
 }
 
-// ------------------------------------------------------------- scene: leads board
+// ------------------------------------------------------------- scene: leads (List View)
+// #leads opens the List View (the app's default since 2026-10-14): the list, the selected lead
+// worked in a side panel, the stage cards below. The panel's Site Survey Date is what moves a
+// New lead on — the same setLeadSurveyDate the Pipeline board's cards use.
 async function sceneLeads() {
-  // The stats line (won / lost / win rate) stays out of frame in every board still.
-  const keepOut = [{ text: 'Active Leads', closest: 'div', why: 'board stats line', required: true }, { text: 'Win Rate', closest: 'span,div', why: 'win rate', required: true }];
-  rec.begin('leads', { kind: 'desktop', css: { w: DESK.width, h: DESK.height }, dpr: DESK.dpr, day: DAY.quoteDrafted, clock: '10:20', keepOut });
+  // The stats line (won / lost / win rate) stays out of frame in every still of this scene.
+  const keepOut = [{ text: 'Active Leads', closest: 'div', why: 'leads stats line', required: true }, { text: 'Win Rate', closest: 'span,div', why: 'win rate', required: true }];
+  rec.begin('leads', { kind: 'desktop', view: 'list', css: { w: DESK.width, h: DESK.height }, dpr: DESK.dpr, day: DAY.quoteDrafted, clock: '10:20', keepOut });
   const page = await deskPage(PT(DAY.quoteDrafted, '10:20'));
-  await openApp(page, 'leads?leadView=pipeline');
-  // The newest lead: the first card of the New column (no survey date yet).
-  const lead = await page.evaluate(() => { const c = document.querySelector(`.kanban-col[ondrop="kanbanDrop(event,'new')"] .kanban-card`); const id = c && (c.getAttribute('ondragstart') || '').match(/'([^']+)'/); return id ? { id: id[1], name: c.querySelector('.kc-name').innerText.trim() } : null; });
-  if (!lead) throw new Error('board: no card in New');
-  const cardSel = `.kanban-card[ondragstart*="'${lead.id}'"]`;
-  rec.scene.lead = lead;
-  const F =() => focus(page, { card: { sel: cardSel }, date: { sel: `${cardSel} input[type=date]` }, newCol: { sel: `.kanban-col[ondrop="kanbanDrop(event,'new')"]` }, sssCol: { sel: `.kanban-col[ondrop="kanbanDrop(event,'site_survey_scheduled')"]` }, title: { text: 'Lead Pipeline', exact: true } });
-  await rec.still(page, 'board', { focus: await F() });
-  await typeDate(page, `${cardSel} input[type=date]`, SURVEY_DATE, 'Survey date', { name: 'date' });
+  await openApp(page, 'leads');
+  check('leads: #leads opens the List View (list + side panel + stage cards)', await page.evaluate(() => !!(document.getElementById('lc-table-wrap') && document.getElementById('lc-panel') && document.getElementById('lc-stages'))));
+  // The panel works the selected lead: on load, the list's top row — the newest lead (Age ↑).
+  const lead = await page.evaluate(() => {
+    const id = (document.getElementById('lc-panel') || { getAttribute: () => null }).getAttribute('data-lead');
+    const l = id && (data.leads || []).find((x) => x.id === id);
+    const top = document.querySelector('#lc-table-wrap tr.lc-row');
+    return l ? { id: l.id, name: l.name, number: l.number, status: l.status, topRow: top && top.getAttribute('data-id'), date: l.siteSurveyDate || null } : null;
+  });
+  if (!lead) throw new Error('list: no lead in the side panel');
+  check('list: the panel works the top row, a New lead with no survey date', lead.topRow === lead.id && lead.status === 'new' && !lead.date, `${lead.number} ${lead.name} ${lead.status}`);
+  rec.scene.lead = { id: lead.id, name: lead.name, number: lead.number };
+  const ROW = `#lc-table-wrap tr.lc-row[data-id="${lead.id}"]`;
+  const CARD = (s) => `#lc-stages .lc-stage-card[data-stage="${s}"]`;
+  // What the camera frames (css boxes): the row and its status pill, the panel (head, stage chip,
+  // stage buttons, the survey date), the stage cards; the edges it keeps to (cards, columns).
+  const F = () => focus(page, {
+    row: { sel: ROW }, name: { sel: `${ROW} .lc-nm1` }, pill: { sel: `${ROW} td:nth-child(4) .badge-pill` }, phoneText: { sel: `${ROW} td:nth-child(5) a` },
+    quick: { sel: '.card.lc-quick' }, list: { sel: '.card.lc-list' }, panel: { sel: '.card.lc-panel-card' },
+    pHead: { sel: '#lc-panel .lc-p-head' }, chip: { sel: '#lc-panel .lc-p-stage .badge-pill' }, stageLine: { sel: '#lc-panel .lc-p-stage' },
+    stageSec: { sel: '#lc-panel .lc-sec-stage' }, onBtn: { sel: '#lc-panel .lc-stage-btn.on' }, date: { sel: '#lc-survey-date' }, dates: { sel: '#lc-panel .lc-dates' },
+    cards: { sel: '#lc-stages' }, newCard: { sel: CARD('new') }, sssCard: { sel: CARD('site_survey_scheduled') },
+    newHead: { sel: `${CARD('new')} .lc-stage-h` }, sssHead: { sel: `${CARD('site_survey_scheduled')} .lc-stage-h` },
+    toast: { sel: '#toast-container .toast', last: true },
+  });
+  // What the list, the panel and the stage cards say about the lead (read off the screen).
+  const onScreen = () => page.evaluate((ROW) => {
+    const t = (e) => (e ? e.innerText.replace(/\s+/g, ' ').trim() : null);
+    return {
+      pill: t(document.querySelector(`${ROW} td:nth-child(4) .badge-pill`)),
+      chip: t(document.querySelector('#lc-panel .lc-p-stage .badge-pill')),
+      onBtn: (document.querySelector('#lc-panel .lc-stage-btn.on') || { getAttribute: () => null }).getAttribute('data-stage'),
+      date: (document.getElementById('lc-survey-date') || {}).value || '',
+      panelLead: (document.getElementById('lc-panel') || { getAttribute: () => null }).getAttribute('data-lead'),
+      topRow: (document.querySelector('#lc-table-wrap tr.lc-row') || { getAttribute: () => null }).getAttribute('data-id'),
+      counts: Object.fromEntries([...document.querySelectorAll('#lc-stages .lc-stage-card')].map((c) => [c.getAttribute('data-stage'), Number((c.querySelector('.lc-stage-n') || {}).innerText)])),
+    };
+  }, ROW);
+  // Hovered rows and stage-card buckets light up: the real pointer rests where nothing reacts
+  // (the content pane's left margin, between the sidebar and the cards).
+  const rest = () => parkPointer(page, 262, 700);
+  await rest();
+  const s0 = await onScreen();
+  check('list: row and panel say New', /^new$/i.test(s0.pill) && /^new$/i.test(s0.chip) && s0.onBtn === 'new' && s0.date === '', JSON.stringify(s0));
+  await rec.still(page, 'list', { onScreen: s0, focus: await F() });
+  await typeDate(page, '#lc-survey-date', SURVEY_DATE, 'Survey date', { name: 'date' });
   await page.waitForFunction((id) => { const l = (data.leads || []).find((x) => x.id === id); return l && l.status === 'site_survey_scheduled'; }, { timeout: 5000 }, lead.id);
   await settle(page, 300);
-  await parkPointer(page);
+  await rest();
   const toast = await toastText(page);
-  await rec.still(page, 'moved', { toast, focus: await focus(page, { card: { sel: cardSel }, sssCol: { sel: `.kanban-col[ondrop="kanbanDrop(event,'site_survey_scheduled')"]` }, newCol: { sel: `.kanban-col[ondrop="kanbanDrop(event,'new')"]` }, toast: { sel: '#toast-container .toast', last: true } }) });
-  check('board: survey toast', /Survey set for/.test(toast) && toast.includes(lead.name) && /Site Survey Scheduled/.test(toast), toast);
+  const s1 = await onScreen();
+  await rec.still(page, 'moved', { toast, onScreen: s1, focus: await F() });
+  check('list: survey toast', /Survey set for/.test(toast) && toast.includes(lead.name) && /Site Survey Scheduled/.test(toast), toast);
+  check('list: the same lead, still the top row, in the panel', s1.panelLead === lead.id && s1.topRow === lead.id, JSON.stringify(s1));
+  check('list: row pill, panel chip and stage buttons say Site Survey Scheduled', /^site survey scheduled$/i.test(s1.pill) && /^site survey scheduled$/i.test(s1.chip) && s1.onBtn === 'site_survey_scheduled', JSON.stringify(s1));
+  check('list: the panel shows the survey date', s1.date === SURVEY_DATE, s1.date);
+  check('list: stage cards — New one less, Site Survey Scheduled one more', s1.counts.new === s0.counts.new - 1 && s1.counts.site_survey_scheduled === s0.counts.site_survey_scheduled + 1, `${JSON.stringify(s0.counts)} → ${JSON.stringify(s1.counts)}`);
   await flush(page);
   const l = (await db(page, 'leads')).find((x) => x.id === lead.id);
-  check('board: lead moved to Site Survey Scheduled with the date', l && l.status === 'site_survey_scheduled' && String(l.site_survey_date || '').slice(0, 10) === SURVEY_DATE, l && `${l.status} ${l.site_survey_date}`);
+  check('list: lead moved to Site Survey Scheduled with the date', l && l.status === 'site_survey_scheduled' && String(l.site_survey_date || '').slice(0, 10) === SURVEY_DATE, l && `${l.status} ${l.site_survey_date}`);
   const tasks = (await db(page, 'tasks')).filter((t) => /site survey/i.test(t.title || '') && (t.link_id === lead.id || t.linkId === lead.id));
-  check('board: the app made the survey task', tasks.length >= 1, tasks.map((t) => t.title).join(', '));
+  check('list: the app made the survey task', tasks.length >= 1, tasks.map((t) => t.title).join(', '));
 }
 
 // ------------------------------------------------------------- scene: the phone app
