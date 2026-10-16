@@ -4,7 +4,7 @@ import { fileURLToPath } from 'node:url';
 import { describe, expect, it } from 'vitest';
 import * as sample from '../../src/data/sample-data';
 import {
-  appSnapToCartons, cartonCount, computeDueNow, fmtMoney, LEAD_STATUSES, snapToCartons, WO_SEQUENCE,
+  appSnapToCartons, augustSnapToCartons, cartonCount, computeDueNow, fmtMoney, LEAD_STATUSES, snapToCartons, WO_SEQUENCE,
 } from '../../src/lib/logic';
 
 const { DEMO_TODAY, demoDate, shop, reps, installers, leads, incomingLeads, counters, products, labor, thread } = sample;
@@ -113,26 +113,28 @@ describe('leads mirror the demo seed', () => {
 describe('carton sizes keep app and site in agreement for every sample quantity', () => {
   const cartonLines = [...thread.quote.sections.flatMap((s) => s.materials), ...thread.workOrder.materials].filter((m) => Number(m.coveragePerUOM) > 1);
 
-  it('snap, hint count and re-entry agree (no exact-multiple bug cases)', () => {
+  it('snap, hint count and re-entry agree — in the current app and even in the August one', () => {
     expect(cartonLines.length).toBeGreaterThanOrEqual(4);
     for (const m of cartonLines) {
       const q = Number(m.quantity);
       const cov = Number(m.coveragePerUOM);
-      expect(Math.ceil(q / cov)).toBe(cartonCount(q, cov)); // app hint vs site hint
-      expect(appSnapToCartons(q, cov)).toEqual(snapToCartons(q, cov)); // re-typing the quantity
+      expect(Math.ceil(q / cov)).toBe(cartonCount(q, cov)); // August app hint vs site hint
+      expect(augustSnapToCartons(q, cov)).toEqual(snapToCartons(q, cov)); // re-typing the quantity, August rule
+      expect(appSnapToCartons(q, cov)).toEqual(snapToCartons(q, cov)); // current app rule
       expect(snapToCartons(q, cov)!.quantity).toBe(q); // already whole cartons
     }
     // the sample's job area, applied to every carton product
     for (const p of products.filter((x) => x.coverage > 1)) {
-      expect(appSnapToCartons(thread.quote.jobArea.value, p.coverage)).toEqual(snapToCartons(thread.quote.jobArea.value, p.coverage));
+      expect(augustSnapToCartons(thread.quote.jobArea.value, p.coverage)).toEqual(snapToCartons(thread.quote.jobArea.value, p.coverage));
     }
   });
 
-  it('the briefed 22.31 for Better would hit the bug (why it is 22.32)', () => {
+  it('the briefed 22.31 for Better would have hit the August bug (why it is 22.32); the current app is fixed', () => {
     const s = snapToCartons(912, 22.31)!;
     expect(s).toEqual({ cartons: 41, quantity: 914.71 });
-    expect(Math.ceil(s.quantity / 22.31)).toBe(42); // app hint would read "42 Cartons = 914.71 SqFt"
-    expect(appSnapToCartons(s.quantity, 22.31)!.quantity).toBe(937.02);
+    expect(Math.ceil(s.quantity / 22.31)).toBe(42); // the August hint read "42 Cartons = 914.71 SqFt"
+    expect(augustSnapToCartons(s.quantity, 22.31)!.quantity).toBe(937.02);
+    expect(appSnapToCartons(s.quantity, 22.31)!.quantity).toBe(914.71);
   });
 });
 
@@ -154,7 +156,7 @@ describe('the thread: LD-056 → QT-330 → WO-330 / IN-330 → job costing', ()
   });
 
   it('Washoe tax on materials only, 50% deposit, 50/50 terms', () => {
-    expect([q.taxRate, q.taxCounty, q.totals.taxLabel]).toEqual([0.08265, 'Washoe County', 'Tax (8.27%)']);
+    expect([q.taxRate, q.taxCounty, q.totals.taxLabel]).toEqual([0.08265, 'Washoe County', 'Tax (8.265%)']);
     expect(q.paymentTerms).toBe('50% Deposit / 50% on Completion');
     expect(q.totalsAtSend).toMatchObject({ subtotal: 7195.79, tax: 376.14, total: 7571.93 });
     expect(q.depositAtSend).toBe(3785.96);
@@ -234,7 +236,10 @@ describe('the thread: LD-056 → QT-330 → WO-330 / IN-330 → job costing', ()
     expect(f.tax).toBe(440.63);
     expect(fmtMoney(f.commission)).toBe('$248.89');
     expect(fmtMoney(f.profit)).toBe('$2,862.26');
-    expect(f.margin.toFixed(1)).toBe('35.0');
+    expect(fmtMoney(f.preCommProfit)).toBe('$3,111.15');
+    // margin is taken before commission in the October app (it read 35.0% after commission in August)
+    expect(f.margin.toFixed(1)).toBe('38.0');
+    expect(((f.profit / f.revenue) * 100).toFixed(1)).toBe('35.0');
     // revenue − cost − commission = profit, to the cent, as displayed
     expect(Math.round((f.revenue - f.actual) * 100) - Math.round(f.commission * 100)).toBe(Math.round(f.profit * 100));
   });

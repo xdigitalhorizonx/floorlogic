@@ -1,11 +1,16 @@
 /**
  * Due-now parity: q.html's own termRule / computeDueNow (the code the live
  * invoice runs) against the site port, over a large grid; the live invoice's
- * PAYMENT box against dueNowView; and the app's invoice-status rule.
+ * PAYMENT box (with the app's real DocumentDates) against dueNowView; how a
+ * payment is labelled; and the app's invoice-status rules — the stored one a
+ * payment writes and the balance-based one every badge shows.
  */
 import { describe, expect, it } from 'vitest';
-import { computeDueNow, dueNowView, invoiceStatus, termRule, type DueNowRow } from '../../src/lib/logic';
-import { code, sandbox } from './app-source';
+import {
+  canTakePayment, cardBrandName, computeDueNow, dueNowView, invoiceBalance, invoiceDisplayStatus, invoiceStatus, paymentCardLine, paymentTypeLabel, termRule,
+  type DueNowRow,
+} from '../../src/lib/logic';
+import { appDocumentDates, code, sandbox } from './app-source';
 import { fixedDate, stripTags } from './helpers';
 
 type AppDue = {
@@ -49,13 +54,15 @@ describe('computeDueNow parity (grid)', () => {
 });
 
 describe('live invoice PAYMENT box (q.html IIFE) vs dueNowView', () => {
-  const qsrcFns = ['computeDueNow', 'termRule', 'invoiceAgeDays', 'fmt$', 'fmtDate', 'plusDays', 'esc'];
+  const qsrcFns = ['computeDueNow', 'termRule', 'invoiceAgeDays', 'fmt$', 'fmtDate', 'esc'];
+  const DocumentDates = appDocumentDates();
   function appBox(inv: { total: number; paid: number; terms: string; pct: number | null; final: boolean; createdAt: string }, nowMs: number): string {
     const body = `${qsrcFns.map((f) => code(`q:fn:${f}`)).join('\n')}\nreturn ${code('q:text:payment-box')};`;
-    const run = new Function('INV_MODE', 'PDF_MODE', 'window', 'q', 'Date', body) as (...a: unknown[]) => string;
+    // eslint-disable-next-line @typescript-eslint/no-implied-eval
+    const run = new Function('INV_MODE', 'PDF_MODE', 'window', 'q', 'Date', 'DocumentDates', body) as (...a: unknown[]) => string;
     const grand = inv.total;
     return run(true, false, { __invTotals: { grand, paid: inv.paid, bal: Math.round((grand - inv.paid) * 100) / 100 } },
-      { total: grand, down_payment_pct: inv.pct, final_invoice: inv.final, payment_terms: inv.terms, created_at: inv.createdAt }, fixedDate(nowMs));
+      { total: grand, down_payment_pct: inv.pct, final_invoice: inv.final, payment_terms: inv.terms, created_at: inv.createdAt }, fixedDate(nowMs), DocumentDates);
   }
   function siteText(v: ReturnType<typeof dueNowView>): string {
     if (v.kind === 'paid') return `PAYMENT ${v.title} ${v.meta}`;
@@ -66,13 +73,15 @@ describe('live invoice PAYMENT box (q.html IIFE) vs dueNowView', () => {
   const cases: Array<{ total: number; paid: number; terms: string; pct: number | null; final: boolean; createdAt: string; at: string }> = [];
   for (const terms of ['50% Deposit / 50% on Completion', 'Due on Receipt', 'Net 30', 'Net 15', 'Net Upon Completion', 'Cash Before Delivery', '']) {
     for (const [paid, final] of [[0, false], [4312.35, false], [4312.35, true], [8624.7, true], [100, false]] as const) {
-      for (const createdAt of ['2026-10-15', '2026-09-01']) {
+      // date-only, UTC midnight (how Postgres returns a date-only write), a real instant, and junk
+      for (const createdAt of ['2026-10-15', '2026-09-01', '2026-09-01T00:00:00+00:00', '2026-10-13T03:30:00Z', 'nope']) {
         cases.push({ total: 8624.7, paid, terms, pct: 50, final, createdAt, at: '2026-10-15T12:00:00Z' });
       }
     }
   }
   cases.push({ total: 1000, paid: 0, terms: 'Net 30', pct: 0, final: false, createdAt: '2026-10-15', at: '2026-10-15T12:00:00Z' });
   cases.push({ total: 1000, paid: 0, terms: '', pct: 100, final: false, createdAt: '2026-10-15', at: '2026-10-15T12:00:00Z' });
+  cases.push({ total: 100, paid: 99.7, terms: 'Due on Receipt', pct: 50, final: false, createdAt: '2026-10-15', at: '2026-10-15T12:00:00Z' });
 
   it.each(cases)('$terms · paid $paid · final $final · $createdAt', (c) => {
     const nowMs = Date.parse(c.at);
@@ -82,21 +91,61 @@ describe('live invoice PAYMENT box (q.html IIFE) vs dueNowView', () => {
   });
 });
 
-describe('invoice status after a payment (acctRecordInvPayment)', () => {
-  it('paid ≥ total → paid, anything paid → deposit, else unpaid', () => {
-    const totals = [0, 100, 8624.7, 8624.696];
-    const amounts = [0.01, 50, 99.99, 100, 4312.35, 8624.7, 9000];
-    for (const total of totals) for (const prior of [[], [{ amount: 50 }], [{ amount: 4312.35 }]]) for (const amt of amounts) {
-      const inv = { number: 'IN-1', total, payments: prior.map((p) => ({ ...p })), status: 'unpaid', jobId: null };
-      const vals: Record<string, string> = { 'acct-pay-amt': String(amt), 'acct-pay-method': 'Check', 'acct-pay-date': '2026-10-15' };
-      const noop = () => {};
-      const fns = sandbox<{ acctRecordInvPayment: (id: string) => void }>('index', { fns: ['acctRecordInvPayment'] }, {
-        getInvoice: () => inv, document: { getElementById: (id: string) => ({ value: vals[id] }) }, _payWithCheckNo: (p: unknown) => p,
-        _advanceJobToReady: noop, addActivity: noop, saveData: noop, closeModal: noop, showToast: noop, renderView: noop,
-        fmt$: (n: number) => '$' + n, alert: noop,
-      });
-      fns.acctRecordInvPayment('IN-1');
-      expect(inv.status).toBe(invoiceStatus(total, inv.payments));
+describe('how a payment is labelled (q.html payTypeLabel / main _payCardLine)', () => {
+  const q = sandbox<{ payTypeLabel: (p: unknown) => string; payCardLine: (p: unknown) => string; cardBrandName: (b: unknown) => string }>('q', {
+    consts: ['CARD_BRANDS'], fns: ['payTypeLabel', 'payCardLine', 'payCheckNo', 'cardBrandName'],
+  });
+  const main = sandbox<{ _payCardLine: (p: unknown) => string }>('index', { consts: ['_CARD_BRANDS'], fns: ['_payCardLine', '_cardBrandName'] });
+  it('method, card brand + last 4, check number', () => {
+    const PAYS: Array<Record<string, unknown> | null> = [null, {}, { method: 'Check' }, { method: 'Check', checkNumber: '1042' }, { method: 'Check', checkNumber: 1042 },
+      { type: 'Cash' }, { method: 'Credit Card (Stripe)', cardBrand: 'visa', cardLast4: '4242' }, { method: 'Credit Card (Online)', cardBrand: 'AMEX', cardLast4: 1005 },
+      { method: 'Card', cardBrand: 'unknown', cardLast4: '0001' }, { method: 'Card', cardBrand: 'cartes_bancaires', cardLast4: '7777' }, { method: 'Card', cardLast4: '' },
+      { method: 'Card', cardBrand: 'eftpos_au', cardLast4: '1234', checkNumber: '9' }, { method: '', type: '', checkNumber: '55' }];
+    for (const p of PAYS) {
+      expect(paymentTypeLabel(p), JSON.stringify(p)).toBe(q.payTypeLabel(p));
+      expect(paymentCardLine(p)).toBe(q.payCardLine(p));
+      if (p) expect(paymentCardLine(p)).toBe(main._payCardLine(p));
     }
+    for (const b of [null, '', 'unknown', 'visa', 'MasterCard', ' jcb ', 'link', 'zip']) expect(cardBrandName(b)).toBe(q.cardBrandName(b));
+    expect(paymentTypeLabel({ method: 'Credit Card (Stripe)', cardBrand: 'visa', cardLast4: '4242' })).toBe('Credit Card (Stripe) · Visa ••••4242');
+  });
+});
+
+describe('invoice status', () => {
+  const noop = () => {};
+  it('stored status after a payment (acctRecordInvPayment / recordPayment): exact paid ≥ total', () => {
+    const totals = [0, 100, 8624.7, 8624.696, 202.00499999999997];
+    const amounts = [0.01, 50, 99.99, 100, 202, 4312.35, 8624.7, 9000];
+    for (const total of totals) for (const prior of [[], [{ amount: 50 }], [{ amount: 4312.35 }]]) for (const amt of amounts) {
+      for (const path of ['acct', 'record'] as const) {
+        const inv = { id: 'i1', number: 'IN-1', total, payments: prior.map((p) => ({ ...p })), status: 'unpaid', jobId: null };
+        const vals: Record<string, string> = { 'acct-pay-amt': String(amt), 'acct-pay-method': 'Check', 'acct-pay-date': '2026-10-15', 'pay-amt': String(amt), 'pay-method': 'Check', 'pay-date': '2026-10-15' };
+        const globals = {
+          getInvoice: () => inv, data: { invoices: [inv] }, document: { getElementById: (id: string) => ({ value: vals[id] }) }, _payWithCheckNo: (p: unknown) => p,
+          _advanceJobToReady: noop, addActivity: noop, saveData: noop, closeModal: noop, showToast: noop, renderView: noop, navigate: noop,
+          fmt$: (n: number) => '$' + n, alert: noop, _todayISO: () => '2026-10-15', updateBadges: noop,
+        };
+        if (path === 'acct') sandbox<{ acctRecordInvPayment: (id: string) => void }>('index', { fns: ['acctRecordInvPayment'] }, globals).acctRecordInvPayment('IN-1');
+        else sandbox<{ recordPayment: (id: string) => void }>('index', { fns: ['recordPayment'] }, globals).recordPayment('i1');
+        expect(inv.status, `${path} ${total} ${JSON.stringify(prior)} +${amt}`).toBe(invoiceStatus(total, inv.payments));
+      }
+    }
+  });
+
+  it('what every badge shows (_invDisplayStatus), the balance and the Take Payment gate', () => {
+    const fns = sandbox<{ _invDisplayStatus: (i: unknown) => string; _invBalAmt: (i: unknown) => number; _ibCanTakePayment: (b: unknown) => boolean; _invPaidAmt: (i: unknown) => number }>('index', {
+      fns: ['_invDisplayStatus', '_invBalAmt', '_ibCanTakePayment', '_invPaidAmt'],
+    });
+    for (const status of ['unpaid', 'deposit', 'paid', 'void', 'sent', undefined]) for (const total of [0, -5, 100, 202.00499999999997, 850, '850']) {
+      for (const payments of [[], [{ amount: 0 }], [{ amount: 0.004 }], [{ amount: 50 }], [{ amount: 99.996 }], [{ amount: 202 }], [{ amount: 850 }], [{ amount: '850' }], [{ amount: 900 }]]) {
+        const inv = { status, total, payments };
+        expect(invoiceDisplayStatus(inv as Parameters<typeof invoiceDisplayStatus>[0]), JSON.stringify(inv)).toBe(fns._invDisplayStatus(inv));
+        expect(invoiceBalance(inv as Parameters<typeof invoiceBalance>[0])).toBe(fns._invBalAmt(inv));
+      }
+    }
+    expect(invoiceDisplayStatus(null)).toBe(fns._invDisplayStatus(null));
+    for (const b of [0, 0.004, 0.005, 0.0051, 0.01, 1, -3, '', null, '12']) expect(canTakePayment(b as number)).toBe(fns._ibCanTakePayment(b));
+    // IN-5791: $850 of $850 collected but stored "unpaid" — the badge says paid.
+    expect(invoiceDisplayStatus({ status: 'unpaid', total: 850, payments: [{ amount: 850 }] })).toBe('paid');
   });
 });

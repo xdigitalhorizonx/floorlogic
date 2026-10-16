@@ -3,34 +3,54 @@
  * materials-only tax, margin, and what an approval hands to the work order
  * and invoice.
  *
- * Source: main L11321-11406 (`qbFastRecalc`), L13897-13913 (`_mqTotals`),
- * L13013-13024 (`saveQuoteDraft` stored totals), L23236 (`_computeTotalsData`
- * totals rows), L9944-9984 (Pick One row keys), L10016-10101
- * (`qbChosenSectionsAndRows`, `qbFilterChosenItems`) and L10263-10313
- * (`approveQuote`); public page q L1000-1046 and L1404-1557.
+ * Source (current app, demo main): main L13531 (`qbFastRecalc`), L16243
+ * (`_mqTotals`), L27324 (`_computeTotalsData` totals rows), L11948-12018
+ * (choice groups and Pick One row keys), L12060-12139
+ * (`qbChosenSectionsAndRows`, `qbFilterChosenItems`), L12301
+ * (`_resolveQuoteLeadToCustomer`), L12333-12367 (`confirmApproveQuote`,
+ * `approveQuoteVerified`) and L12367-12435 (`approveQuote`); public page
+ * q L1043-1077 and L1454-1663. The totals maths is unchanged since August.
  *
  * Rules (all verified against main):
  * - Material line = qty × retail, blank qty counts as 0.
  * - Labor line = qty × retail, but a blank OR ZERO labor qty counts as 1
- *   (`Number(l.quantity)||1`, main L11364) — app quirk, kept.
+ *   (`Number(l.quantity)||1`) — app quirk, kept.
  * - Required sections always count. Optional sections count only when the
  *   customer adds them. A "Pick One" section counts only its chosen row
  *   (default: its first material, else its first labor row).
  * - Tax = materials × rate (never labor); 0 when exempt.
- *   total = materials + labor + tax.
- * - Rounding follows the app's STORED totals and invoices (`_mqTotals`
- *   main L13912-13914, `approveQuote` main L10293): tax is rounded to the
- *   cent first, then added, so Subtotal + Tax always equals Total and the
- *   quote total equals the invoice total the approval creates. The builder
- *   header instead adds UNROUNDED tax and can print a total 1¢ off its own
- *   Subtotal + Tax rows (e.g. $9,825.98 + $593.52 shown as $10,419.51);
- *   `raw.total` keeps that builder value for parity tests.
+ *   total = materials + labor + tax. The label now keeps 3 decimals:
+ *   "Tax (8.265%)" (August: "Tax (8.27%)").
+ * - Rounding follows the app's STORED totals and invoices (`_mqTotals`,
+ *   `approveQuote`): tax is rounded to the cent first, then added, so
+ *   Subtotal + Tax always equals Total and the quote total equals the invoice
+ *   total the approval creates. The builder header instead adds UNROUNDED
+ *   tax and can print a total 1¢ off its own Subtotal + Tax rows (e.g.
+ *   $9,825.98 + $593.52 shown as $10,419.51); `raw.total` keeps that builder
+ *   value for parity tests.
  * - The builder and q.html also FORMAT unrounded sums (toLocaleString), which
  *   at a half-cent tie can print 1¢ below Math.round — the app's own stored
  *   totals round the other way. To reproduce those screens to the cent,
  *   format `raw.*`. The sample dataset is tie-free (tested).
+ *
+ * Changed since the August app (approval):
+ * - the invoice is due the SAME DAY NEXT MONTH (`invoiceDueDate`), not +30 days;
+ * - a quote is never converted twice: approving is refused while work orders
+ *   or invoices failed to load, and a quote that already has a work order OR an
+ *   invoice only re-marks itself approved (`approveQuoteGuard`);
+ * - a quote is approved through a confirm ("✅ Approve QT-330?", see
+ *   `approveQuoteDialog`); a customer approving online no longer creates the
+ *   work order and invoice by itself — the office presses "🔨 Create WO &
+ *   Invoice";
+ * - approving a lead's quote turns the lead into a customer and takes it off
+ *   the pipeline (`convertLeadOnQuoteApproval`, lead-pipeline.ts) — this is
+ *   now the ONLY way a lead is won.
+ * Not modelled here (no site demo uses them): bundles ($0 parent rows whose
+ * children carry the money) and private-label product names.
  */
-import { addDays, type ISODate } from './dates';
+import { type ISODate } from './dates';
+import { invoiceDueDate } from './document-dates';
+import { convertLeadOnQuoteApproval, type Lead } from './lead-pipeline';
 import { formatDocNumber, num, round2 } from './money';
 import { DEFAULT_TAX, materialsTax, taxLabel } from './tax';
 
@@ -67,7 +87,7 @@ export interface QuoteSection {
   kind: SectionKind;
   materials: QuoteMaterial[];
   labors: QuoteLabor[];
-  /** Pick One only: the row the shop pre-selected (main L9957 `chosenRowKey`). */
+  /** Pick One only: the row the shop pre-selected (main L12001 `chosenRowKey`). */
   chosenRowKey?: RowKey | null;
 }
 
@@ -93,7 +113,7 @@ export function materialLineTotal(m: Pick<QuoteMaterial, 'quantity' | 'retailPri
 export function materialLineCost(m: Pick<QuoteMaterial, 'quantity' | 'companyCost'>): number {
   return num(m.quantity) * num(m.companyCost);
 }
-/** Labor qty: blank or 0 reads as 1 (main L11364). */
+/** Labor qty: blank or 0 reads as 1 (`qbFastRecalc`, main L13572). */
 export function laborQty(l: Pick<QuoteLabor, 'quantity'>): number {
   return num(l.quantity) || 1;
 }
@@ -106,7 +126,7 @@ export function laborLineCost(l: Pick<QuoteLabor, 'quantity' | 'companyCost'>): 
 
 // -------------------------------------------------------- Pick One rows ----
 
-/** Default Pick One row: first material, else first labor (main L9944). */
+/** Default Pick One row: first material, else first labor (main L11988). */
 export function defaultRowKey(section: Pick<QuoteSection, 'materials' | 'labors'>): RowKey | null {
   if (section.materials.length) return 'mat-0';
   if (section.labors.length) return 'lab-0';
@@ -123,7 +143,7 @@ function rowExists(section: QuoteSection, key: RowKey): boolean {
 /**
  * The live row of a Pick One section: the customer's pick, else the shop's
  * pre-selected row, else the default. A key pointing at a missing row falls
- * back to the default (q.html does this, q L1053; the builder would count
+ * back to the default (q.html does this, q L1086; the builder would count
  * nothing in that case).
  */
 export function chosenRowKey(section: QuoteSection, sectionIndex: number, picks?: QuotePicks): RowKey | null {
@@ -173,7 +193,7 @@ export interface QuoteTotals extends QuoteFigures {
   raw: QuoteFigures;
   /**
    * The total the app stores on the invoice an approval creates: UNROUNDED
-   * subtotal + tax in cents (main L10293). Deposits and "Due Now" are figured
+   * subtotal + tax in cents (`approveQuote`, main L12413). Deposits and "Due Now" are figured
    * from this, so use it (via `quoteDeposit`) for money the customer pays.
    */
   invoiceTotal: number;
@@ -184,12 +204,12 @@ export interface QuoteTotals extends QuoteFigures {
   /** "Tax (8.27%)" / "Tax (Exempt)". */
   taxLabel: string;
   sections: QuoteSectionTotal[];
-  /** Builder's "if everything is added" total: counted + every optional section, with tax (main L11397), rounded. */
+  /** Builder's "if everything is added" total: counted + every optional section, with tax (main L13602), rounded. */
   totalIfAll: number;
   /** Site margin: (subtotal − cost) ÷ subtotal. Tax is NOT revenue. */
   margin: { profit: number; pct: number };
   /**
-   * APP QUIRK: the quote builder's Margin row (main L23236) divides by the
+   * APP QUIRK: the quote builder's Margin row (`_computeTotalsData`, main L27324) divides by the
    * grand total INCLUDING tax and counts the tax as profit. Kept for parity
    * tests only — the site shows `margin`.
    */
@@ -253,7 +273,7 @@ export function computeQuoteTotals(quote: QuoteMoneyInput, picks?: QuotePicks): 
 
 /**
  * Totals the app STORES when a selection is applied or quotes are merged
- * (`_mqTotals`, main L13897): optional sections stay out, tax rounded first,
+ * (`_mqTotals`, main L16243): optional sections stay out, tax rounded first,
  * then total = round2(subtotal + tax).
  */
 export function storedQuoteTotals(quote: QuoteMoneyInput): { subtotal: number; tax: number; total: number } {
@@ -270,7 +290,7 @@ export interface DocCounters {
   invoice: number;
 }
 
-/** New quote number: counter + 1, padded (main L13024). */
+/** New quote number: counter + 1, padded (`saveQuoteDraft`, main L15359). */
 export function nextQuoteNumber<C extends Pick<DocCounters, 'quote'>>(counters: C): { number: string; counters: C } {
   const n = counters.quote + 1;
   return { number: formatDocNumber('QT-', n), counters: { ...counters, quote: n } };
@@ -278,7 +298,7 @@ export function nextQuoteNumber<C extends Pick<DocCounters, 'quote'>>(counters: 
 
 // -------------------------------------------------------------- approval ---
 
-/** What the customer submitted with "Approve" on the live quote (q L748-770). */
+/** What the customer submitted with "Approve" on the live quote (q L773-795). */
 export interface QuoteSelection {
   pickOne?: Readonly<Record<number, RowKey>>;
   optional?: readonly number[];
@@ -291,7 +311,7 @@ export interface ChosenLine<T> {
 
 /**
  * Which lines go to the work order + invoice (`qbChosenSectionsAndRows` +
- * `qbFilterChosenItems`, main L10016-10101). Exactly the app's rules:
+ * `qbFilterChosenItems`, main L12060-12145). Exactly the app's rules:
  * - required sections: always;
  * - optional sections: only when picked — but when NO selection was captured
  *   at all (the shop approved by hand) every optional section goes in;
@@ -307,7 +327,7 @@ export function chosenItems(
   const noSel = !selection || (optional.size === 0 && Object.keys(mc).length === 0);
   const materials: ChosenLine<QuoteMaterial>[] = [];
   const labors: ChosenLine<QuoteLabor>[] = [];
-  // APP ORDER QUIRK (main L10081-10085): sections are visited in the order
+  // APP ORDER QUIRK (main L12125-12129): sections are visited in the order
   // they first appear in the flat materials list, then the labor list, then
   // the rest — so a section with labor but no materials is visited after
   // every section that has materials, and its labor lands later on the work
@@ -346,6 +366,10 @@ export interface QuoteForApproval extends QuoteMoneyInput {
   number: string;
   paymentTerms?: string;
   downPaymentPct?: number | null;
+  /** The quote's rep — it fills an empty rep on the customer a lead becomes. */
+  salesRepId?: string;
+  /** The lead this quote was written for, if any: approving converts it. */
+  lead?: Pick<Lead, 'id' | 'number' | 'name' | 'phone' | 'email' | 'city' | 'source' | 'salesRepId' | 'type'> | null;
 }
 
 export interface ApprovedQuote {
@@ -373,18 +397,22 @@ export interface ApprovedQuote {
   };
   counters: { job: number; invoice: number };
   toast: string;
+  /** Set when the quote belonged to a lead: the customer it became; the lead leaves the pipeline. */
+  convertedLead: ReturnType<typeof convertLeadOnQuoteApproval> | null;
 }
 
 /**
- * `approveQuote` (main L10263-10313), money and numbering only:
+ * `approveQuote` (main L12367-12435), money and numbering only:
  * - WO and invoice numbers come from the QUOTE number: QT-330 → WO-330 / IN-330,
- *   and the job/invoice counters move up to at least 330. (A lead approved
- *   from the board uses the counters instead — see lead-pipeline.ts — so the
- *   two schemes can in theory hand out the same number; app behaviour.)
+ *   and the job/invoice counters move up to at least 330.
  * - Invoice: subtotal = Σ line amounts, tax = round2(materials × rate),
- *   total = subtotal + tax; due 30 days after creation.
+ *   total = subtotal + tax (both left unrounded in the app); due the same
+ *   day next month (`DocumentDates.invoiceDueDate` — August: +30 days).
  *   The app does not look at taxExempt here — an exempt quote already carries
- *   rate 0 (main L12667). The site applies the exempt flag explicitly.
+ *   rate 0 (`selectQBClient`). The site applies the exempt flag explicitly.
+ * - A lead's quote converts the lead (customer made, lead off the pipeline)
+ *   BEFORE the work order and invoice are built, so they carry the customer.
+ * Check `approveQuoteGuard` first: the app refuses or no-ops in some states.
  */
 export function approveQuote(
   quote: QuoteForApproval,
@@ -412,7 +440,7 @@ export function approveQuote(
     lines.push({ desc: (l.name || 'Labor') + (l.description ? ' | ' + l.description : ''), qty: laborQty(l), rate: num(l.retailPrice), amount });
   }
   // Right after creating the invoice the app re-totals it as Σ materials +
-  // Σ labor (`snapInv`, main L10293) — that is the stored subtotal.
+  // Σ labor (`snapInv`, main L12413) — that is the stored subtotal.
   const sub = matSub + labSub;
   const rate = quote.taxExempt ? 0 : (quote.taxRate ?? DEFAULT_TAX.rate);
   const tax = round2(matSub * rate);
@@ -431,9 +459,49 @@ export function approveQuote(
       paymentTerms: quote.paymentTerms || '',
       downPaymentPct: quote.downPaymentPct != null ? quote.downPaymentPct : 50,
       createdAt: today,
-      dueDate: addDays(today, 30),
+      dueDate: invoiceDueDate(today),
     },
     counters: { job: Math.max(counters.job, n), invoice: Math.max(counters.invoice, n) },
     toast: `Quote ${quote.number} approved! Work Order ${woNumber} & Invoice ${inNumber} created.`,
+    convertedLead: quote.lead ? convertLeadOnQuoteApproval(quote.lead, today, quote.salesRepId || '') : null,
+  };
+}
+
+export type ApprovalGuard =
+  | { kind: 'proceed' }
+  /** Nothing is made; the toast explains (error). */
+  | { kind: 'refuse'; toast: string; toastKind: 'error' }
+  /** Already converted: the quote is (re)marked approved and the toast says so. */
+  | { kind: 'alreadyConverted'; toast: string };
+
+/** The refusal when work orders or invoices did not load (`_conversionDataTrusted`, main L5393). */
+export const APPROVE_NOT_LOADED_TOAST = 'Work orders or invoices did not finish loading. Reload the page before approving, so nothing is made twice.';
+
+/**
+ * The checks `approveQuote` runs before it makes anything (main L12367-12390):
+ * refused while the work orders / invoices / quotes did not load; a quote
+ * that already has a work order OR an invoice is only marked approved again
+ * ("Quote already has a work order" / "… an invoice"). August checked for a
+ * work order only, which is how a second invoice could be made.
+ */
+export function approveQuoteGuard(state: { dataLoaded: boolean; hasWorkOrder: boolean; hasInvoice: boolean }): ApprovalGuard {
+  if (!state.dataLoaded) return { kind: 'refuse', toast: APPROVE_NOT_LOADED_TOAST, toastKind: 'error' };
+  if (state.hasWorkOrder || state.hasInvoice) {
+    return { kind: 'alreadyConverted', toast: state.hasWorkOrder ? 'Quote already has a work order' : 'Quote already has an invoice' };
+  }
+  return { kind: 'proceed' };
+}
+
+/**
+ * The confirm every Approve button opens (`confirmApproveQuote`, main L12333):
+ * "✅ Approve QT-330?" / "This wins the job for Dev & Anjali Prasad and creates
+ * the work order and invoice, and turns the lead into a customer."
+ * (`who` is the customer's name, else the lead's; the app bolds it.)
+ */
+export function approveQuoteDialog(quoteNumber: string, who: string, fromLead: boolean): { title: string; body: string; button: string } {
+  return {
+    title: `✅ Approve ${quoteNumber}?`,
+    body: `This wins the job${who ? ` for ${who}` : ''} and creates the work order and invoice${fromLead ? ', and turns the lead into a customer' : ''}.`,
+    button: '✅ Approve',
   };
 }

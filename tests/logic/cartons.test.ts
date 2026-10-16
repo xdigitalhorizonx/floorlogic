@@ -1,7 +1,7 @@
 import { describe, expect, it } from 'vitest';
 import {
-  appSnapToCartons, applyArea, cartonCount, cartonHint, cartonUnitLabel, materialQtyFromInput, MISSING_COVERAGE_HINT, qtyExtra,
-  ROUND_LABOR_COPY, snapToCartons,
+  appSnapToCartons, applyArea, areaSkipsMaterial, augustSnapToCartons, cartonCount, cartonHint, cartonUnitLabel, coverageUnitKey, coverageUnits, lineCoverage,
+  materialQtyFromInput, MISSING_COVERAGE_HINT, qtyExtra, ROUND_LABOR_COPY, snapToCartons, woQtyExtra,
 } from '../../src/lib/logic';
 
 describe('carton snapping', () => {
@@ -27,11 +27,21 @@ describe('carton snapping', () => {
     expect(snapToCartons(-5, 23.77)).toBeNull();
   });
 
-  it('documents the app’s exact-multiple bug and the site fix', () => {
+  it('the August exact-multiple bug is fixed in the app too (same 1e-9 epsilon as the site)', () => {
     // 41 × 22.31 = 914.71, but 914.71 / 22.31 = 41.00000000000001 in floating point.
     expect(914.71 / 22.31).toBeGreaterThan(41);
-    expect(appSnapToCartons(914.71, 22.31)).toEqual({ cartons: 42, quantity: 937.02 });
+    expect(augustSnapToCartons(914.71, 22.31)).toEqual({ cartons: 42, quantity: 937.02 }); // August app
+    expect(appSnapToCartons(914.71, 22.31)).toEqual({ cartons: 41, quantity: 914.71 }); // current app
     expect(snapToCartons(914.71, 22.31)).toEqual({ cartons: 41, quantity: 914.71 });
+    // the app's own comment: 522.94 = 22 × 23.77
+    expect(snapToCartons(522.94, 23.77)).toEqual({ cartons: 22, quantity: 522.94 });
+  });
+
+  it('coverageUnits: whole cartons a work order allocates, the quantity otherwise', () => {
+    expect(coverageUnits(912, 23.77)).toBe(39);
+    expect(coverageUnits(914.71, 22.31)).toBe(41);
+    expect(coverageUnits(180, 0)).toBe(180);
+    expect(coverageUnits('', 23.77)).toBe(0);
   });
 
   it('materialQtyFromInput: blank stays blank, carton products snap, others keep the typed value', () => {
@@ -70,14 +80,35 @@ describe('carton hint', () => {
     expect(cartonCount(927.03, 23.77)).toBe(39);
   });
 
-  it('qtyExtra: rolled lines show their length (or a warning) before any carton text', () => {
-    expect(qtyExtra({ quantity: 19.33, rollWidth: 12, lengthFt: 14, lengthIn: 6, coveragePerUOM: 0 })).toEqual({ kind: 'roll', text: `14' 6"` });
+  it('qtyExtra: rolled lines show their length and width (or a warning) before any carton text', () => {
+    expect(qtyExtra({ quantity: 19.33, rollWidth: 12, lengthFt: 14, lengthIn: 6, coveragePerUOM: 0 })).toEqual({
+      kind: 'roll', text: `14' 6"`, width: { text: "× 12' roll", title: 'Roll width — click to change' },
+    });
+    expect(qtyExtra({ quantity: 79.12, rollWidth: 12, rollWidthAssumed: true, lengthFt: 59, lengthIn: 4 })).toEqual({
+      kind: 'roll', text: `59' 4"`, width: { text: "× 12' roll (assumed)", title: "No roll width on this product — 12' assumed. Click to change." },
+    });
     expect(qtyExtra({ quantity: 19.33, purchaseUOM: 'Roll' })).toEqual({ kind: 'roll-missing', text: '⚠ set length' });
     expect(qtyExtra({ quantity: 927.03, coveragePerUOM: 23.77, purchaseUOM: 'Carton', costUOM: 'SqFt' })).toEqual({
       kind: 'cartons', hint: { cartons: 39, count: '39 Cartons', equals: '= 927.03 SqFt', text: '39 Cartons = 927.03 SqFt' },
     });
     expect(qtyExtra({ quantity: 180, coveragePerUOM: 0, purchaseUOM: 'Linear Ft' })).toBeNull();
     expect(MISSING_COVERAGE_HINT).toBe('⚠ Set coverage / unit to auto-count boxes');
+  });
+
+  it('work-order rows add the missing-coverage nudge on Box / Carton products', () => {
+    expect(woQtyExtra({ quantity: 180, coveragePerUOM: 0, purchaseUOM: 'Box' })).toEqual({ kind: 'missing-coverage', text: MISSING_COVERAGE_HINT });
+    expect(woQtyExtra({ quantity: 180, coveragePerUOM: 0, purchaseUOM: 'Linear Ft' })).toBeNull();
+    expect(woQtyExtra({ quantity: 927.03, coveragePerUOM: 23.77, purchaseUOM: 'Carton' })).toMatchObject({ kind: 'cartons' });
+  });
+
+  it('lineCoverage: only a coverage in the price’s own unit counts', () => {
+    expect(lineCoverage({ coverage: 23.4, coverageUOM: 'SqFt', costUOM: 'SqFt' })).toBe(23.4);
+    expect(lineCoverage({ coverage: 94, coverageUOM: 'Inches', costUOM: 'Each' })).toBe(0); // trim: 1 stays 1
+    expect(lineCoverage({ coverage: 16, coverageUOM: 'LF', costUOM: 'Linear Ft' })).toBe(16);
+    expect(lineCoverage({ coverage: 23.4, coverageUOM: 'SqFt', costUOM: 'Each' })).toBe(0);
+    expect(lineCoverage({ coverage: 20, coverageUOM: 'SqFt', costUOM: '' })).toBe(20);
+    expect(lineCoverage({ coverage: 1 })).toBe(1);
+    expect([coverageUnitKey('Sq. Ft'), coverageUnitKey('SY'), coverageUnitKey('linear feet'), coverageUnitKey('pcs'), coverageUnitKey('Carton')]).toEqual(['sqft', 'sqyd', 'lf', 'each', 'carton']);
   });
 });
 
@@ -104,6 +135,13 @@ describe('apply job area + "Round Labor Up?"', () => {
     expect(applyArea(912, 'SqFt', [], [lvpInstall, lvpInstall])!.toast).toBe('✓ Applied 912 SqFt to 2 labor items');
     expect(applyArea(912, 'SqYd', [good], [lvpInstall])!.toast).toBe('No materials or labor items with UOM "SqYd" found in this section.');
     expect(applyArea(0, 'SqFt', [good], [])).toBeNull();
+  });
+
+  it('skips trim, transitions, moulding and nosing (counted by the piece)', () => {
+    const r = applyArea(300, 'SqFt', [good, { costUOM: 'SqFt', category: 'Trim/Transition' }, { costUOM: 'SqFt', category: 'Stair Nosing' }, { costUOM: 'SqFt', category: 'Moulding' }], [])!;
+    expect(r.materialQty).toEqual([309.01, null, null, null]);
+    expect(r.toast).toBe('✓ Applied 300 SqFt to 1 material');
+    expect(['Trim', 'T-Molding', 'transition strips', 'Nosing', 'LVP', '', null].map((category) => areaSkipsMaterial({ category }))).toEqual([true, true, true, true, false, false, false]);
   });
 
   it('matches materials on cost UOM, then coverage UOM, then purchase UOM', () => {

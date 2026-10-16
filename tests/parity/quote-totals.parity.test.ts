@@ -1,8 +1,9 @@
 /**
  * Quote-total parity: the app's builder recalc (qbFastRecalc), stored totals
  * (_mqTotals), totals box (_computeTotalsData), deposit line
- * (qbRefreshDownPaymentAmt) and approval (approveQuote) run in a sandbox
- * against computeQuoteTotals / storedQuoteTotals / quoteDeposit / approveQuote.
+ * (qbRefreshDownPaymentAmt) and approval (approveQuote, with its guards, the
+ * lead conversion and the next-month due date) run in a sandbox against
+ * computeQuoteTotals / storedQuoteTotals / quoteDeposit / approveQuote.
  *
  * Known, documented difference: the site rounds tax to the cent before adding
  * it (like the app's stored totals and invoices); the builder HEADER adds
@@ -11,11 +12,11 @@
  */
 import { describe, expect, it } from 'vitest';
 import {
-  approveQuote, computeQuoteTotals, depositLabel, fmtMoney, quoteDeposit, storedQuoteTotals, taxLabel,
-  type QuoteLabor, type QuoteMaterial, type QuoteSection, type QuoteSelection, type RowKey, type SectionKind,
+  approveQuote, approveQuoteGuard, computeQuoteTotals, depositLabel, fmtMoney, quoteDeposit, storedQuoteTotals, taxLabel,
+  type Lead, type QuoteLabor, type QuoteMaterial, type QuoteSection, type QuoteSelection, type RowKey, type SectionKind,
 } from '../../src/lib/logic';
-import { thread } from '../../src/data/sample-data';
-import { sandbox } from './app-source';
+import { leads, thread } from '../../src/data/sample-data';
+import { appDocumentDates, sandbox } from './app-source';
 import { fixedDate, money, pick, recorderDocument, rng, toAppQuote, toSelectedOptions, type AppQuote } from './helpers';
 
 const MC_FNS = ['qbMcIsChosen', 'qbMcChosenRowKey', 'qbMcSectionLocalIdx', 'qbMcDefaultRowKey', '_quoteSecActive', '_choiceActiveIdxs'];
@@ -58,7 +59,7 @@ function runBuilder(q: { sections: QuoteSection[]; taxRate: number; taxExempt: b
   const win = { _qb: appQ };
   const fns = sandbox<{ qbFastRecalc: () => void; _computeTotalsData: (t: string) => { rows: Array<{ label?: string; value?: string; divider?: boolean }> } }>(
     'index',
-    { fns: ['qbFastRecalc', '_qbSecActive', '_qbFmtQty', 'qbBuildQtyExtraHtml', '_qbInchFrac', 'qbRefreshDownPaymentAmt', '_computeTotalsData', 'fmt$', ...MC_FNS] },
+    { fns: ['qbFastRecalc', '_qbSecActive', '_qbFmtQty', 'qbBuildQtyExtraHtml', '_qbInchFrac', '_isRolledLine', '_rollWidthFt', '_rollQtyExtraHtml', '_iuFmtFt', 'qbRefreshDownPaymentAmt', '_computeTotalsData', 'fmt$', ...MC_FNS] },
     { window: win, document, setTimeout: noop, getQuote: () => undefined, qbSyncRails: noop },
   );
   fns.qbFastRecalc();
@@ -136,27 +137,81 @@ describe('stored totals (_mqTotals) vs storedQuoteTotals', () => {
 
 describe('approval (approveQuote) vs approveQuote', () => {
   const NOW = Date.parse('2026-10-15T17:00:00Z');
-  function runApprove(q: { sections: QuoteSection[]; taxRate: number; taxExempt: boolean }, number: string, selection: QuoteSelection | null, counters: { job: number; invoice: number }) {
+  const DocumentDates = appDocumentDates();
+  interface ApproveState { trusted?: boolean; existingJob?: boolean; existingInv?: boolean; lead?: Lead | null; today?: string }
+  function runApprove(q: { sections: QuoteSection[]; taxRate: number; taxExempt: boolean }, number: string, selection: QuoteSelection | null, counters: { job: number; invoice: number }, st: ApproveState = {}) {
+    const today = st.today ?? '2026-10-15';
     const appQ = {
-      ...toAppQuote(q.sections, q.taxRate, q.taxExempt), id: 'q1', number, status: 'sent', customerId: 'cu-1', leadId: null,
+      ...toAppQuote(q.sections, q.taxRate, q.taxExempt), id: 'q1', number, status: 'sent', customerId: st.lead ? '' : 'cu-1', leadId: st.lead ? st.lead.id : null,
       paymentTerms: '50% Deposit / 50% on Completion', downPaymentPct: 50, selectedOptions: toSelectedOptions(q.sections, selection),
       siteAddress: 'Reno, NV', salesRepId: 'ct-rep-2', salesRep: 'Marisol Vega', lineItemsHeader: 'Materials & Labor',
     };
-    const data = { quotes: [appQ], jobs: [] as Record<string, unknown>[], invoices: [] as Record<string, unknown>[], counters: { ...counters, quote: 0 }, systemSalesReps: [], customers: [], inventory: [], leads: [], quoteInteractions: [] };
+    const leadsList = st.lead ? [{ ...st.lead, address: st.lead.city, notes: [], contacts: [] }] : [];
+    const data = {
+      quotes: [appQ], jobs: (st.existingJob ? [{ id: 'jx', quoteId: 'q1' }] : []) as Record<string, unknown>[], invoices: (st.existingInv ? [{ id: 'ix', quoteId: 'q1' }] : []) as Record<string, unknown>[],
+      counters: { ...counters, quote: 0 }, systemSalesReps: [], customers: [] as Record<string, unknown>[], inventory: [], leads: leadsList, quoteInteractions: [],
+    };
     const toasts: string[] = [];
+    const acts: string[] = [];
     let link = 0;
     const fns = sandbox<{ approveQuote: (id: string) => void }>('index', {
       fns: ['approveQuote', 'applyCustomerSelectionToQuote', '_refreshQuoteStoredTotals', '_mqTotals', '_mqSecActive', 'qbChosenSectionsAndRows',
-        'qbFilterChosenItems', '_choiceGroups', '_coverageUnits', '_isoDay', ...MC_FNS],
+        'qbFilterChosenItems', '_choiceGroups', '_coverageUnits', '_isoDay', '_quoteConversionOf', '_resolveQuoteLeadToCustomer', '_convertLeadToCustomer',
+        '_carryLeadNotes', 'isCustomerCompany', ...MC_FNS],
     }, {
-      data, getQuote: (id: string) => data.quotes.find((x) => x.id === id), getCustomer: () => null, getLead: () => null,
-      _todayISO: () => '2026-10-15', _logQuoteApproval: noop, addActivity: noop, _resolveQuoteLeadToCustomer: (x: { customerId: string }) => x.customerId,
-      _newLinkId: () => `lk${++link}`, _syncSnap: () => ({}), createTasksForEvent: noop, showToast: (t: string) => toasts.push(t), saveData: noop,
-      navigate: noop, Date: fixedDate(NOW),
+      data, getQuote: (id: string) => data.quotes.find((x) => x.id === id), getCustomer: (id: string) => data.customers.find((c) => c.id === id),
+      getLead: (id: string) => data.leads.find((l) => l.id === id), _conversionDataTrusted: () => st.trusted !== false,
+      _todayISO: () => today, _logQuoteApproval: noop, addActivity: (t: string) => acts.push(t), DocumentDates,
+      _newLinkId: () => `lk${++link}`, _syncSnap: () => ({}), createTasksForEvent: noop, showToast: (t: string, k?: string) => toasts.push(k ? `${k}:${t}` : t), saveData: noop,
+      navigate: noop, Date: fixedDate(NOW), console: { warn: noop },
     });
     fns.approveQuote('q1');
-    return { job: data.jobs[0]!, inv: data.invoices[0]!, counters: data.counters, toasts };
+    return { job: data.jobs[0]!, inv: data.invoices[0]!, counters: data.counters, toasts, acts, quote: appQ, data };
   }
+
+  it('guards: nothing is made from a partial load, or twice', () => {
+    const q = { sections: thread.quote.sections, taxRate: thread.quote.taxRate, taxExempt: false };
+    for (const trusted of [true, false]) for (const existingJob of [false, true]) for (const existingInv of [false, true]) {
+      const a = runApprove(q, 'QT-330', thread.quote.selection, { job: 327, invoice: 324 }, { trusted, existingJob, existingInv });
+      const g = approveQuoteGuard({ dataLoaded: trusted, hasWorkOrder: existingJob, hasInvoice: existingInv });
+      const label = `${trusted} ${existingJob} ${existingInv}`;
+      if (g.kind === 'refuse') {
+        expect(a.toasts, label).toEqual([`${g.toastKind}:${g.toast}`]);
+        expect(a.quote.status).toBe('sent');
+      } else if (g.kind === 'alreadyConverted') {
+        expect(a.toasts, label).toEqual([g.toast]);
+        expect(a.quote.status).toBe('approved');
+        expect(a.data.jobs.length + a.data.invoices.length).toBe(Number(existingJob) + Number(existingInv)); // nothing new
+      } else {
+        expect(a.data.jobs.length, label).toBe(1);
+        expect(a.data.invoices.length, label).toBe(1);
+      }
+    }
+  });
+
+  it('a lead’s quote converts the lead and takes it off the pipeline', () => {
+    const q = { sections: thread.quote.sections, taxRate: thread.quote.taxRate, taxExempt: false };
+    for (const lead of [...leads.slice(0, 6), { ...leads[1]!, type: 'Designer' as const, salesRepId: '' }]) {
+      const a = runApprove(q, 'QT-330', thread.quote.selection, { job: 327, invoice: 324 }, { lead });
+      const s = approveQuote({ number: 'QT-330', sections: q.sections, taxRate: q.taxRate, taxExempt: false, salesRepId: 'ct-rep-2', lead }, thread.quote.selection, { job: 327, invoice: 324 }, '2026-10-15');
+      const cu = a.data.customers[0]!;
+      expect(a.data.leads, lead.number).toEqual([]);
+      expect([cu.type, cu.name, cu.salesRepId, cu.convertedFromLeadId]).toEqual([s.convertedLead!.customer.type, s.convertedLead!.customer.name, s.convertedLead!.customer.salesRepId, lead.id]);
+      expect(a.job.customerId).toBe(cu.id); // the work order and invoice carry the new customer
+      expect(a.inv.customerId).toBe(cu.id);
+      expect(a.acts).toContain(s.convertedLead!.activity[0]);
+    }
+  });
+
+  it('the invoice is due the same day next month (DocumentDates.invoiceDueDate)', () => {
+    const q = { sections: thread.quote.sections, taxRate: thread.quote.taxRate, taxExempt: false };
+    for (const today of ['2026-10-15', '2026-01-31', '2028-01-31', '2026-12-31', '2026-03-31']) {
+      const a = runApprove(q, 'QT-330', thread.quote.selection, { job: 327, invoice: 324 }, { today });
+      const s = approveQuote({ number: 'QT-330', sections: q.sections, taxRate: q.taxRate }, thread.quote.selection, { job: 327, invoice: 324 }, today);
+      expect(a.inv.dueDate, today).toBe(s.invoice.dueDate);
+      expect(a.inv.createdAt).toBe(today);
+    }
+  });
 
   const cases: Array<[string, { sections: QuoteSection[]; taxRate: number; taxExempt: boolean }, QuoteSelection | null]> = [
     ['sample, Better + stairs', { sections: thread.quote.sections, taxRate: thread.quote.taxRate, taxExempt: false }, thread.quote.selection],

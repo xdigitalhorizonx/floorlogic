@@ -2,12 +2,14 @@
 // Isolation layers (all on, always):
 //   1. --host-resolver-rules="MAP * ~NOTFOUND, EXCLUDE 127.0.0.1"  (no DNS for anything else)
 //      + a dead proxy for everything but 127.0.0.1 (belt and braces)
-//   2. CDP Fetch interception on every page: only http://127.0.0.1:<port> continues; the two
-//      CDN URLs the pages ask for (supabase-js, Google Fonts) are ANSWERED LOCALLY from disk;
-//      every other request is failed and logged.
-//   3. Network.setBlockedURLs for *supabase.co*, *supabase.in*, *supabase.io*, *landmark*.
-// Every attempted outside request is logged. assertClean() throws if any supabase or
-// landmark host was ever attempted.
+//   2. Request interception on every page: only http://127.0.0.1:<port> continues. The few
+//      outside URLs the app asks for are ANSWERED LOCALLY (LOCAL_ANSWERS below: supabase-js ->
+//      the offline stand-in, Google Fonts -> local Inter, Stripe.js -> an inert script, the
+//      weather API -> 503). Every other request is failed and logged.
+//   3. Network.setBlockedURLs for supabase / landmark / the live demo / vercel.app.
+// assertClean() throws if a forbidden host (supabase, landmark, the live demo, vercel.app,
+// openai, dialpad) was ever attempted, or if ANY outside request reached the block rule
+// (i.e. the app asked for something no local answer covers) — a run fails on any leak.
 import { createRequire } from 'node:module';
 import fs from 'node:fs';
 import path from 'node:path';
@@ -18,7 +20,20 @@ const require = createRequire(path.resolve(HERE, '../package.json')); // tools/v
 const puppeteer = require('puppeteer-core');
 
 export const CHROME = 'C:/Program Files/Google/Chrome/Application/chrome.exe';
-const FORBIDDEN_HOST = /supabase|landmark/i;
+const FORBIDDEN_HOST = /supabase|landmark|floorlogicdemo|vercel\.app|openai|dialpad/i;
+
+// Outside URLs the app asks for in normal use, answered on this machine (never forwarded).
+//   with: what the log says; body/status/type: the local response.
+const LOCAL_ANSWERS = [
+  { re: /^https:\/\/cdn\.jsdelivr\.net\/npm\/@supabase\/supabase-js@2/, with: 'offline supabase stand-in', type: 'text/javascript; charset=utf-8', body: (ctx) => ctx.stubSource() },
+  { re: /^https:\/\/fonts\.googleapis\.com\/css2/, with: 'local Inter woff2', type: 'text/css; charset=utf-8', body: (ctx) => ctx.interCss() },
+  // index.html loads Stripe.js up front (card payments). Card payments are off camera
+  // (the Charge Card tab is hidden), so an inert script stands in: window.Stripe stays unset.
+  { re: /^https:\/\/js\.stripe\.com\/v3\/?$/, with: 'inert script (Stripe off)', type: 'text/javascript; charset=utf-8', body: () => '/* offline film harness: Stripe.js is not loaded */\n' },
+  // The topbar weather chip fetches Open-Meteo on boot. Answered with an error (no invented
+  // weather): the app shows its own "no weather" state.
+  { re: /^https:\/\/api\.open-meteo\.com\/v1\/forecast\?/, with: '503 (weather off in the harness)', status: 503, type: 'application/json', body: () => JSON.stringify({ error: true, reason: 'offline film harness' }) },
+];
 
 export async function launchIsolated({ port, freezeAt, logPath, stubSource }) {
   const origin = `http://127.0.0.1:${port}`;
@@ -66,13 +81,14 @@ export async function launchIsolated({ port, freezeAt, logPath, stubSource }) {
     }
   });
 
-  const interInter = (inter) => `@font-face{font-family:'Inter';font-style:normal;font-weight:300 800;font-display:block;src:url(${origin}/__harness/inter.woff2) format('woff2');}`;
+  const interCss = () => `@font-face{font-family:'Inter';font-style:normal;font-weight:300 800;font-display:block;src:url(${origin}/__harness/inter.woff2) format('woff2');}`;
+  const answerCtx = { stubSource, interCss };
 
   async function isolatePage(page) {
     page.__flIsolated = true;
     const cdp = await page.createCDPSession();
     await cdp.send('Network.enable');
-    await cdp.send('Network.setBlockedURLs', { urls: ['*supabase.co*', '*supabase.in*', '*supabase.io*', '*landmark*'] });
+    await cdp.send('Network.setBlockedURLs', { urls: ['*supabase.co*', '*supabase.in*', '*supabase.io*', '*landmark*', '*floorlogicdemo*', '*vercel.app*'] });
     cdp.on('Network.requestWillBeSent', (e) => {
       const u = e.request.url;
       if (u.startsWith(origin) || u.startsWith('data:') || u.startsWith('blob:') || u.startsWith('about:')) return;
@@ -86,13 +102,10 @@ export async function launchIsolated({ port, freezeAt, logPath, stubSource }) {
       if (u.startsWith(origin + '/') || u === origin) return req.continue();
       if (u.startsWith('data:') || u.startsWith('blob:')) return req.continue();
       // Answered locally (never leaves the machine):
-      if (/^https:\/\/cdn\.jsdelivr\.net\/npm\/@supabase\/supabase-js@2/.test(u)) {
-        record({ kind: 'answered-locally', url: u, with: 'offline supabase stand-in' });
-        return req.respond({ status: 200, contentType: 'text/javascript; charset=utf-8', body: stubSource() });
-      }
-      if (/^https:\/\/fonts\.googleapis\.com\/css2/.test(u)) {
-        record({ kind: 'answered-locally', url: u, with: 'local Inter woff2' });
-        return req.respond({ status: 200, contentType: 'text/css; charset=utf-8', body: interInter() });
+      const ans = LOCAL_ANSWERS.find((a) => a.re.test(u));
+      if (ans) {
+        record({ kind: 'answered-locally', url: u, with: ans.with });
+        return req.respond({ status: ans.status || 200, contentType: ans.type, headers: { 'Access-Control-Allow-Origin': '*' }, body: ans.body(answerCtx) });
       }
       record({ kind: 'blocked', url: u, resourceType: req.resourceType() });
       return req.abort('blockedbyclient');
@@ -147,11 +160,15 @@ export async function launchIsolated({ port, freezeAt, logPath, stubSource }) {
   }
 
   function forbiddenAttempts() {
-    return isoLog.filter((e) => e.url && (() => { try { return FORBIDDEN_HOST.test(new URL(e.url).hostname); } catch (_) { return /supabase\.(co|in|io)|landmark/i.test(e.url); } })());
+    return isoLog.filter((e) => e.url && (() => { try { return FORBIDDEN_HOST.test(new URL(e.url).hostname); } catch (_) { return /supabase\.(co|in|io)|landmark|floorlogicdemo|vercel\.app/i.test(e.url); } })());
   }
+  // Outside requests no local answer covers (refused at the interception layer).
+  function unansweredAttempts() { return isoLog.filter((e) => e.kind === 'blocked' || e.kind === 'websocket-attempt'); }
   function assertClean() {
     const bad = forbiddenAttempts();
-    if (bad.length) { const err = new Error('ISOLATION FAILURE: forbidden host attempted: ' + bad.map((b) => b.url).join(', ')); err.bad = bad; throw err; }
+    if (bad.length) { const err = new Error('ISOLATION FAILURE: forbidden host attempted: ' + [...new Set(bad.map((b) => b.url))].join(', ')); err.bad = bad; throw err; }
+    const stray = unansweredAttempts();
+    if (stray.length) { const err = new Error('ISOLATION FAILURE: outside request(s) with no local answer: ' + [...new Set(stray.map((b) => b.url))].join(', ')); err.bad = stray; throw err; }
   }
-  return { browser, newPage, setClock, isoLog, pageErrors, consoleErrors, assertClean, forbiddenAttempts, origin };
+  return { browser, newPage, setClock, isoLog, pageErrors, consoleErrors, assertClean, forbiddenAttempts, unansweredAttempts, origin };
 }

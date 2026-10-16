@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { DEFAULT_TAX, getTaxRateFromAddress, materialsTax, taxLabel, WASHOE_TAX } from '../../src/lib/logic';
+import { countyFromTown, DEFAULT_TAX, getTaxRateFromAddress, materialsTax, taxLabel, taxRatePill, WASHOE_TAX } from '../../src/lib/logic';
 
 describe('Nevada tax lookup', () => {
   it.each([
@@ -16,9 +16,18 @@ describe('Nevada tax lookup', () => {
     expect(getTaxRateFromAddress(addr)).toEqual({ rate, label });
   });
 
-  it('town names match anywhere in the text, first table entry wins (app behaviour)', () => {
-    // "Renova" contains "reno": the app's substring match calls it Washoe.
-    expect(getTaxRateFromAddress('123 Renova Ct, Elko, NV')?.label).toBe('Washoe County');
+  it('towns match on whole words, after the street line, longest name first (changed since August)', () => {
+    // August: "Renova" contained "reno" → Washoe. Now the town after the comma decides.
+    expect(getTaxRateFromAddress('123 Renova Ct, Elko, NV')?.label).toBe('Elko County');
+    // "Jeanette" no longer reads as Jean (Clark County).
+    expect(getTaxRateFromAddress('60 Jeanette Dr, Carson City, NV 89706')).toEqual({ rate: 0.076, label: 'Carson City County' });
+    // A street named after a town does not move the tax.
+    expect(getTaxRateFromAddress('1200 Austin Ave, Reno, NV 89509')?.label).toBe('Washoe County');
+    // A written town beats a ZIP that straddles two counties; the ZIP decides when no town is written.
+    expect(getTaxRateFromAddress('975 Adobe Dr, Carson City, NV 89705')?.label).toBe('Carson City County');
+    expect(getTaxRateFromAddress('975 Adobe Dr, NV 89705')?.label).toBe('Douglas County');
+    expect(countyFromTown('north las vegas, nv')).toBe('clark');
+    expect(countyFromTown('61 industrial pkwy, mound house, nv 89706')).toBeNull(); // the table spells it "moundhouse"
   });
 
   it('nothing recognisable → null; the builder then uses Carson City', () => {
@@ -28,11 +37,13 @@ describe('Nevada tax lookup', () => {
     expect(WASHOE_TAX).toEqual(getTaxRateFromAddress('Reno, NV'));
   });
 
-  it('labels: "Tax (8.27%)" for Washoe, "Tax (Exempt)" when exempt', () => {
-    expect(taxLabel(0.08265)).toBe('Tax (8.27%)');
-    expect(taxLabel(0.076)).toBe('Tax (7.60%)');
-    expect(taxLabel(0.08375)).toBe('Tax (8.38%)');
+  it('labels keep up to 3 decimals: "Tax (8.265%)" for Washoe, "Tax (Exempt)" when exempt', () => {
+    expect(taxLabel(0.08265)).toBe('Tax (8.265%)');
+    expect(taxLabel(0.076)).toBe('Tax (7.6%)');
+    expect(taxLabel(0.08375)).toBe('Tax (8.375%)');
+    expect(taxLabel(0)).toBe('Tax (0%)');
     expect(taxLabel(0.08265, true)).toBe('Tax (Exempt)');
+    expect([taxRatePill(0.08265), taxRatePill(0.076), taxRatePill(0.08265, true), taxRatePill(null)]).toEqual(['8.265%', '7.600%', '0.000%', '0.000%']);
   });
 
   it('tax is on materials only and zero when exempt', () => {

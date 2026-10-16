@@ -1,8 +1,10 @@
 import { describe, expect, it } from 'vitest';
 import {
-  advanceLabel, advanceTip, approveConfirmText, approveLead, approveToast, BOARD_STATUSES, canDrop, cardPrimaryAction, changeStatus,
-  columnBucket, followUpState, isLeadStale, LEAD_COLORS, LEAD_COLORS_APP, LEAD_LABELS, LEAD_STATUSES, lostConfirmText, nextLeadNumber,
-  nextStatus, setSurveyDate, SURVEY_DATE_REQUIRED_TOAST, surveyTaskTitle, surveyToast, type Lead,
+  advanceLabel, advanceLead, advanceTip, APPROVE_VIA_QUOTE_TOAST, approveConfirmText, approveLead, approveToast, BOARD_STATUSES, canDrop, cardPrimaryAction,
+  changeStatus, columnBucket, convertLeadOnQuoteApproval, customerTypeFromLead, followUpState, isLeadStale, LEAD_AGE_BUCKETS, leadAgeBucketDefaultOpen,
+  leadAgeBucketKey, leadAgeBucketLabel, LEAD_COLORS, LEAD_COLORS_APP, LEAD_LABELS, LEAD_STATUSES, leadStageAgeDays, lostConfirmText, nextLeadNumber, nextStatus,
+  quoteSentToLead, setSurveyDate, stageTask, statusChangeActivity, SURVEY_DATE_REQUIRED_PANEL_TOAST, SURVEY_DATE_REQUIRED_TOAST, surveyDayReached, surveyTaskTitle,
+  surveyToast, type Lead,
 } from '../../src/lib/logic';
 
 const lead = (over: Partial<Lead> = {}): Lead => ({
@@ -35,14 +37,22 @@ describe('advancing', () => {
     ['quote_sent', null],
   ])('nextStatus(%s) = %s', (from, to) => expect(nextStatus(from)).toBe(to));
 
-  it('card primary action per status', () => {
+  it('card primary action per status — no "→ Approved" any more', () => {
     expect(cardPrimaryAction({ status: 'new' })).toEqual({ kind: 'surveyPicker', tip: 'Pick a site-survey date — auto-moves this lead to Site Survey Scheduled' });
     expect(cardPrimaryAction({ status: 'site_survey_scheduled' })).toEqual({ kind: 'none' });
     expect(cardPrimaryAction({ status: 'send_quote' })).toEqual({ kind: 'advance', to: 'follow_up', label: '→ Follow-up', tip: 'Advance to Follow-up', approves: false });
-    expect(cardPrimaryAction({ status: 'follow_up' })).toEqual({ kind: 'advance', to: 'approved', label: '→ Approved', tip: 'Advance to Approved', approves: true });
-    expect(cardPrimaryAction({ status: 'approved' })).toMatchObject({ kind: 'advance', to: 'lost', label: '→ Lost' });
+    expect(cardPrimaryAction({ status: 'follow_up' })).toEqual({ kind: 'none' }); // won through its quote now
+    expect(cardPrimaryAction({ status: 'approved' })).toEqual({ kind: 'advance', to: 'lost', label: '→ Lost', tip: 'Advance to Lost', approves: false }); // app quirk, kept
     expect(cardPrimaryAction({ status: 'lost' })).toEqual({ kind: 'none' });
     expect([advanceLabel('send_quote'), advanceTip('send_quote')]).toEqual(['→ Send Quote', 'Advance to Send Quote']);
+  });
+
+  it('"→ Next" (advanceLead): the step into Approved is refused', () => {
+    expect(advanceLead({ status: 'new' })).toEqual({ kind: 'move', to: 'site_survey_scheduled' });
+    expect(advanceLead({ status: 'follow_up' })).toEqual({ kind: 'refuse', toast: 'Approve the lead’s quote to move it to Approved.', toastKind: 'warning' });
+    expect(advanceLead({ status: 'approved' })).toEqual({ kind: 'move', to: 'lost' });
+    expect(advanceLead({ status: 'lost' })).toEqual({ kind: 'none' });
+    expect(APPROVE_VIA_QUOTE_TOAST.includes('’')).toBe(true); // a real apostrophe, like the app
   });
 });
 
@@ -57,22 +67,33 @@ describe('drag and drop', () => {
     expect(SURVEY_DATE_REQUIRED_TOAST).toBe('📐 Set a site-survey date on the card first — that auto-moves it here.');
     expect(canDrop(lead({ status: 'new', siteSurveyDate: '2026-10-16' }), 'site_survey_scheduled')).toEqual({ ok: true, to: 'site_survey_scheduled', confirm: null, approves: false });
   });
-  it('Approved asks the exact confirm and approves', () => {
-    const r = canDrop(lead(), 'approved');
-    expect(r).toEqual({
-      ok: true, to: 'approved', approves: true,
-      confirm: 'Move Dev & Anjali Prasad to Approved? This will convert the lead to a customer and create a work order + invoice.',
-    });
+  it('the List View panel words that refusal its own way', () => {
+    expect(canDrop(lead({ status: 'new', siteSurveyDate: null }), 'site_survey_scheduled', 'panel')).toMatchObject({ toast: SURVEY_DATE_REQUIRED_PANEL_TOAST });
+    expect(SURVEY_DATE_REQUIRED_PANEL_TOAST).toBe('📐 Set a site-survey date first — that auto-moves it here.');
+  });
+  it('Approved is refused — a lead is won when its quote is approved', () => {
+    expect(canDrop(lead(), 'approved')).toEqual({ ok: false, reason: 'approve-via-quote', toast: APPROVE_VIA_QUOTE_TOAST, toastKind: 'warning' });
+    expect(canDrop(lead(), 'approved', 'panel')).toEqual({ ok: false, reason: 'approve-via-quote', toast: APPROVE_VIA_QUOTE_TOAST, toastKind: 'warning' });
+    // August's confirm, kept only for old imports
     expect(approveConfirmText({ name: 'X' })).toBe('Move X to Approved? This will convert the lead to a customer and create a work order + invoice.');
   });
-  it('Lost asks to confirm; other columns move straight away', () => {
+  it('Lost asks to confirm; other columns move straight away (backwards too)', () => {
     expect(canDrop(lead(), 'lost')).toEqual({ ok: true, to: 'lost', confirm: 'Mark Dev & Anjali Prasad as Lost?', approves: false });
     expect(lostConfirmText({ name: 'Bill Hargrove' })).toBe('Mark Bill Hargrove as Lost?');
     expect(canDrop(lead(), 'follow_up')).toEqual({ ok: true, to: 'follow_up', confirm: null, approves: false });
     expect(canDrop(lead(), 'new')).toEqual({ ok: true, to: 'new', confirm: null, approves: false });
   });
-  it('changeStatus restarts the stage clock', () => {
+  it('changeStatus restarts the stage clock and logs the move', () => {
     expect(changeStatus(lead(), 'follow_up', '2026-10-14')).toMatchObject({ status: 'follow_up', stageChangedAt: '2026-10-14', stageAgeDays: 0 });
+    expect(statusChangeActivity(lead(), 'follow_up')).toBe('Lead LD-056 → Follow-up');
+  });
+  it('the task a manual move adds', () => {
+    expect(stageTask({ ...lead(), address: 'Reno, NV' }, 'send_quote')).toEqual({
+      title: 'Send quote to Dev & Anjali Prasad', description: 'Build and send the quote to Dev & Anjali Prasad.', priority: 'high', due: { inDays: 2 },
+    });
+    expect(stageTask({ ...lead(), address: 'Reno, NV' }, 'site_survey_scheduled')).toMatchObject({ title: 'Site survey: Dev & Anjali Prasad', due: { date: '2026-10-12' } });
+    expect(stageTask({ ...lead({ siteSurveyDate: null }), address: '' }, 'site_survey_scheduled')!.description).toBe('Confirm a survey date with the customer and visit (no address).');
+    expect(stageTask(lead(), 'approved')).toBeNull();
   });
 });
 
@@ -98,7 +119,44 @@ describe('survey date', () => {
   });
 });
 
-describe('approving a lead from the board', () => {
+describe('automatic moves', () => {
+  it('survey day reached → Send Quote, on the day itself', () => {
+    const r = surveyDayReached(lead({ status: 'site_survey_scheduled', siteSurveyDate: '2026-10-14', stageAgeDays: 4 }), '2026-10-14')!;
+    expect(r.lead).toMatchObject({ status: 'send_quote', stageChangedAt: '2026-10-14', stageAgeDays: 0 });
+    expect(r.activity).toBe('Lead LD-056 auto-moved to Send Quote (survey date passed)');
+    expect(r.task).toEqual({ title: 'Send quote to Dev & Anjali Prasad', description: 'Site survey on Oct 14, 2026 is complete. Build and send the quote.', priority: 'high', due: { inDays: 2 } });
+    expect(r.completesSurveyTasks).toBe(true);
+    expect(surveyDayReached(lead({ status: 'site_survey_scheduled', siteSurveyDate: '2026-10-15' }), '2026-10-14')).toBeNull();
+    expect(surveyDayReached(lead({ status: 'new', siteSurveyDate: '2026-10-01' }), '2026-10-14')).toBeNull();
+  });
+
+  it('a quote emailed or texted → Follow-up from any open stage', () => {
+    const r = quoteSentToLead(lead({ status: 'new' }), 'QT-330', 'email', '2026-10-14')!;
+    expect(r.lead).toMatchObject({ status: 'follow_up', stageChangedAt: '2026-10-14' });
+    expect(r.activity).toBe('Lead LD-056 → Follow-up (quote QT-330 sent via email)');
+    expect(r.task).toMatchObject({ title: 'Follow up with Dev & Anjali Prasad on quote QT-330', priority: 'medium', due: { inDays: 3 } });
+    const again = quoteSentToLead(lead({ status: 'follow_up' }), 'QT-330', 'SMS', '2026-10-14', true)!;
+    expect([again.activity, again.task, again.lead.status]).toEqual([null, null, 'follow_up']);
+    expect(quoteSentToLead(lead({ status: 'lost' }), 'QT-330', 'email', '2026-10-14')).toBeNull();
+    expect(quoteSentToLead(lead({ status: 'approved' }), 'QT-330', 'email', '2026-10-14')).toBeNull();
+  });
+});
+
+describe('won through the quote', () => {
+  it('approving a lead’s quote converts it to a customer and takes it off the pipeline', () => {
+    const r = convertLeadOnQuoteApproval(lead({ type: 'Property Management', salesRepId: '' }), '2026-10-15', 'ct-rep-2');
+    expect(r.customer).toMatchObject({
+      id: 'cu-ld-16', type: 'Property Management', salesRepId: 'ct-rep-2', customerSince: '2026-10-15', convertedFromLeadId: 'ld-16', propertyLabel: 'Main Office',
+    });
+    expect(r.removedFromPipeline).toBe(true);
+    expect(r.activity).toEqual(['Lead LD-056 converted to customer']);
+    expect(convertLeadOnQuoteApproval(lead(), '2026-10-15').customer).toMatchObject({ type: 'Retail', salesRepId: 'ct-rep-2', propertyLabel: 'Home' });
+    expect(['Retail', 'Commercial', 'Property Management', 'Builder', 'Designer', 'Realtor', ''].map(customerTypeFromLead))
+      .toEqual(['Retail', 'Commercial', 'Property Management', 'Builder', 'Retail', 'Retail', 'Retail']);
+  });
+});
+
+describe('approving a lead from the board (AUGUST app only — kept for old imports)', () => {
   it('bumps job + invoice counters, pads to 3 digits, value becomes the invoice', () => {
     const r = approveLead(lead({ number: 'LD-059', name: 'Meadowbrook Villas HOA', estimatedValue: 28800, type: 'Property Management' }),
       { lead: 60, quote: 330, job: 327, invoice: 324 }, '2026-10-14');
@@ -127,6 +185,11 @@ describe('card decorations', () => {
     expect(isLeadStale({ status: 'new', stageAgeDays: 6 })).toBe(false);
     expect(isLeadStale({ status: 'follow_up', stageAgeDays: 13 })).toBe(false);
     expect(isLeadStale({ status: 'approved', stageAgeDays: 500 })).toBe(false);
+    // from the dates, like the app: stageChangedAt, else createdAt
+    expect(isLeadStale({ status: 'new', stageChangedAt: '2026-10-07' }, '2026-10-14')).toBe(true);
+    expect(isLeadStale({ status: 'send_quote', stageChangedAt: '', createdAt: '2026-10-08' }, '2026-10-14')).toBe(false);
+    expect(leadStageAgeDays({ stageChangedAt: null, createdAt: '2026-10-06' }, '2026-10-14')).toBe(8);
+    expect(leadStageAgeDays({}, '2026-10-14')).toBe(0);
   });
   it('follow-up state', () => {
     expect(followUpState(null, '2026-10-14')).toBeNull();
@@ -135,7 +198,13 @@ describe('card decorations', () => {
     expect(followUpState('2026-10-21', '2026-10-14')).toBe('soon');
     expect(followUpState('2026-10-22', '2026-10-14')).toBe('scheduled');
   });
-  it('column buckets by lead age', () => {
+  it('column buckets by lead age, their labels and which start open', () => {
     expect(['2026-10-14', '2026-10-13', '2026-10-07', '2026-09-14', '2026-09-13'].map((d) => columnBucket(d, '2026-10-14'))).toEqual(['today', 'today', 'week', 'month', 'older']);
+    expect(leadAgeBucketKey('2026-10-12', '2026-10-14')).toBe('week');
+    expect(LEAD_AGE_BUCKETS.map((b) => b.label)).toEqual(['📥 Today', '📆 This Week', '📅 This Month', '🗂 Older']);
+    expect([leadAgeBucketLabel('week'), leadAgeBucketLabel('nope')]).toEqual(['📆 This Week', 'nope']);
+    expect((['today', 'week', 'month', 'older'] as const).map((k) => leadAgeBucketDefaultOpen(k, 5, 1))).toEqual([true, true, true, false]);
+    expect((['today', 'week', 'month', 'older'] as const).map((k) => leadAgeBucketDefaultOpen(k, 16, 2))).toEqual([true, false, false, false]);
+    expect(leadAgeBucketDefaultOpen('week', 16, 0)).toBe(true);
   });
 });

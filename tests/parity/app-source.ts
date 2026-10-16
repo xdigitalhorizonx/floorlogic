@@ -2,12 +2,16 @@
  * Pulls REAL functions out of the live app's exported HTML so parity tests can
  * run them side by side with the site's ports.
  *
- * Source of truth: the FloorLogic demo `main` branch, exported to
- *   demo-main-index.html (28,047 lines) and demo-main-q.html.
- * Set FLOORLOGIC_APP_EXPORT_DIR to the folder holding them. When the exports
- * are present they are extracted live AND checked against the committed
- * snapshot (fixtures/app-source.json); when they are absent the snapshot is
- * used, so the suite still runs on any machine.
+ * Source of truth: the FloorLogic demo `main` branch as deployed at
+ * floorlogicdemo.vercel.app — demo commit 80be9ee, synced from
+ * landmark-flooring-app dd609d2 on 2026-10-14 — exported to
+ *   demo-main-index.html (34,159 lines), demo-main-q.html (1,987 lines) and
+ *   document-dates.js (the DocumentDates helper both pages load).
+ * Set FLOORLOGIC_APP_EXPORT_DIR to the folder holding them (default: the
+ * repo's tools/video/app-export). When the exports are present they are
+ * extracted live AND checked against the committed snapshot
+ * (fixtures/app-source.json); when they are absent the snapshot is used, so
+ * the suite still runs on any machine.
  *
  * Refresh the snapshot after re-exporting main:
  *   UPDATE_APP_SNAPSHOT=1 npx vitest run tests/parity/snapshot.test.ts
@@ -20,11 +24,15 @@ import { fileURLToPath } from 'node:url';
 const HERE = path.dirname(fileURLToPath(import.meta.url));
 export const SNAPSHOT_PATH = path.join(HERE, 'fixtures', 'app-source.json');
 
-/** Session scratch folder the exports were written to (2026-10-14). */
-const DEFAULT_EXPORT_DIR = 'C:/Users/Landmark/AppData/Local/Temp/claude/C--/d597fd48-77ff-4168-956e-996f00e022e7/scratchpad';
+/** Where tools/video keeps the export of the live demo build. */
+const DEFAULT_EXPORT_DIR = 'C:/dev/floorlogic/tools/video/app-export';
 export const EXPORT_DIR = process.env.FLOORLOGIC_APP_EXPORT_DIR || DEFAULT_EXPORT_DIR;
-export const EXPORT_FILES = { index: 'demo-main-index.html', q: 'demo-main-q.html' } as const;
+export const EXPORT_FILES = { index: 'demo-main-index.html', q: 'demo-main-q.html', docDates: 'document-dates.js' } as const;
 export type SourceName = keyof typeof EXPORT_FILES;
+const SOURCE_NAMES = Object.keys(EXPORT_FILES) as SourceName[];
+
+/** What the snapshot was taken from. */
+export const SNAPSHOT_LABEL = 'demo main export (80be9ee = landmark-flooring-app dd609d2), 2026-10-15';
 
 // ------------------------------------------------------------ tokenizer ---
 
@@ -84,6 +92,9 @@ function regexAllowed(prev: Prev): boolean {
  * literals while tracking bracket depth. Stops either right after the bracket
  * that brings depth back to zero (`untilBalanced`), or AT the first `;` seen
  * at depth zero (statements). Returns that index.
+ *
+ * Checked against every one of the current index.html's 2,968 uniquely named
+ * functions: all extract and compile (async ones with their `async`).
  */
 function walk(src: string, start: number, mode: 'untilBalanced' | 'untilSemicolon'): number {
   const stack: string[] = [];
@@ -141,14 +152,17 @@ export interface Extracted {
   code: string;
 }
 
-/** `function name(…){…}` — must be defined exactly once. */
+/**
+ * `function name(…){…}` (or `async function name(…){…}`, kept with its
+ * `async` so it compiles) — must be defined exactly once.
+ */
 export function extractFunction(src: string, name: string): Extracted {
-  const re = new RegExp(`(^|[^.\\w$])function\\s+${esc(name)}\\s*\\(`, 'g');
+  const re = new RegExp(`(^|[^.\\w$])((?:async\\s+)?function\\s+${esc(name)}\\s*\\()`, 'g');
   const hits = [...src.matchAll(re)];
   if (hits.length !== 1) throw new Error(`extractFunction(${name}): ${hits.length} definitions`);
   const m = hits[0]!;
   const start = m.index! + m[1]!.length;
-  const paren = src.indexOf('(', start);
+  const paren = start + m[2]!.length - 1;
   const afterParams = matchBracket(src, paren);
   const brace = src.indexOf('{', afterParams);
   if (src.slice(afterParams, brace).trim() !== '') throw new Error(`extractFunction(${name}): no body after params`);
@@ -178,40 +192,60 @@ export function extractText(src: string, re: RegExp): Extracted {
 
 // ------------------------------------------------------------- manifest ---
 
-type Item = { source: SourceName } & ({ fn: string } | { constName: string } | { text: string; re: RegExp });
+export type Item = { source: SourceName } & ({ fn: string } | { constName: string } | { text: string; re: RegExp });
 
 const fn = (source: SourceName, ...names: string[]): Item[] => names.map((n) => ({ source, fn: n }));
 const cst = (source: SourceName, ...names: string[]): Item[] => names.map((n) => ({ source, constName: n }));
 
 /** Everything the parity tests run or read. */
 export const MANIFEST: Item[] = [
-  ...fn('q', 'termRule', 'invoiceAgeDays', 'computeDueNow', 'fmt$', 'plusDays', 'fmtDate', 'esc'),
+  // ---------------------------------------------------------- q.html
+  ...fn('q', 'termRule', 'invoiceAgeDays', 'computeDueNow', 'fmt$', 'fmtDate', 'esc', 'payTypeLabel', 'payCardLine', 'payCheckNo', 'cardBrandName'),
+  ...cst('q', 'CARD_BRANDS'),
+  // The live invoice's PAYMENT box, as the whole IIFE so it can be executed.
+  { source: 'q', text: 'payment-box', re: /\(function\(\)\{\n\s*\/\/ Invoice-only: the PAYMENT area[\s\S]*?\n {10}\}\)\(\)/ },
+  // Issued / Valid until / Due dates on the customer page.
+  { source: 'q', text: 'doc-dates', re: /const issued = q\.created_at[^\n]*\n(?:[^\n]*\n){4}[^\n]*DocumentDates\.addDays\(q\.created_at, 30\)\) : ''\);/ },
+  // ------------------------------------------------ document-dates.js
+  { source: 'docDates', text: 'DocumentDates', re: /\(function\(root\)\{[\s\S]*?root\.DocumentDates=\{[^}]*\};\n\}\)\(window\);/ },
+  // ---------------------------------------------------------- index.html
   ...fn(
     'index',
     // formatting + dates
-    'fmt$', '_isoDay', 'fmtDate', 'daysBetween', 'statusBadge',
-    // cartons + roll
-    'setQBMaterialQty', 'qbRecalcRollQty', '_qbInchFrac', 'qbBuildQtyExtraHtml', '_qbFmtQty', '_coverageUnits',
+    'fmt$', '_isoDay', '_dateOnly', 'fmtDate', 'daysBetween', 'statusBadge',
+    // cartons + roll goods
+    'setQBMaterialQty', 'qbRecalcRollQty', '_qbInchFrac', 'qbBuildQtyExtraHtml', 'woBuildQtyExtraHtml', '_qbFmtQty', '_coverageUnits',
+    '_covUnitKey', '_lineCoverage',
     'applyAreaQty', 'openLaborRoundupModal', 'roundupLaborQty',
+    '_rollWidthFt', '_isRolledLine', '_rollQtyIsSqYd', '_rollWidthFor', '_rollEnsureWidth', '_rollInchesFor', '_rollLengthFromQty',
+    '_rollQtyExtraHtml', '_rollDimsOpen', '_rollDimsApply', 'qbApplyRollDimensions', '_iuFmtFt',
     // quote totals
     'qbFastRecalc', 'qbRefreshDownPaymentAmt', 'qbMcIsChosen', 'qbMcChosenRowKey', 'qbMcSectionLocalIdx', 'qbMcDefaultRowKey',
     '_qbSecActive', '_quoteSecActive', '_choiceActiveIdxs', '_choiceGroups', '_mqTotals', '_mqSecActive', '_computeTotalsData',
     'qbChosenSectionsAndRows', 'qbFilterChosenItems', 'applyCustomerSelectionToQuote', '_refreshQuoteStoredTotals', 'approveQuote',
+    '_quoteConversionOf', '_resolveQuoteLeadToCustomer',
     // tax
-    '_nvTaxResult', 'getTaxRateFromAddress',
+    '_nvTaxResult', '_nvCityHit', '_nvCityCounty', 'getTaxRateFromAddress',
     // leads
-    'kanbanDrop', 'advanceLead', 'approveLead', 'changeLeadStatus', 'setLeadSurveyDate', 'getFollowUpState', 'isLeadStale', 'getLeadStageAgeDays',
+    'kanbanDrop', 'advanceLead', '_leadTryMoveStage', 'changeLeadStatus', 'setLeadSurveyDate', 'getFollowUpState', 'isLeadStale',
+    'getLeadStageAgeDays', '_leadAgeBucketKey', '_leadAgeBucketLabel', '_runLeadAutoTransitions', '_onQuoteSentToCustomer',
+    '_ensureTaskForLeadStage', '_convertLeadToCustomer', '_carryLeadNotes', 'isCustomerCompany', 'leadKbColumnBodyHTML',
     // work orders
-    'completeJob', 'markJobPaid', 'saveScheduleJob', '_matMaybeAdvance', '_jobMatState', '_jobMatLines', '_matLineOrdered', '_matLineIn', '_advanceJobToReady',
-    // invoices + job costing
-    'acctRecordInvPayment', '_invPaidAmt', '_jobFinance', '_jcRollup', '_jcForJob', '_jcAll', '_jcAmount', '_jcBucket', '_jobRepShares',
-    '_invProcessingFees', '_payProcessingFee', '_isCardPayment', '_cardFeeRate', '_jcEstimate', '_jcActual',
+    'completeJob', 'markJobPaid', 'saveScheduleJob', '_matMaybeAdvance', '_jobMatState', '_jobMatLines', '_matLineOrdered', '_matLineIn',
+    '_advanceJobToReady', '_isoParts', '_isoAddDays', '_isoDayDiff', '_jobInstallSpan', '_installRangeLabel', '_jobInstallEnd',
+    '_woGroupParent', '_woGroupInvoice', '_woGroupJobs', '_woGroupPaidInFull', '_plAutoAdvanceSweep', '_ndMarkJobStarted',
+    'submitOrderMaterials', '_jobBucket', 'jcMarkGroupPaid', 'jcMarkGroupComplete',
+    // invoices + payments + job costing
+    'acctRecordInvPayment', '_invPaidAmt', '_invDisplayStatus', '_jobFinance', '_jcRollup', '_jcForJob', '_jcAll', '_jcAmount', '_jcBucket',
+    '_jobRepShares', '_invProcessingFees', '_payProcessingFee', '_isCardPayment', '_cardFeeRate', '_jcEstimate', '_jcActual', '_jpoTotal',
+    '_jcPaidInFull', '_jcGroupStatus', '_jcCommissionOwed', '_ibCanTakePayment', '_invBalAmt', 'recordPayment', '_cardBrandName', '_payCardLine',
   ),
   ...cst(
     'index',
-    'LEAD_STATUSES', 'LEAD_STATUS_LABELS', 'LEAD_STATUS_COLORS', 'QUOTE_STATUS_COLORS', 'JOB_STATUS_COLORS', 'JOB_STATUS_LABELS', 'INV_STATUS_COLORS',
-    'NV_COUNTY_TAX', 'NV_CITY_COUNTY', 'NV_ZIP_COUNTY', 'NV_ZIP3_COUNTY', 'LEAD_STALE_DAYS', 'PIPELINE_STAGES', 'JOB_BUCKETS', 'JC_KINDS',
-    'CARD_FEE_PCT_DEFAULT',
+    'LEAD_STATUSES', 'LEAD_STATUS_LABELS', 'LEAD_STATUS_COLORS', 'QUOTE_STATUS_COLORS', 'QUOTE_STATUS_LABELS', 'JOB_STATUS_COLORS', 'JOB_STATUS_LABELS',
+    'INV_STATUS_COLORS', 'NV_COUNTY_TAX', 'NV_CITY_COUNTY', 'NV_ZIP_COUNTY', 'NV_ZIP3_COUNTY', 'LEAD_STALE_DAYS', 'LEAD_AGE_BUCKETS', 'PIPELINE_STAGES',
+    'JOB_BUCKETS', 'PIPELINE_CLOSED', 'JC_KINDS', 'CARD_FEE_PCT_DEFAULT', 'ROLL_DEFAULT_WIDTH_FT', 'JOB_MAX_INSTALL_DAYS', 'PL_STALL_DAYS',
+    'PL_LATE_GRACE_DAYS', '_JC_STAGE_DONE', '_CARD_BRANDS',
   ),
   { source: 'index', text: 'root-css', re: /:root\{[^}]*\}/ },
   { source: 'index', text: 'badge-css', re: /\.badge-blue\{[^\n]*\n(?:\.badge-[a-z]+\{[^\n]*\n){8}/ },
@@ -221,8 +255,10 @@ export const MANIFEST: Item[] = [
   { source: 'index', text: 'lead-card-actions', re: /let primaryHTML;\n[\s\S]*?\n {2}\/\/ Action bar/ },
   { source: 'index', text: 'privacy-css', re: /\[data-privacy="on"\] \.qb-private,[^\n]*\n[^\n]*\n[^\n]*/ },
   { source: 'index', text: 'privacy-tooltip', re: /data-tip="Privacy Mode — [^"]*"/ },
-  // The live invoice's PAYMENT box, as the whole IIFE so it can be executed.
-  { source: 'q', text: 'payment-box', re: /\(function\(\)\{\n\s*\/\/ Invoice-only: the PAYMENT area[\s\S]*?\n {10}\}\)\(\)/ },
+  { source: 'index', text: 'tax-rate-pill', re: /const pct=exempt\?'0\.000%':\(\(qb\.taxRate\|\|0\)\*100\)\.toFixed\(3\)\+'%';/ },
+  // Job Costing: the job page's seven-figure bar, and the list's Variance card.
+  { source: 'index', text: 'jc-metric-bar', re: /\$\{_jcMetricBar\(\[\n\s*\{label:'Revenue'[\s\S]*?\n\]\)\}/ },
+  { source: 'index', text: 'jc-list-variance', re: /\$\{_acctStatCard\('Variance',[^\n]*?\)\}/ },
 ];
 
 export function itemKey(item: Item): string {
@@ -250,7 +286,7 @@ function readExport(name: SourceName): string {
 
 /** Extract every manifest item from the exports on disk. */
 export function extractLive(): Snapshot {
-  const srcs = { index: readExport('index'), q: readExport('q') };
+  const srcs = Object.fromEntries(SOURCE_NAMES.map((n) => [n, readExport(n)])) as Record<SourceName, string>;
   const items: Record<string, Extracted> = {};
   for (const item of MANIFEST) {
     const src = srcs[item.source];
@@ -261,7 +297,8 @@ export function extractLive(): Snapshot {
     lines: srcs[name].split('\n').length,
     sha256: createHash('sha256').update(srcs[name]).digest('hex'),
   });
-  return { generated: 'demo main export, 2026-10-14', sources: { index: meta('index'), q: meta('q') }, items };
+  const sources = Object.fromEntries(SOURCE_NAMES.map((n) => [n, meta(n)])) as Snapshot['sources'];
+  return { generated: SNAPSHOT_LABEL, sources, items };
 }
 
 export function readSnapshot(): Snapshot | null {
@@ -317,4 +354,17 @@ export function sandbox<T extends Record<string, unknown>>(
   // eslint-disable-next-line @typescript-eslint/no-implied-eval
   const factory = new Function(...ids, body) as (...args: unknown[]) => T;
   return factory(...ids.map((k) => globals[k]));
+}
+
+/** The app's real `DocumentDates` (document-dates.js), evaluated against a stand-in `window`. */
+export function appDocumentDates(): {
+  dateOnly: (v: unknown) => string;
+  addDays: (v: unknown, n: number) => string;
+  addMonths: (v: unknown, n: number) => string;
+  invoiceDueDate: (v: unknown) => string;
+} {
+  const root: Record<string, unknown> = {};
+  // eslint-disable-next-line @typescript-eslint/no-implied-eval
+  new Function('window', code('docDates:text:DocumentDates'))(root);
+  return root.DocumentDates as ReturnType<typeof appDocumentDates>;
 }

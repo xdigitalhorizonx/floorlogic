@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest';
 import {
-  computeDueNow, DEFAULT_PAYMENT_TERMS, depositAmount, depositLabel, downPaymentPct, dueNowView, invoiceStatus, quoteDeposit, termRule,
+  canTakePayment, computeDueNow, DEFAULT_PAYMENT_TERMS, depositAmount, depositLabel, downPaymentPct, dueNowView, invoiceBalance, invoiceDisplayStatus, invoiceStatus, paymentTypeLabel, quoteDeposit, termRule,
   type DueNowRow,
 } from '../../src/lib/logic';
 
@@ -105,5 +105,39 @@ describe('live-invoice payment box', () => {
     expect(v).toMatchObject({ kind: 'due', dueNow: 500, sub: '50% deposit — remaining $500.00 due Nov 14, 2026' });
     const due = dueNowView({ total: 1000, paid: 0, terms: 'Net 30', downPaymentPct: 50, createdAt: '2026-09-01' }, at);
     expect(due).toMatchObject({ kind: 'due', dueNow: 1000, sub: 'Net 30 — full balance due as of Oct 1, 2026' });
+  });
+});
+
+describe('the Net-terms due day follows the document day (DocumentDates)', () => {
+  const at = Date.parse('2026-10-15T12:00:00Z');
+  it('a UTC-midnight created_at keeps its day (no slip to the evening before)', () => {
+    const v = dueNowView({ total: 1000, paid: 0, terms: 'Net 30', downPaymentPct: 50, createdAt: '2026-10-13T00:00:00+00:00' }, at);
+    expect(v).toMatchObject({ kind: 'due', sub: '50% deposit — remaining $500.00 due Nov 12, 2026' });
+  });
+  it('an unreadable created_at leaves the day out, like the app', () => {
+    const v = dueNowView({ total: 1000, paid: 0, terms: 'Net 30', downPaymentPct: 50, createdAt: 'nope' }, at);
+    expect(v).toMatchObject({ kind: 'due', sub: '50% deposit — remaining $500.00 due upon completion' });
+  });
+});
+
+describe('what the screens show for an invoice', () => {
+  it('the badge follows the balance (0.005 tolerance); the stored status is exact', () => {
+    expect(invoiceDisplayStatus({ status: 'unpaid', total: 850, payments: [{ amount: 850 }] })).toBe('paid');
+    expect(invoiceDisplayStatus({ status: 'unpaid', total: 202.00499999999997, payments: [{ amount: 202 }] })).toBe('paid');
+    expect(invoiceStatus(202.00499999999997, [{ amount: 202 }])).toBe('deposit');
+    expect(invoiceDisplayStatus({ status: 'paid', total: 1120, payments: [{ amount: 1000 }] })).toBe('deposit');
+    expect(invoiceDisplayStatus({ status: 'void', total: 100, payments: [{ amount: 100 }] })).toBe('void');
+    expect(invoiceDisplayStatus({ status: 'sent', total: 0, payments: [] })).toBe('sent');
+  });
+  it('Take Payment shows while more than half a cent is owed', () => {
+    expect([canTakePayment(0), canTakePayment(0.005), canTakePayment(0.01), canTakePayment(4312.35)]).toEqual([false, false, true, true]);
+    expect(invoiceBalance({ total: 8624.7, payments: [{ amount: 4312.35 }] })).toBe(4312.35);
+    expect(invoiceBalance({ total: 100, payments: [{ amount: 150 }] })).toBe(0);
+  });
+  it('payments show their card or check number', () => {
+    expect(paymentTypeLabel({ method: 'Credit Card (Stripe)', cardBrand: 'visa', cardLast4: '4242' })).toBe('Credit Card (Stripe) · Visa ••••4242');
+    expect(paymentTypeLabel({ method: 'Check', checkNumber: '1042' })).toBe('Check #1042');
+    expect(paymentTypeLabel({ method: 'Cash' })).toBe('Cash');
+    expect(paymentTypeLabel({})).toBe('Payment');
   });
 });

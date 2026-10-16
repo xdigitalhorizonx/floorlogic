@@ -1,7 +1,7 @@
 /**
  * Down payment (deposit) on a quote or invoice.
  *
- * Source: main L11307-11320 (`qbRefreshDownPaymentAmt`): amount =
+ * Source: main L13517-13530 (`qbRefreshDownPaymentAmt`, unchanged): amount =
  * (subtotal + tax) × pct / 100, pct defaults to 50; the builder prints
  * "→ $X due upfront". The invoice side asks for the same portion through
  * `computeDueNow` (due-now.ts).
@@ -11,7 +11,7 @@ import { round2 } from './money';
 export const DEFAULT_DOWN_PAYMENT_PCT = 50;
 
 /**
- * Normalise a stored percentage the way the live invoice does (q L617-618):
+ * Normalise a stored percentage the way the live invoice does (q L642-643):
  * missing → 50, otherwise clamped to 0..100.
  */
 export function downPaymentPct(raw: unknown): number {
@@ -21,9 +21,9 @@ export function downPaymentPct(raw: unknown): number {
 
 /**
  * Deposit on a grand total (subtotal + tax), rounded to cents — the same
- * arithmetic as the live invoice's deposit basis (q L628 + L631). For a quote,
+ * arithmetic as the live invoice's deposit basis (q L653 + L656). For a quote,
  * prefer `quoteDeposit`. The builder's own "→ $X due upfront" multiplies its
- * unrounded-tax total (main L11317) and can read 1¢ different in rare cases.
+ * unrounded-tax total (main L13527) and can read 1¢ different in rare cases.
  */
 export function depositAmount(grandTotal: number, pct: number = DEFAULT_DOWN_PAYMENT_PCT): number {
   return round2(grandTotal * (downPaymentPct(pct) / 100));
@@ -40,7 +40,7 @@ export function quoteDeposit(totals: { invoiceTotal: number }, pct: number = DEF
   return depositAmount(totals.invoiceTotal, pct);
 }
 
-/** Builder line under the percentage (main L11319): "→ $4312.35 due upfront" — no thousands separator. */
+/** Builder line under the percentage (main L13529): "→ $4312.35 due upfront" — no thousands separator. */
 export function depositLabel(amount: number): string {
   return '→ $' + amount.toFixed(2) + ' due upfront';
 }

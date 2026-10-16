@@ -2,12 +2,19 @@
  * Nevada sales tax: county lookup from an address, the label, and the rule
  * that tax applies to MATERIALS ONLY (labor is never taxed).
  *
- * Source: main L6518-6539 (`NV_COUNTY_TAX`, `NV_CITY_COUNTY`, `NV_ZIP_COUNTY`,
- * `NV_ZIP3_COUNTY`, `_nvTaxResult`, `getTaxRateFromAddress`), the totals rows
- * at main L23236 (label), and the money lines at main L11391 / L13024.
+ * Source: main L7646-7682 (`NV_COUNTY_TAX`, `NV_CITY_COUNTY`, `NV_ZIP_COUNTY`,
+ * `NV_ZIP3_COUNTY`, `_nvTaxResult`, `_nvCityHit`, `_nvCityCounty`,
+ * `getTaxRateFromAddress`), the totals rows at main L27324 (label) and the
+ * builder's rate pill at main L13510.
+ *
+ * Changed since the August app:
+ * - towns match on WHOLE WORDS, after the street line when the address has
+ *   commas, longest name first ("Jeanette Dr, Carson City" is no longer Clark
+ *   County because "Jeanette" contains "Jean");
+ * - the label keeps up to three decimals: "Tax (8.265%)", not "Tax (8.27%)".
  */
 
-/** Combined county rates the app ships (main L6518). */
+/** Combined county rates the app ships (main L7646). */
 export const NV_COUNTY_TAX: Readonly<Record<string, number>> = {
   clark: 0.08375,
   washoe: 0.08265,
@@ -29,9 +36,9 @@ export const NV_COUNTY_TAX: Readonly<Record<string, number>> = {
 };
 
 /**
- * Town → county (main L6519), in the app's order — order matters because the
- * lookup takes the FIRST town whose name appears anywhere in the address.
- * App data quirk kept as-is: 'crystal bay' maps to Douglas (it is in Washoe).
+ * Town → county (main L7647), in the app's order. App data quirks kept as-is:
+ * 'crystal bay' maps to Douglas (it is in Washoe), and "Mound House" is
+ * spelled 'moundhouse', so a written "Mound House" falls through to the ZIP.
  */
 export const NV_CITY_COUNTY: Readonly<Record<string, string>> = {
   'las vegas': 'clark', henderson: 'clark', 'north las vegas': 'clark', 'boulder city': 'clark', mesquite: 'clark',
@@ -51,7 +58,7 @@ export const NV_CITY_COUNTY: Readonly<Record<string, string>> = {
   ruth: 'white pine', mcgill: 'white pine',
 };
 
-/** Exact ZIP → county (main L6524). */
+/** Exact ZIP → county (main L7652). */
 export const NV_ZIP_COUNTY: Readonly<Record<string, string>> = {
   '89001': 'lincoln', '89003': 'nye', '89008': 'lincoln', '89010': 'esmeralda', '89013': 'esmeralda',
   '89017': 'lincoln', '89020': 'nye', '89041': 'nye', '89042': 'lincoln', '89043': 'lincoln', '89045': 'nye',
@@ -69,7 +76,7 @@ export const NV_ZIP_COUNTY: Readonly<Record<string, string>> = {
   '89820': 'lander', '89821': 'eureka',
 };
 
-/** 3-digit ZIP prefix → county fallback (main L6525). */
+/** 3-digit ZIP prefix → county fallback (main L7653). */
 export const NV_ZIP3_COUNTY: Readonly<Record<string, string>> = {
   '889': 'clark', '890': 'clark', '891': 'clark', '893': 'white pine', '895': 'washoe', '897': 'carson city', '898': 'elko',
 };
@@ -80,7 +87,7 @@ export interface TaxResult {
   label: string;
 }
 
-/** `_nvTaxResult` (main L6526). */
+/** `_nvTaxResult` (main L7654). */
 function countyResult(county: string): TaxResult | null {
   const rate = NV_COUNTY_TAX[county];
   if (rate == null) return null;
@@ -89,19 +96,52 @@ function countyResult(county: string): TaxResult | null {
 }
 
 /**
- * `getTaxRateFromAddress` (main L6527): an explicit "X County" wins, then the
- * first known town found in the text, then the last NV ZIP (exact, then
- * 3-digit prefix). Null when nothing matches.
+ * `_nvCityHit` (main L7658): the town's FIRST occurrence in `hay` must stand
+ * alone — no letter or digit right before or after it. (App behaviour kept:
+ * only the first occurrence is checked, so "Jeanette Rd, Jean" misses the
+ * second, whole-word "Jean".)
+ */
+function cityHit(hay: string, city: string): boolean {
+  const i = hay.indexOf(city);
+  if (i < 0) return false;
+  const before = i === 0 ? ' ' : hay[i - 1]!;
+  const after = i + city.length >= hay.length ? ' ' : hay[i + city.length]!;
+  return !/[a-z0-9]/.test(before) && !/[a-z0-9]/.test(after);
+}
+
+/**
+ * `_nvCityCounty` (main L7668): with commas, only the parts after the street
+ * line are searched first (street names are town names all the time — Austin
+ * Ave, Wells St), then the whole address. Within a scope the LONGEST matching
+ * town wins ("north las vegas" over "las vegas").
+ */
+export function countyFromTown(lowerAddress: string): string | null {
+  const parts = lowerAddress.split(',').map((x) => x.trim()).filter(Boolean);
+  const scopes = parts.length > 1 ? [parts.slice(1).join(' , '), lowerAddress] : [lowerAddress];
+  for (const hay of scopes) {
+    let best: { city: string; county: string } | null = null;
+    for (const [city, county] of Object.entries(NV_CITY_COUNTY)) {
+      if (cityHit(hay, city) && (!best || city.length > best.city.length)) best = { city, county };
+    }
+    if (best) return best.county;
+  }
+  return null;
+}
+
+/**
+ * `getTaxRateFromAddress` (main L7682): an explicit "X County" wins, then a
+ * known town (whole words, see `countyFromTown`) — a written town beats a ZIP
+ * that straddles two counties (89705) — then the LAST NV ZIP in the text
+ * (exact, then 3-digit prefix). Null when nothing matches.
  */
 export function getTaxRateFromAddress(address: string | null | undefined): TaxResult | null {
   if (!address) return null;
-  const lower = address.toLowerCase();
+  const lower = String(address).toLowerCase();
   for (const county of Object.keys(NV_COUNTY_TAX)) {
     if (county !== 'carson city' && lower.includes(county + ' county')) return countyResult(county);
   }
-  for (const [city, county] of Object.entries(NV_CITY_COUNTY)) {
-    if (lower.includes(city)) return countyResult(county);
-  }
+  const byCity = countyFromTown(lower);
+  if (byCity) return countyResult(byCity);
   const zips = lower.match(/\b8[89]\d{3}\b/g) || [];
   for (let i = zips.length - 1; i >= 0; i--) {
     const z = zips[i]!;
@@ -113,22 +153,28 @@ export function getTaxRateFromAddress(address: string | null | undefined): TaxRe
 
 /**
  * What the quote builder falls back to when the address gives no county
- * (main L12667 `selectQBClient`; `qb.taxRate??0.076` at main L11324).
+ * (`selectQBClient`; `qb.taxRate??0.076` in `qbFastRecalc`, main L13531).
  */
 export const DEFAULT_TAX: TaxResult = { rate: 0.076, label: 'Carson City County' };
 
-/** Tax-exempt customers get rate 0 and this county label (main L12667). */
+/** Tax-exempt customers get rate 0 and this county label (`selectQBClient`). */
 export const TAX_EXEMPT_COUNTY = 'Tax Exempt';
 
 /** Washoe County (Reno/Sparks) — the sample shop's county. */
 export const WASHOE_TAX: TaxResult = { rate: 0.08265, label: 'Washoe County' };
 
 /**
- * Totals-row label (main L23236): "Tax (8.27%)" — rate × 100 to 2 decimals —
+ * Totals-row label (main L27324, every totals box): "Tax (8.265%)" — the
+ * rate × 100 to at most 3 decimals, trailing zeros dropped ("Tax (7.6%)") —
  * or "Tax (Exempt)".
  */
 export function taxLabel(rate: number, exempt = false): string {
-  return exempt ? 'Tax (Exempt)' : `Tax (${(rate * 100).toFixed(2)}%)`;
+  return exempt ? 'Tax (Exempt)' : `Tax (${+(rate * 100).toFixed(3)}%)`;
+}
+
+/** The builder's tax-rate pill (main L13510): "8.265%" — always 3 decimals; "0.000%" when exempt. */
+export function taxRatePill(rate: number | null | undefined, exempt = false): string {
+  return exempt ? '0.000%' : ((rate || 0) * 100).toFixed(3) + '%';
 }
 
 /**

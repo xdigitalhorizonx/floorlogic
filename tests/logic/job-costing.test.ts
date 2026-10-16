@@ -1,7 +1,7 @@
 import { describe, expect, it } from 'vitest';
 import {
-  bucketDelta, CARD_FEE, isCardPayment, isPrivateField, jobCostAmount, jobCostBucket, jobFinance, paymentFee, PRIVACY_MODE, PRIVATE_FIELDS,
-  rollupJobCosts, varianceView, type CostLine,
+  bucketDelta, CARD_FEE, commissionOwed, groupStatus, isCardPayment, isPrivateField, JC_SCOPES, jobCostAmount, jobCostBucket, jobCostingMetrics, jobFinance,
+  jobPaidInFull, paymentFee, poTotal, PRIVACY_MODE, PRIVATE_FIELDS, rollupJobCosts, varianceView, type CostLine,
 } from '../../src/lib/logic';
 
 describe('card fees', () => {
@@ -90,10 +90,27 @@ describe('job finance', () => {
     expect(f.tax).toBe(300);
     expect(f.feeCost).toBe(77.15); // 2650 × 2.9% + 0.30
     expect(f.commission).toBeCloseTo((5000 - 2000 - 1000 - 77.15) * 0.08, 9);
+    expect(f.preCommProfit).toBeCloseTo(5000 - 2000 - 1000 - 77.15, 9);
     expect(f.profit).toBeCloseTo((5000 - 2000 - 1000 - 77.15) * 0.92, 9);
-    expect(f.margin).toBeCloseTo((f.profit / 5000) * 100, 9);
+    // margin is taken BEFORE commission now (August: profit ÷ revenue)
+    expect(f.margin).toBeCloseTo((f.preCommProfit / 5000) * 100, 9);
     expect(f.collected).toBe(5300);
     expect(f.outstanding).toBe(0);
+  });
+
+  it('a PO costs its goods plus estimated freight', () => {
+    const f = jobFinance({ materials, labors, pos: [{ id: 'p1', totalCost: 372, freight: 25 }, { id: 'p2', totalCost: 100, status: 'cancelled', freight: 10 }] });
+    expect(f.poCost).toBe(397);
+    expect(f.matCost).toBe(397);
+    expect(poTotal({ totalCost: 372, freight: 25 })).toBe(397);
+  });
+
+  it('a bill tied to a live PO mirrors it (left out); once the PO is cancelled the bill counts on its own', () => {
+    const pos = [{ id: 'p1', totalCost: 372 }, { id: 'p2', totalCost: 500, status: 'cancelled' }];
+    const f = jobFinance({ materials, labors, pos, payables: [{ amount: 372, category: 'Materials', poId: 'p1', source: 'po' }, { amount: 480, category: 'Materials', poId: 'p2', source: 'po' }] });
+    expect(f.matCost).toBe(372 + 480);
+    // a PO-sourced bill with no poId still mirrors a PO
+    expect(jobFinance({ materials, labors, pos, payables: [{ amount: 99, category: 'Materials', source: 'po' }] }).matCost).toBe(372);
   });
 
   it('an invoice without a stored subtotal counts total − tax, never the tax', () => {
@@ -109,15 +126,43 @@ describe('job finance', () => {
   });
 });
 
+describe('payout queue', () => {
+  it('paid in full: the balance when invoiced, else the stage', () => {
+    expect(jobPaidInFull({ invTotal: 8624.7, outstanding: 0 }, ['final_invoice'])).toBe(true);
+    expect(jobPaidInFull({ invTotal: 8624.7, outstanding: 0.01 }, ['ready_to_be_paid'])).toBe(false);
+    expect(jobPaidInFull({ invTotal: 0, outstanding: 0 }, ['ready_to_be_paid'])).toBe(true);
+    expect(jobPaidInFull({ invTotal: 0, outstanding: 0 }, ['final_invoice', 'paid'])).toBe(false); // the least advanced sheet decides
+    expect(groupStatus(['paid', 'scheduled', 'final_invoice'])).toBe('scheduled');
+  });
+  it('commission owed until every sheet with a paid rep is stamped', () => {
+    expect(commissionOwed(248.89, [{ commissionPaidAt: null, repRates: [8] }])).toBe(true);
+    expect(commissionOwed(248.89, [{ commissionPaidAt: '2026-10-20', repRates: [8] }])).toBe(false);
+    expect(commissionOwed(248.89, [{ commissionPaidAt: null, repRates: [0] }])).toBe(false);
+    expect(commissionOwed(0.004, [{ commissionPaidAt: null, repRates: [8] }])).toBe(false);
+    expect(JC_SCOPES[0]).toEqual({ key: 'payout', label: 'Commission due' });
+  });
+});
+
 describe('variance', () => {
   it('over: red, "over estimate"; under: green, "under estimate"', () => {
     expect(varianceView(5072.92, 4883.7875)).toEqual({ amount: 5072.92 - 4883.7875, text: '+$189.13', label: 'over estimate', tone: 'red' });
     expect(varianceView(4800, 4883.79)).toMatchObject({ text: '$83.79', label: 'under estimate', tone: 'green' });
   });
-  it('thresholds: label flips above 0, colour above half a cent (app behaviour)', () => {
-    expect(varianceView(100.004, 100)).toMatchObject({ label: 'over estimate', tone: 'green' });
+  it('the list card: label and colour both flip above 0', () => {
+    expect(varianceView(100.004, 100)).toMatchObject({ label: 'over estimate', tone: 'red' });
     expect(varianceView(100.006, 100)).toMatchObject({ label: 'over estimate', tone: 'red' });
     expect(varianceView(100, 100)).toMatchObject({ label: 'under estimate', tone: 'green' });
+  });
+  it('the job page’s metric bar: "+$x over", "−$x under", Margin before / Profit after commission', () => {
+    const fin = { revenue: 8184.07, revSource: 'invoice' as const, tax: 440.63, taxSource: 'invoice' as const, margin: 38.03, profit: 2862.26, estimate: 4883.7875, actual: 5072.92 };
+    const m = jobCostingMetrics(fin, { count: 6 });
+    expect(m.map((x) => [x.label, x.value, x.note])).toEqual([
+      ['Revenue', '$8,184.07', 'invoiced'], ['Estimated', '$4,883.79', 'quoted cost'], ['Actual', '$5,072.92', '6 recorded'], ['Variance', '+$189.13', 'over'],
+      ['Margin', '38.0%', 'before commission'], ['Profit', '$2,862.26', 'after commission'], ['Sales Tax', '$440.63', 'invoiced'],
+    ]);
+    expect(m.filter((x) => x.private).map((x) => x.label)).toEqual(['Margin', 'Profit']);
+    expect(jobCostingMetrics({ ...fin, estimate: 1726, actual: 1690 }, { count: 1 })[3]).toMatchObject({ value: '−$36.00', tone: 'green', note: 'under' });
+    expect(jobCostingMetrics({ ...fin, estimate: 100, actual: 100.004 }, { count: 1 })[3]).toMatchObject({ value: '$0.00', tone: 'green', note: 'under' });
   });
   it('bucket Δ cells', () => {
     expect(bucketDelta(3157.7875, 3214.06)).toEqual({ text: '+$56.27', tone: 'danger' });

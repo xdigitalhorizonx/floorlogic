@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest';
 import {
-  addDays, daysBetween, docNumberSuffix, fmtDate, fmtMoney, fmtNum, fmtQty, fmtSignedMoney, formatDocNumber, isoDay, num, round2,
+  addCalendarDays, addDays, addMonths, dateOnly, daysBetween, documentValidUntil, invoiceDueDate, localDateOnly, QUOTE_VALID_DAYS, docNumberSuffix, fmtDate, fmtMoney, fmtNum, fmtQty, fmtSignedMoney, formatDocNumber, isoDay, num, round2,
 } from '../../src/lib/logic';
 
 describe('money', () => {
@@ -71,5 +71,33 @@ describe('dates', () => {
 
   it('isoDay formats a local date', () => {
     expect(isoDay(new Date(2026, 9, 14))).toBe('2026-10-14');
+  });
+});
+
+describe('document dates (DocumentDates, new)', () => {
+  it('dateOnly keeps a bare day and a UTC-midnight timestamp; other instants use the Pacific calendar', () => {
+    expect(dateOnly('2026-10-13')).toBe('2026-10-13');
+    expect(dateOnly('2026-10-13T00:00:00Z')).toBe('2026-10-13');
+    expect(dateOnly('2026-10-13T00:00:00+00:00')).toBe('2026-10-13');
+    expect(dateOnly('2026-10-14T03:30:00Z')).toBe('2026-10-13'); // 8:30 pm Pacific the evening before
+    expect(dateOnly('')).toBe('');
+    expect(dateOnly('junk')).toBe('');
+  });
+  it('invoice due date = same day next month, clamped; quotes are valid 30 days', () => {
+    expect(invoiceDueDate('2026-10-13')).toBe('2026-11-13');
+    expect(invoiceDueDate('2026-01-31')).toBe('2026-02-28');
+    expect(invoiceDueDate('2028-01-31')).toBe('2028-02-29');
+    expect(addMonths('2026-12-31', 2)).toBe('2027-02-28');
+    expect(addCalendarDays('2026-10-13T00:00:00Z', 30)).toBe('2026-11-12');
+    expect(QUOTE_VALID_DAYS).toBe(30);
+    expect(documentValidUntil({ createdAt: '2026-10-13' }, true)).toBe('2026-11-13');
+    expect(documentValidUntil({ createdAt: '2026-10-13' }, false)).toBe('2026-11-12');
+    expect(documentValidUntil({ createdAt: '2026-10-13', expirationDate: '2026-12-01T00:00:00Z' }, true)).toBe('2026-12-01');
+  });
+  it('localDateOnly is the app’s _dateOnly: bare days pass through', () => {
+    expect(localDateOnly('2026-10-13')).toBe('2026-10-13');
+    expect(localDateOnly('')).toBe('');
+    expect(localDateOnly('nope')).toBe('');
+    expect(localDateOnly(new Date(2026, 9, 14, 23, 0).toISOString())).toBe('2026-10-14');
   });
 });

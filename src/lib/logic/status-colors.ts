@@ -2,20 +2,21 @@
  * Status colours: the app's originals and AA-safe site variants.
  *
  * The app paints board column headers as SOLID `var(--<name>)` with white
- * 13px/600 text (main L7954 lead board, L19101 job board), and badges as a
- * 10% tint with darker text (main L1528-1536). Most of the solid colours fail
+ * 13px/600 text (main L9128 lead board, L21802 job board), and badges as a
+ * 10% tint with darker text (main L1580-1588). Most of the solid colours fail
  * WCAG AA for white text (blue 3.68:1, amber 2.15:1, green 2.54:1…), so the
  * site uses the same hues darkened until white text reaches ≥ 4.5:1. The
  * test suite computes every ratio.
  *
- * Source: main L10-24 (:root light theme), L1528-1536 (badges),
- * L6511-6516 (status → colour name maps), L18567-18575 (job board buckets).
+ * Source: main L13-27 (:root light theme), L1580-1588 (badges),
+ * L7622-7644 (status → colour name maps), L21252 (job board buckets).
+ * Unchanged since the August app.
  */
 import type { LeadStatus } from './lead-pipeline';
 
 export type ColorName = 'blue' | 'indigo' | 'amber' | 'pink' | 'green' | 'gray' | 'purple' | 'red' | 'orange';
 
-/** :root light theme, verbatim (main L11-14). */
+/** :root light theme, verbatim (main L14-17). */
 export const APP_THEME = {
   primary: '#0074D3',
   primaryDark: '#005BA8',
@@ -42,7 +43,7 @@ export const APP_THEME = {
  * Solid colour the app paints for each colour name (`var(--name)`).
  * APP BUG: there is no `--orange` in :root, so Final Invoice's solid fill
  * (`var(--orange)`) renders as nothing. '#F97316' is the hue the app's
- * `.badge-orange` tint is built from (rgba(249,115,22,.1), main L1536).
+ * `.badge-orange` tint is built from (rgba(249,115,22,.1), main L1588).
  */
 export const APP_SOLID: Readonly<Record<ColorName, string>> = {
   blue: APP_THEME.blue,
@@ -56,7 +57,7 @@ export const APP_SOLID: Readonly<Record<ColorName, string>> = {
   orange: '#F97316',
 };
 
-/** Badge text colours on the 10% tint (main L1528-1536; amber uses --custom-price-fg #B45309). */
+/** Badge text colours on the 10% tint (main L1580-1588; amber uses --custom-price-fg #B45309). */
 export const APP_BADGE_TEXT: Readonly<Record<ColorName, string>> = {
   blue: '#2563EB',
   purple: '#7C3AED',
@@ -101,7 +102,7 @@ export function siteHex(name: ColorName): string {
   return SITE_SOLID[name];
 }
 
-/** Lead status → colour name (main L6511). */
+/** Lead status → colour name (main L7622). */
 export const LEAD_STATUS_COLOR_NAMES: Readonly<Record<LeadStatus, ColorName>> = {
   new: 'blue',
   site_survey_scheduled: 'indigo',
@@ -111,7 +112,7 @@ export const LEAD_STATUS_COLOR_NAMES: Readonly<Record<LeadStatus, ColorName>> = 
   lost: 'gray',
 };
 
-/** Work-order status → colour name (main L6514). */
+/** Work-order status → colour name (main L7625). */
 export const JOB_STATUS_COLOR_NAMES = {
   order_materials: 'purple',
   materials_ordered: 'indigo',
@@ -126,7 +127,7 @@ export const JOB_STATUS_COLOR_NAMES = {
   cancelled: 'red',
 } as const satisfies Record<string, ColorName>;
 
-/** Invoice status → colour name (main L6516). */
+/** Invoice status → colour name (main L7644). */
 export const INVOICE_STATUS_COLOR_NAMES = {
   unpaid: 'red',
   deposit: 'amber',
@@ -134,7 +135,7 @@ export const INVOICE_STATUS_COLOR_NAMES = {
   void: 'gray',
 } as const satisfies Record<string, ColorName>;
 
-/** Quote status → colour name (main L6512). */
+/** Quote status → colour name (main L7623). */
 export const QUOTE_STATUS_COLOR_NAMES = {
   draft: 'gray',
   sent: 'blue',
@@ -168,7 +169,7 @@ export function contrastRatio(a: string, b: string): number {
 }
 
 /**
- * Badge backgrounds, verbatim (main L1528-1536). Note red's tint is built on
+ * Badge backgrounds, verbatim (main L1580-1588). Note red's tint is built on
  * #EF4444 (--danger) while the red SOLID is #DC2626 (--red).
  */
 export const APP_BADGE_TINT: Readonly<Record<ColorName, string>> = {

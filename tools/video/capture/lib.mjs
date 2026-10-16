@@ -3,6 +3,7 @@
 // the click actually happened. Stills are screenshots of the real app between actions.
 import fs from 'node:fs';
 import path from 'node:path';
+import { BANNED_ON_CAMERA, NEVER_ON_CAMERA_INDEX } from '../harness/server.mjs';
 
 export function makeRecorder(outDir) {
   fs.mkdirSync(path.join(outDir, 'stills'), { recursive: true });
@@ -15,14 +16,13 @@ export function makeRecorder(outDir) {
       const file = `${scene.id}-${String(scene.steps.length).padStart(2, '0')}-${name}.png`;
       await settle(page);
       // Hard rule: none of these may ever be on camera. Checked on the rendered text of every still.
-      const hits = await page.evaluate(() => {
+      const hits = await page.evaluate((banned) => {
         const t = document.body ? document.body.innerText : '';
-        const bad = [/landmark/i, /\berick\b/i, /foundation/i, /855[\s.-]*457[\s.-]*2197/, /casper/i, /charge card/i];
-        return bad.filter((re) => re.test(t)).map((re) => String(re));
-      });
+        return banned.map((s) => new RegExp(s.src, s.flags)).filter((re) => re.test(t)).map((re) => String(re));
+      }, BANNED_ON_CAMERA.map((re) => ({ src: re.source, flags: re.flags })));
       if (hits.length) throw new Error(`banned text on screen in still "${name}": ${hits.join(', ')}`);
-      const shareVisible = await page.evaluate(() => [...document.querySelectorAll('.hdr-share-btn, button[onclick^="openShareMenu"]')].some((b) => b.offsetParent !== null));
-      if (shareVisible) throw new Error(`a Share button is visible in still "${name}"`);
+      const shown = await page.evaluate((sels) => sels.filter((s) => [...document.querySelectorAll(s)].some((b) => b.offsetParent !== null)), NEVER_ON_CAMERA_INDEX);
+      if (shown.length) throw new Error(`a never-on-camera control is visible in still "${name}": ${shown.join(', ')}`);
       await page.screenshot({ path: path.join(outDir, 'stills', file), type: 'png', fullPage: !!opts.fullPage });
       const scroll = await page.evaluate(() => ({ x: window.scrollX, y: window.scrollY }));
       scene.steps.push({ kind: 'still', name, file, scroll, ...extra });

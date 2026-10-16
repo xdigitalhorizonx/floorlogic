@@ -8,7 +8,7 @@
 
 /**
  * The app's universal coercion: `Number(v) || 0`. Blank, null, undefined and
- * NaN all read as 0 (main L11348 and nearly every money line in the app).
+ * NaN all read as 0 (`qbFastRecalc` main L13557 and nearly every money line in the app).
  */
 export function num(v: unknown): number {
   return Number(v) || 0;
@@ -16,14 +16,14 @@ export function num(v: unknown): number {
 
 /**
  * Round to cents the way the app does: `Math.round(n * 100) / 100`
- * (main L10966, L13912 `r2`, q L616).
+ * (`setQBMaterialQty` main L13214, `_mqTotals` L16258 `r2`, q L641).
  */
 export function round2(n: number): number {
   return Math.round(n * 100) / 100;
 }
 
 /**
- * The app's `fmt$` (main L5842): "$" + en-US grouping with exactly two
+ * The app's `fmt$` (main L6968): "$" + en-US grouping with exactly two
  * decimals. Negative values keep the app's "$-1,234.50" shape.
  */
 export function fmtMoney(n: unknown): string {
@@ -31,7 +31,7 @@ export function fmtMoney(n: unknown): string {
 }
 
 /**
- * Signed money for variance cells (main L26475 / L26500): "—" when the
+ * Signed money for variance cells (main L32067 / L32132): "—" when the
  * difference is under half a cent, otherwise "+$x" or "−$x" (U+2212 minus).
  */
 export function fmtSignedMoney(v: number): string {
@@ -39,22 +39,23 @@ export function fmtSignedMoney(v: number): string {
   return (v > 0 ? '+' : '−') + fmtMoney(Math.abs(v));
 }
 
-/** Quote-builder quantity cell (`_qbFmtQty`, main L11165): two decimals, blank stays blank. */
+/** Quote-builder quantity cell (`_qbFmtQty`, main L13383): two decimals, blank stays blank. */
 export function fmtQty(v: unknown): string {
   if (v == null || v === '') return '';
   const n = Number(v);
   return Number.isNaN(n) ? '' : n.toFixed(2);
 }
 
-/** q.html `fmtNum` (q L572): whole numbers without decimals, others up to 2. */
+/** q.html `fmtNum` (q L574): whole numbers without decimals, others up to 2. */
 export function fmtNum(n: unknown): string {
   const v = Number(n) || 0;
   return v % 1 ? v.toLocaleString('en-US', { maximumFractionDigits: 2 }) : v.toLocaleString('en-US');
 }
 
 /**
- * Document numbers: prefix + counter padded to 3 digits — 'QT-' (main L13024),
- * 'WO-' / 'IN-' (main L8225), 'LD-' (main L8139). Longer numbers are not cut.
+ * Document numbers: prefix + counter padded to 3 digits — 'QT-' (`saveQuoteDraft`,
+ * main L15359), 'LD-' (`_createLeadRecord`, main L9803), and the August lead
+ * approval's 'WO-' / 'IN-'. Longer numbers are not cut.
  */
 export function formatDocNumber(prefix: string, n: number): string {
   return prefix + String(n).padStart(3, '0');

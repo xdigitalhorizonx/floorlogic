@@ -1,11 +1,21 @@
 /**
  * Payment terms → how much the live invoice asks for right now, plus the
- * invoice status after a payment.
+ * invoice status after a payment and how a payment is labelled.
  *
  * `termRule`, `invoiceAgeDays` and `computeDueNow` are line-for-line ports of
- * q.html (q L595-631), which the app keeps byte-identical to the server copy
- * that Stripe actually charges (api/public-invoice-intent.js). The parity test
- * runs the real q.html functions against these over a grid.
+ * q.html (q L620-658, unchanged since August), which the app keeps
+ * byte-identical to the server copy that Stripe actually charges
+ * (api/public-invoice-intent.js). The parity test runs the real q.html
+ * functions against these over a grid.
+ *
+ * Changed since the August app:
+ * - the live invoice's "due Nov 14, 2026" (Net terms) is DocumentDates.addDays
+ *   on the invoice's document day (q L1699) — a UTC-midnight created_at keeps
+ *   its day instead of slipping to the evening before in Pacific;
+ * - the badge, counts and filters read the BALANCE (`invoiceDisplayStatus`,
+ *   0.005 tolerance), not the stored status, and Take Payment shows while the
+ *   balance is over half a cent (`canTakePayment`);
+ * - payments show their card ("Visa ••••4242") or check number ("#1042").
  *
  *   Due on Receipt / Cash Before Delivery → 100% of the balance, now
  *   Net <n>      → the deposit portion until the invoice is n days old, then 100%
@@ -14,10 +24,11 @@
  *
  * "Net Upon Completion" has no day count, so it must NOT read as Net 0.
  */
-import { addDays, fmtDate } from './dates';
+import { fmtDate } from './dates';
+import { addCalendarDays } from './document-dates';
 import { fmtMoney, num } from './money';
 
-/** The app's built-in payment terms (main L4593, L3958). */
+/** The app's built-in payment terms (main L5372, L4640). */
 export const DEFAULT_PAYMENT_TERMS = [
   'Due on Receipt',
   'Net 15',
@@ -29,7 +40,7 @@ export const DEFAULT_PAYMENT_TERMS = [
 
 export type TermRule = { kind: 'default' } | { kind: 'immediate' } | { kind: 'net'; days: number };
 
-/** q L595 */
+/** q L620 */
 export function termRule(terms: string | null | undefined): TermRule {
   const s = String(terms == null ? '' : terms).toLowerCase().replace(/\s+/g, ' ').trim();
   if (!s) return { kind: 'default' };
@@ -39,7 +50,7 @@ export function termRule(terms: string | null | undefined): TermRule {
   return { kind: 'default' };
 }
 
-/** q L606: whole days since the invoice was raised; null when the date is unusable. */
+/** q L631: whole days since the invoice was raised; null when the date is unusable. */
 export function invoiceAgeDays(createdAt: string | null | undefined, nowMs: number): number | null {
   if (!createdAt) return null;
   const t = Date.parse(createdAt);
@@ -68,7 +79,7 @@ export interface DueNow {
   netDays: number | null;
 }
 
-/** q L612 */
+/** q L637 */
 export function computeDueNow(row: DueNowRow, nowMs: number): DueNow {
   const grand = Number(row.total) || 0;
   const paid = (Array.isArray(row.payments) ? row.payments : []).reduce((a, p) => a + (Number(p && p.amount) || 0), 0);
@@ -93,13 +104,87 @@ export function computeDueNow(row: DueNowRow, nowMs: number): DueNow {
 export type InvoiceStatus = 'unpaid' | 'deposit' | 'paid';
 
 /**
- * Status after recording a payment (main L18355, L25153, L27318):
- * paid ≥ total → 'paid', anything paid → 'deposit', else 'unpaid'.
- * (The in-app Stripe charge path uses paid ≥ total − 0.01 instead, main L18320.)
+ * The STORED status after recording a payment (`recordPayment` main L21005,
+ * `acctRecordInvPayment` L29952, bank match L33077 — unchanged): paid ≥ total
+ * exactly → 'paid', anything paid → 'deposit', else 'unpaid'. (The card
+ * charge and the pay-link webhook use paid ≥ total − 0.01 instead, and the
+ * screens show `invoiceDisplayStatus` — see the app bugs in
+ * docs/logic-changes-2026-10.md.)
  */
 export function invoiceStatus(total: number, payments: ReadonlyArray<{ amount?: number | string | null }>): InvoiceStatus {
   const tp = payments.reduce((a, p) => a + num(p.amount), 0);
   return tp >= num(total) ? 'paid' : tp > 0 ? 'deposit' : 'unpaid';
+}
+
+/**
+ * The status every badge, count and filter shows (`_invDisplayStatus`, main
+ * L7634, new): read off the balance — paid ≥ total − 0.005 → 'paid', paid
+ * over half a cent → 'deposit', else 'unpaid'. Void stays void; a zero-value
+ * invoice with nothing paid keeps whatever was stored.
+ */
+export function invoiceDisplayStatus(inv: {
+  status?: string | null;
+  total?: number | string | null;
+  payments?: ReadonlyArray<{ amount?: number | string | null } | null> | null;
+} | null | undefined): InvoiceStatus | 'void' | string {
+  if (!inv) return 'unpaid';
+  if (inv.status === 'void') return 'void';
+  const total = Number(inv.total) || 0;
+  const paid = (inv.payments || []).reduce((a, p) => a + (Number(p && p.amount) || 0), 0);
+  if (total <= 0 && paid <= 0.005) return inv.status || 'unpaid';
+  if (paid >= total - 0.005) return 'paid';
+  if (paid > 0.005) return 'deposit';
+  return 'unpaid';
+}
+
+/** `_ibCanTakePayment` (main L20864): "💰 Take Payment" shows while the balance is over half a cent. */
+export function canTakePayment(balance: number | string | null | undefined): boolean {
+  return (Number(balance) || 0) > 0.005;
+}
+
+/** `_invBalAmt` (main L29212): what is still owed, never below 0. */
+export function invoiceBalance(inv: { total?: number | string | null; payments?: ReadonlyArray<{ amount?: number | string | null }> | null }): number {
+  return Math.max(0, (Number(inv.total) || 0) - (inv.payments || []).reduce((a, p) => a + (Number(p.amount) || 0), 0));
+}
+
+// ------------------------------------------------------- payment labels --
+
+/** Card brands as the app names them (`CARD_BRANDS`, q L584 / `_CARD_BRANDS` main L29192). */
+export const CARD_BRANDS: Readonly<Record<string, string>> = {
+  visa: 'Visa', mastercard: 'Mastercard', amex: 'Amex', discover: 'Discover', diners: 'Diners Club', jcb: 'JCB', unionpay: 'UnionPay', eftpos_au: 'Eftpos', link: 'Link',
+};
+
+/** `cardBrandName`: 'Card' for none/'unknown', the app's name, else the token capitalised. */
+export function cardBrandName(brand: string | null | undefined): string {
+  const k = String(brand == null ? '' : brand).toLowerCase().trim();
+  if (!k || k === 'unknown') return 'Card';
+  return CARD_BRANDS[k] || k.charAt(0).toUpperCase() + k.slice(1);
+}
+
+export interface PaymentLabelled {
+  method?: string | null;
+  type?: string | null;
+  cardBrand?: string | null;
+  cardLast4?: string | number | null;
+  checkNumber?: string | number | null;
+}
+
+/** `payCardLine`: "Visa ••••4242" when the payment carries its last 4, else ''. */
+export function paymentCardLine(p: PaymentLabelled | null | undefined): string {
+  const l = p && p.cardLast4;
+  return l ? cardBrandName(p!.cardBrand) + ' ••••' + String(l) : '';
+}
+
+/**
+ * How a payment reads on the customer's invoice (`payTypeLabel`, q L594):
+ * "Credit Card (Stripe) · Visa ••••4242", "Check #1042", or just the method.
+ */
+export function paymentTypeLabel(p: PaymentLabelled | null | undefined): string {
+  const m = (p && (p.method || p.type)) || 'Payment';
+  const c = paymentCardLine(p);
+  if (c) return m + ' · ' + c;
+  const n = p && p.checkNumber ? '#' + String(p.checkNumber) : '';
+  return n ? m + ' ' + n : m;
 }
 
 // ------------------------------------------------- live-invoice payment box --
@@ -110,8 +195,9 @@ export type DueNowView =
   | { kind: 'due'; label: string; dueNow: number; amount: string; sub: string; button: string };
 
 /**
- * The PAYMENT box on the customer’s live invoice (q L1630-1682), as data.
- * `createdAt` is the invoice's date-only creation day (used for "due Nov 13, 2026").
+ * The PAYMENT box on the customer’s live invoice (q L1679-1731), as data.
+ * `createdAt` is the invoice's created_at — a day or a timestamp — used for
+ * "due Nov 13, 2026" on Net terms (DocumentDates.addDays).
  */
 export function dueNowView(
   invoice: { total: number; paid: number; terms?: string | null; downPaymentPct?: number | null; finalInvoice?: boolean; createdAt: string },
@@ -129,7 +215,8 @@ export function dueNowView(
     nowMs,
   );
   const bal = Math.round((num(invoice.total) - num(invoice.paid)) * 100) / 100;
-  const netDueOn = due.netDays != null ? fmtDate(addDays(invoice.createdAt.slice(0, 10), due.netDays)) : '';
+  const dueDay = due.netDays != null ? addCalendarDays(invoice.createdAt, due.netDays) : '';
+  const netDueOn = dueDay ? fmtDate(dueDay) : '';
   if (bal <= 0.005) {
     return { kind: 'paid', title: '✓ Paid in Full', meta: 'Thank you — no balance remains on this invoice.' };
   }

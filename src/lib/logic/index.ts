@@ -1,9 +1,11 @@
 /**
  * FloorLogic site logic — pure functions ported from the live app (demo
- * `main`). No DOM, no network, no clock except `todayISO()`.
+ * `main`, the October 2026 build). No DOM, no network, no clock except
+ * `todayISO()`.
  */
 export * from './money';
 export * from './dates';
+export * from './document-dates';
 export * from './cartons';
 export * from './roll';
 export * from './tax';
