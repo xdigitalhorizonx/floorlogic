@@ -423,12 +423,12 @@ const invoice = {
 
 // ---- work order WO-330: every stage, driven by the app's transitions ----
 const INSTALL_DATE = D(7);
+const INSTALL_END = D(8);
 const woEvents: Array<{ date: ISODate; event: WoEvent; note: string }> = [
-  { date: D(1), event: { type: 'materialsOrdered' }, note: 'POs PO-1193…PO-1196 sent' },
-  { date: D(5), event: { type: 'materialsIn', scheduledDate: null }, note: 'All materials received' },
-  { date: D(5), event: { type: 'schedule', date: INSTALL_DATE, installer: 'ct-ins-1' }, note: 'Install booked with Ruben Ortiz' },
+  { date: D(1), event: { type: 'materialsOrdered', allOrdered: true, scheduledDate: null }, note: 'JPO-1193…JPO-1196 marked ordered' },
+  { date: D(2), event: { type: 'schedule', date: INSTALL_DATE, end: INSTALL_END, installer: 'ct-ins-1' }, note: 'Install booked with Ruben Ortiz, 2 days' },
   { date: D(7), event: { type: 'start' }, note: 'Crew on site' },
-  { date: D(8), event: { type: 'complete', anyInvoicePaid: false }, note: 'Job complete — final invoice' },
+  { date: D(9), event: { type: 'complete', anyInvoicePaid: false }, note: 'Install ended — moved to Final Invoice' },
   { date: D(9), event: { type: 'invoicePaid' }, note: 'Balance paid by check' },
   { date: D(12), event: { type: 'markPaid' }, note: 'Ruben Ortiz paid out' },
 ];
@@ -454,6 +454,7 @@ const workOrder = {
   salesRepId: quote.salesRepId,
   installerId: 'ct-ins-1',
   scheduledDate: INSTALL_DATE,
+  scheduledEndDate: INSTALL_END,
   createdAt: approval.workOrder.createdAt,
   materials: woMaterials,
   labors: woLabors,
@@ -467,25 +468,24 @@ const betterLine = woMaterials.find((m) => m.matNum === better.matNum)!;
 const carpetLine = woMaterials.find((m) => m.matNum === 'RMAT-SANDBAR-12')!;
 const padLine = woMaterials.find((m) => m.matNum === 'ACC-PAD8')!;
 const BASE_STICKS = 12; // base ships in 16 ft lengths: 12 × 16 = 192 LF for a 180 LF run
-const po = (number: string, vendor: string, p: Product, qty: number, note: string) => ({
-  number, jobNumber: workOrder.number, vendor, productName: p.name, matNum: p.matNum, uom: p.costUOM, qty,
-  cost: p.companyCost, totalCost: round2(qty * p.companyCost), status: 'received' as const, orderedAt: D(1), receivedAt: D(5), note,
+const po = (number: string, vendor: string, p: Product, qty: number, note: string, freight = 0) => ({
+  id: number.toLowerCase(), number, jobNumber: workOrder.number, vendor, productName: p.name, matNum: p.matNum, uom: p.costUOM, qty,
+  cost: p.companyCost, totalCost: round2(qty * p.companyCost), freight, status: 'received' as const, orderedAt: D(1), receivedAt: D(5), note,
 });
 const pos = [
-  po('PO-1193', better.vendor, better, Number(betterLine.quantity), cartonHint(betterLine)?.text ?? ''),
-  po('PO-1194', 'Basin Floor Supply', product('p-base-325'), BASE_STICKS * 16, `${BASE_STICKS} × 16 ft lengths`),
-  po('PO-1195', 'High Desert Carpet Supply', product('p-carpet-sandbar'), Number(carpetLine.quantity), `12' × 14' 6" cut`),
-  po('PO-1196', 'High Desert Carpet Supply', product('p-pad-8lb'), Number(padLine.quantity), 'Cut to the carpet'),
+  po('JPO-1193', better.vendor, better, Number(betterLine.quantity), cartonHint(betterLine)?.text ?? ''),
+  po('JPO-1194', 'Basin Floor Supply', product('p-base-325'), BASE_STICKS * 16, `${BASE_STICKS} × 16 ft lengths`, 45),
+  po('JPO-1195', 'High Desert Carpet Supply', product('p-carpet-sandbar'), Number(carpetLine.quantity), `12' × 14' 6" cut`),
+  po('JPO-1196', 'High Desert Carpet Supply', product('p-pad-8lb'), Number(padLine.quantity), 'Cut to the carpet'),
 ];
 const transitionStrips = supplies[0];
 const costEntries: Array<JobCostEntry & { date: ISODate; vendor?: string; contractorId?: string; contractorName?: string; method?: string; paidDate?: ISODate }> = [
-  { number: 'JC-015', kind: 'freight', category: 'Freight', description: 'Pallet delivery — Basin Floor Supply', amount: 45, paid: true, date: D(5), vendor: 'Basin Floor Supply', method: 'Card' },
   {
-    number: 'JC-016', kind: 'supply', category: 'Supplies', description: transitionStrips.name, quantity: 3, unitCost: transitionStrips.unitCost,
+    number: 'JC-015', kind: 'supply', category: 'Supplies', description: transitionStrips.name, quantity: 3, unitCost: transitionStrips.unitCost,
     amount: round2(3 * transitionStrips.unitCost), paid: true, date: D(7), method: 'Card',
   },
   {
-    number: 'JC-017', kind: 'contractor', category: 'Labor', description: 'Install — LVP, base + 13 stair steps (2 days)', amount: 1690, paid: true,
+    number: 'JC-016', kind: 'contractor', category: 'Labor', description: 'Install — LVP, base + 13 stair steps (2 days)', amount: 1690, paid: true,
     date: D(8), paidDate: D(12), contractorId: 'ct-ins-1', contractorName: 'Ruben Ortiz', method: 'Check',
   },
 ];
@@ -510,8 +510,9 @@ const jobCosts = {
 /**
  * The story the site and the video tell, end to end:
  * LD-056 (Home Show) → QT-330 (Pick One + optional stairs, Washoe tax,
- * 50% deposit) → approved online with Better + stairs → WO-330 / IN-330 →
- * deposit by card, install, balance by check → job costing for WO-330.
+ * 50% deposit) → the customer approves online with Better + stairs → the
+ * office clicks "Create WO & Invoice" → WO-330 / IN-330 → deposit by card,
+ * install (start + end date), balance by check → job costing for WO-330.
  */
 export const thread = {
   lead: leads.find((l) => l.number === 'LD-056')!,

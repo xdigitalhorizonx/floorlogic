@@ -214,7 +214,9 @@ describe('the thread: LD-056 → QT-330 → WO-330 / IN-330 → job costing', ()
   });
 
   it('work order walks every stage, ending Paid', () => {
-    expect(thread.workOrder.history.map((h) => h.status)).toEqual(WO_SEQUENCE);
+    // Ordering every line at once skips Materials Ordered (straight to Ready to Schedule), as the October app does.
+    expect(thread.workOrder.history.map((h) => h.status)).toEqual(WO_SEQUENCE.filter((s) => s !== 'materials_ordered'));
+    expect(thread.workOrder.scheduledEndDate).toBe('2026-10-22');
     expect(thread.workOrder.status).toBe('paid');
     expect(thread.workOrder.installerId).toBe('ct-ins-1');
     expect(thread.workOrder.history[0]!.note).toBe('Quote QT-330 approved! Work Order WO-330 & Invoice IN-330 created.');
@@ -225,8 +227,8 @@ describe('the thread: LD-056 → QT-330 → WO-330 / IN-330 → job costing', ()
     expect(fmtMoney(f.matQuoted)).toBe('$3,157.79');
     expect(fmtMoney(f.laborQuoted)).toBe('$1,726.00');
     expect(fmtMoney(f.estimate)).toBe('$4,883.79');
-    expect(thread.jobCosts.pos.map((p) => [p.number, p.totalCost])).toEqual([['PO-1193', 2699.6], ['PO-1194', 180.48], ['PO-1195', 248.39], ['PO-1196', 40.59]]);
-    expect(fmtMoney(f.matCost)).toBe('$3,214.06'); // POs + freight
+    expect(thread.jobCosts.pos.map((p) => [p.number, p.totalCost, p.freight])).toEqual([['JPO-1193', 2699.6, 0], ['JPO-1194', 180.48, 45], ['JPO-1195', 248.39, 0], ['JPO-1196', 40.59, 0]]);
+    expect(fmtMoney(f.matCost)).toBe('$3,214.06'); // POs + the pallet freight on JPO-1194
     expect(f.laborCost).toBe(1690); // Ruben Ortiz
     expect(f.otherCost).toBe(43.5); // transition strips
     expect(f.feeCost).toBe(125.36); // deposit paid by card
