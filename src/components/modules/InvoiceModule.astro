@@ -1,41 +1,24 @@
 ---
 /**
- * "Get paid" — IN-330's office side (terms, deposit, Final Invoice, Take
- * Payment) beside the customer's live invoice. Server-renders the starting
- * picture; the island (src/islands/invoice-terms.ts) drives it with due-now.ts.
+ * "Get paid" — IN-330 in today's invoice screen (renderInvoiceBuilder, main L18331): the header's
+ * 💰 Take Payment / ✅ Paid in Full, ☐ Final Invoice and Balance Due; the paper's Bill To (Tax Rate +
+ * Payment Terms), Invoice Number / Issued / Due Date, the sections, the totals and the 💳 Payment
+ * Schedule; the 💳 Payments card — beside the customer's live invoice (q.html) and its PAYMENT card.
+ * Server-renders the starting picture; the island (src/islands/invoice-terms.ts) drives it with
+ * due-now.ts. Sample data only (src/data/modules/invoice.ts ← src/data/sample-data.ts); no network.
  */
-import { thread, shop } from '../../data/sample-data';
-import { DEFAULT_PAYMENT_TERMS, fmtMoney, fmtQty } from '../../lib/logic';
+import { invoiceData as d } from '../../data/modules/invoice';
+import { fmtDate, taxRatePill } from '../../lib/logic';
 import {
-  ivmInitialState, ivmUpfront, ivmAgeText, ivmPillClass, ivmStatus, ivmStatusLabel, renderIvmTotals, renderIvmPays, renderIvmPhone,
-  IVM_MAX_AGE, type IvmData,
+  ivmInitialState, ivmUpfront, ivmClockText, ivmPillClass, ivmStatus, ivmStatusLabel, renderIvmAct, renderIvmBal, renderIvmTotals,
+  renderIvmPays, renderIvmPhone, renderIvmSection, renderIvmPSection, IVM_MAX_AGE,
 } from '../../islands/invoice-terms';
+import { appRailHtml, withAppIcons } from '../../data/modules/app-icons';
 
-const inv = thread.invoice;
-const words = inv.customerName.trim().split(/\s+/);
-const initials = words.length === 1 ? words[0]!.slice(0, 2).toUpperCase() : (words[0]![0]! + words[words.length - 1]![0]!).toUpperCase();
-const data: IvmData = {
-  number: inv.number,
-  customer: inv.customerName,
-  initials,
-  shop: { name: shop.name, address: shop.address, city: shop.city },
-  createdAt: inv.createdAt,
-  materials: inv.raw.materials,
-  labor: inv.raw.subtotal - inv.raw.materials,
-  subtotal: inv.subtotal,
-  tax: inv.tax,
-  total: inv.total,
-  rawTotal: inv.raw.total,
-  terms: inv.paymentTerms,
-  pct: inv.downPaymentPct,
-  termsOptions: [...DEFAULT_PAYMENT_TERMS],
-};
-// IN-330's line items for the wide office view. Approval writes materials then labor, in WO order.
-const uoms = [...thread.workOrder.materials.map((m) => m.costUOM ?? ''), ...thread.workOrder.labors.map((l) => l.uom)];
-const lines = inv.lines.map((l, i) => ({ ...l, uom: uoms[i] ?? '' }));
-const s = ivmInitialState(data);
-const st = ivmStatus(data, s);
-const json = JSON.stringify(data).replace(/</g, '\\u003c');
+const s = ivmInitialState(d);
+const st = ivmStatus(d, s);
+const json = JSON.stringify(d).replace(/</g, '\\u003c');
+const taxPct = taxRatePill(d.taxRate, false);
 ---
 <article class="mod ivm" aria-labelledby="ivm-title" data-ivm>
   <header class="mod-head">
@@ -43,311 +26,487 @@ const json = JSON.stringify(data).replace(/</g, '\\u003c');
     <p class="mod-task" data-task>Try it: switch the terms, then record a check.</p>
   </header>
 
-  <div class="ivm-grid">
-    <div class="app ivm-app">
-      <div class="app-frame ivm-frame">
-        <div class="app-rail" aria-hidden="true"><span></span><span></span><span></span><span></span><span class="on"></span><span></span><span></span></div>
-        <div class="app-main" data-ivm-main>
-          <div class="app-top"><h4>Invoices</h4><span class="app-crumb">› {inv.number}</span></div>
-          <div class="app-body ivm-body">
-            <section class="app-card ivm-head" aria-label={`Invoice ${inv.number}`}>
-              <div class="ivm-title">
-                <span class="ivm-doc"><span aria-hidden="true">🧾</span> Invoice</span>
-                <span class="ivm-num">{inv.number}</span>
-                <span class={ivmPillClass(st)} data-ivm-pill>{ivmStatusLabel(st)}</span>
-              </div>
-              <div class="ivm-cust"><span class="ivm-ava" aria-hidden="true">{initials}</span><span class="ivm-cname">{inv.customerName}</span><span class="ivm-ctag">Customer</span></div>
-              <div class="ivm-actions">
-                <button type="button" class="ivm-final" data-ivm-final aria-pressed="false" title="When active, the live invoice asks the customer for 100% of the remaining balance instead of just the deposit">☐ Final Invoice</button>
-                <button type="button" class="a-btn a-success ivm-take" data-ivm-take>💰 Take Payment</button>
-                <span class="ivm-paidtext" data-ivm-paidtext tabindex="-1" hidden>✅ Paid in Full</span>
-              </div>
-            </section>
+  <div class="mod-ctl ivm-clock">
+    <label class="ivm-clock-l" for="ivm-age"><span aria-hidden="true">📅</span> Demo clock</label>
+    <input class="ivm-clock-r" type="range" id="ivm-age" min="0" max={IVM_MAX_AGE} step="1" value={s.age} data-ivm-age aria-describedby="ivm-age-hint" aria-valuetext={ivmClockText(d, s)} />
+    <output class="ivm-clock-o" for="ivm-age" data-ivm-clock>{ivmClockText(d, s)}</output>
+    <small class="ivm-clock-h" id="ivm-age-hint">Drag to age the invoice and watch Net terms come due.</small>
+  </div>
 
-            <div class="ivm-cols">
-            <div class="ivm-col-l">
-            <section class="app-card ivm-terms" aria-label="Payment terms">
-              <div>
-                <label class="ivm-lbl" for="ivm-terms">Payment Terms</label>
-                <select class="a-select" id="ivm-terms" data-ivm-terms>
-                  <option value="">— Select —</option>
-                  {data.termsOptions.map((t) => <option value={t} selected={t === s.terms}>{t}</option>)}
-                </select>
-              </div>
-              <div class="ivm-sched">
-                <div class="ivm-sched-h">💳 Payment Schedule</div>
-                <div class="ivm-sched-b">
-                  <label for="ivm-pct">Down Payment:</label>
-                  <input class="a-input num" id="ivm-pct" type="number" min="0" max="100" step="1" inputmode="numeric" value={s.pct} data-ivm-pct />
-                  <span aria-hidden="true">%</span>
-                  <span class="ivm-upfront" data-ivm-upfront>{ivmUpfront(data, s)}</span>
+  <div class="ivm-stage">
+    <!-- ================= The office: the invoice screen ================= -->
+    <div class="ivm-b">
+      <div class="app ivm-app" role="region" aria-label={`FloorLogic invoice ${d.number} (sample data)`}>
+        <div class="app-frame ivm-frame">
+          <div class="app-rail" aria-hidden="true" set:html={appRailHtml('invoices')} />
+          <div class="app-main">
+            <div class="app-top ivm-top">
+              <div class="ivm-top-main">
+                <div class="ivm-top-l">
+                  <span class="ivm-top-title" set:html={withAppIcons('🧾 Invoice')} />
+                  <span class="ivm-top-num">{d.number}</span>
+                  <span class={ivmPillClass(st)} data-ivm-pill>{ivmStatusLabel(st)}</span>
+                </div>
+                <div class="ivm-top-meta">
+                  <span class="ivm-cust" title={d.customer}><span class="ivm-cust-av" aria-hidden="true">{d.initials}</span><span class="ivm-cust-name">{d.customer}</span><span class="ivm-ctag">Customer</span></span>
+                  <span class="ivm-act" data-ivm-act set:html={withAppIcons(renderIvmAct(d, s))} />
                 </div>
               </div>
-            </section>
+              <div class="ivm-top-r">
+                <button type="button" class="ivm-final" data-ivm-final aria-pressed="false" title="When active, the live invoice asks the customer for 100% of the remaining balance instead of just the deposit">☐ Final Invoice</button>
+                <div class="ivm-hbal" data-ivm-bal set:html={renderIvmBal(d, s)} />
+              </div>
+            </div>
+            <div class="a-tdock"><div class="a-toast ivm-toast" data-ivm-toast aria-hidden="true"></div></div>
 
-            <section class="app-card ivm-lines" aria-labelledby="ivm-lines-h">
-              <h5 id="ivm-lines-h">Materials &amp; Labor</h5>
-              <table class="ivm-ltable">
-                <thead><tr><th scope="col">Item</th><th scope="col" class="r c-q">Qty</th><th scope="col" class="c-u">UOM</th><th scope="col" class="r c-p">Price</th><th scope="col" class="r c-t">Total</th></tr></thead>
-                <tbody>
-                  {lines.map((l) => <tr><td>{l.desc}</td><td class="r num">{fmtQty(l.qty)}</td><td>{l.uom}</td><td class="r num">{fmtMoney(l.rate)}</td><td class="r num">{fmtMoney(l.amount)}</td></tr>)}
-                </tbody>
-              </table>
-            </section>
-            </div>
-            <div class="ivm-col-r">
-            <div class="app-card ivm-totwrap">
-              <table class="ivm-tot" aria-label={`Invoice ${inv.number} totals`} data-ivm-totals set:html={renderIvmTotals(data, s)} />
-            </div>
+            <div class="app-body ivm-body" data-ivm-body>
+              <div class="ivm-paper">
+                <div class="ivm-info">
+                  <div class="ivm-box">
+                    <div class="ivm-box-h">Bill To</div>
+                    <div class="ivm-box-b">
+                      <div class="ivm-bill-name">{d.customer}</div>
+                      <div class="ivm-bill-line"><b>Address:</b> {d.city}</div>
+                      <div class="ivm-bill-line"><b>Phone:</b> {d.phone}</div>
+                      {d.email && <div class="ivm-bill-line"><b>Email:</b> {d.email}</div>}
+                      <div class="ivm-taxrow">
+                        <div><div class="ivm-lbl">Tax Rate</div><div class="ivm-pillbox"><strong>{taxPct}</strong><small>{d.taxCounty}</small></div></div>
+                        <div>
+                          <label class="ivm-lbl" for="ivm-terms">Payment Terms</label>
+                          <select class="ivm-terms" id="ivm-terms" data-ivm-terms>
+                            <option value="">— Select —</option>
+                            {d.termsOptions.map((t) => <option value={t} selected={t === s.terms}>{t}</option>)}
+                          </select>
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+                  <div class="ivm-qn">
+                    <div class="ivm-qn-box"><div class="ivm-qn-h">Invoice Number</div><div class="ivm-qn-n">{d.number}</div></div>
+                    <dl class="ivm-qn-meta">
+                      <dt>Issued</dt><dd>{fmtDate(d.createdAt)}</dd>
+                      <dt>Due Date</dt><dd>{fmtDate(d.dueDate)}</dd>
+                      <dt>Sales Rep</dt><dd>{d.rep.name}</dd>
+                      <dt>Sales Rep 2</dt><dd>— None —</dd>
+                    </dl>
+                  </div>
+                </div>
 
-            <section class="app-card ivm-pays" aria-labelledby="ivm-pays-h">
-              <h5 id="ivm-pays-h">💳 Payments</h5>
-              <div data-ivm-pays set:html={renderIvmPays(s)} />
-            </section>
-            </div>
+                {d.sections.map((_, i) => (
+                  <section class="ivm-sec" aria-labelledby={`ivm-sec-t-${i}`} set:html={withAppIcons(renderIvmSection(d, i))} />
+                ))}
+
+                <div class="ivm-bottom">
+                  <table class="ivm-tot" aria-label={`Invoice ${d.number} totals`}><tbody data-ivm-totals set:html={renderIvmTotals(d, s)} /></table>
+                  <div class="ivm-sched">
+                    <div class="ivm-sched-h" set:html={withAppIcons('💳 Payment Schedule')} />
+                    <div class="ivm-sched-b">
+                      <label class="ivm-sched-l" for="ivm-pct">Down Payment:</label>
+                      <input class="ivm-pct num" id="ivm-pct" type="number" min="0" max="100" step="1" inputmode="numeric" value={s.pct} data-ivm-pct />
+                      <span class="ivm-sched-pc" aria-hidden="true">%</span>
+                      <span class="ivm-upfront num" data-ivm-upfront>{ivmUpfront(d, s)}</span>
+                    </div>
+                  </div>
+                </div>
+                <div class="ivm-foot">{d.shop.name} | {d.shop.address}, {d.shop.city} | {d.shop.phone}<em>Thank you for choosing {d.shop.name}!</em></div>
+              </div>
+
+              <section class="app-card ivm-pays" aria-labelledby="ivm-pays-h" data-ivm-pays set:html={withAppIcons(renderIvmPays(d, s))} />
             </div>
           </div>
         </div>
-        <div class="ivm-modal" data-ivm-modal hidden></div>
-        <div class="a-toast ivm-toast" data-ivm-toast role="status" aria-live="polite" aria-atomic="true"></div>
+        <dialog class="a-modal" data-ivm-dlg></dialog>
       </div>
     </div>
 
-    <div class="ivm-side">
-      <div class="ivm-clock">
-        <label for="ivm-age">Invoice age</label>
-        <output for="ivm-age" data-ivm-ageout>{ivmAgeText(data, s)}</output>
-        <input type="range" id="ivm-age" min="0" max={IVM_MAX_AGE} step="1" value={s.age} data-ivm-age aria-describedby="ivm-age-hint" />
-        <span class="ivm-clock-hint" id="ivm-age-hint">Drag to watch Net terms come due.</span>
-      </div>
-      <figure class="ivm-phone" aria-labelledby="ivm-phone-cap">
-        <figcaption class="ivm-cap" id="ivm-phone-cap"><span class="ivm-livedot" data-ivm-livedot aria-hidden="true"></span>Live invoice · what {inv.customerName} see</figcaption>
-        <div class="ivm-device">
-          <div class="ivm-screen">
-            <div class="ivm-island" aria-hidden="true"></div>
-            <div class="ivm-status" aria-hidden="true">
-              <span>9:41</span>
-              <span class="ivm-status-ic">
-                <svg viewBox="0 0 18 12" width="18" height="12" fill="currentColor"><rect x="0" y="8" width="3" height="4" rx="1"/><rect x="5" y="5.5" width="3" height="6.5" rx="1"/><rect x="10" y="3" width="3" height="9" rx="1"/><rect x="15" y="0" width="3" height="12" rx="1"/></svg>
-                <svg viewBox="0 0 24 24" width="16" height="12" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round"><path d="M12 20h.01"/><path d="M2 8.82a15 15 0 0 1 20 0"/><path d="M5 12.86a10 10 0 0 1 14 0"/><path d="M8.5 16.43a5 5 0 0 1 7 0"/></svg>
-                <svg viewBox="0 0 27 13" width="25" height="12"><rect x="0.5" y="0.5" width="23" height="12" rx="3.5" fill="none" stroke="currentColor" stroke-opacity=".4"/><rect x="2.5" y="2.5" width="19" height="8" rx="2" fill="currentColor"/><path d="M25 4.5v4a2 2 0 0 0 0-4z" fill="currentColor" fill-opacity=".45"/></svg>
-              </span>
-            </div>
-            <div class="ivm-paper">
-              <div class="ivm-q-head">
-                <div class="ivm-q-shop"><b>{shop.name}</b><span>{shop.city}</span></div>
-                <div class="ivm-qbox"><div class="ivm-qbox-h">INVOICE NUMBER</div><div class="ivm-qbox-n">{inv.number}</div></div>
-              </div>
-              <div class="ivm-q-body" data-ivm-phone set:html={renderIvmPhone(data, s)} />
-            </div>
-            <div class="ivm-home" aria-hidden="true"></div>
+    <!-- ================= The customer's phone: the live invoice (q.html?inv=1) ================= -->
+    <div class="ivm-p">
+      <p class="ivm-pcap" data-ivm-livecap><span class="ivm-livedot" aria-hidden="true"></span>Live invoice · what {d.customer} see</p>
+      <div class="ivm-phone">
+        <div class="ivm-screen" data-ivm-pscreen>
+          <div class="ivm-island" aria-hidden="true"></div>
+          <div class="ivm-status" aria-hidden="true">
+            <span>9:41</span>
+            <span class="ivm-status-ic">
+              <svg viewBox="0 0 18 12" width="18" height="12" fill="currentColor"><rect x="0" y="8" width="3" height="4" rx="1"/><rect x="5" y="5.5" width="3" height="6.5" rx="1"/><rect x="10" y="3" width="3" height="9" rx="1"/><rect x="15" y="0" width="3" height="12" rx="1"/></svg>
+              <svg viewBox="0 0 24 24" width="16" height="12" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round"><path d="M12 20h.01"/><path d="M2 8.82a15 15 0 0 1 20 0"/><path d="M5 12.86a10 10 0 0 1 14 0"/><path d="M8.5 16.43a5 5 0 0 1 7 0"/></svg>
+              <svg viewBox="0 0 27 13" width="25" height="12"><rect x="0.5" y="0.5" width="23" height="12" rx="3.5" fill="none" stroke="currentColor" stroke-opacity=".4"/><rect x="2.5" y="2.5" width="19" height="8" rx="2" fill="currentColor"/><path d="M25 4.5v4a2 2 0 0 0 0-4z" fill="currentColor" fill-opacity=".45"/></svg>
+            </span>
           </div>
+          <div class="ivm-pscroll" data-ivm-pscroll role="region" aria-label={`The customer's phone: live invoice ${d.number}`} tabindex="0">
+            <div class="ivm-q">
+              <div class="ivm-q-wrap">
+                <div class="ivm-q-paper">
+                  <div class="ivm-q-header">
+                    <div class="ivm-q-top">
+                      <div class="ivm-q-logo">
+                        <svg viewBox="0 0 40 40" width="34" height="34" aria-hidden="true"><rect x="18.2" y="25" width="3.6" height="9" rx="1.4" fill="#7a5a3a"/><path d="M20 3.5c5.4 4.8 10.2 9.6 10.2 15.3 0 4-2.9 6.7-6.6 6.7h-7.2c-3.7 0-6.6-2.7-6.6-6.7C9.8 13.1 14.6 8.3 20 3.5z" fill="#3f6b4f"/><path d="M20 12.2c3.9 3.4 7 6.6 7 10.3 0 2.6-1.9 4.3-4.3 4.3h-5.4c-2.4 0-4.3-1.7-4.3-4.3 0-3.7 3.1-6.9 7-10.3z" fill="#5a8a68"/><path d="M5 36.5h30" stroke="#c4a87c" stroke-width="2.2" stroke-linecap="round"/></svg>
+                        <span class="ivm-q-logo-t"><b>Pinyon</b><small>Flooring Co.</small></span>
+                      </div>
+                      <div class="ivm-q-topr">
+                        <div class="ivm-q-qbox"><div class="ivm-q-qbox-h">INVOICE NUMBER</div><div class="ivm-q-qbox-n">{d.number}</div></div>
+                        <div class="ivm-q-dates">
+                          <div class="ivm-q-rrow"><span class="ivm-q-rlbl">ISSUED</span><span class="ivm-q-rval">{fmtDate(d.createdAt)}</span></div>
+                          <div class="ivm-q-rrow"><span class="ivm-q-rlbl">DUE</span><span class="ivm-q-rval">{fmtDate(d.dueDate)}</span></div>
+                        </div>
+                      </div>
+                    </div>
+                    <div class="ivm-q-meta">
+                      <dl>
+                        <dt>ADDRESS</dt><dd>{d.shop.address}<br />{d.shop.city}</dd>
+                        <dt>PHONE</dt><dd>{d.shop.phone}</dd>
+                        <dt>EMAIL</dt><dd>{d.shop.email}</dd>
+                      </dl>
+                      <div class="ivm-q-rep"><div class="ivm-q-rep-l">SALES REP</div><div class="ivm-q-rep-n">{d.rep.name}</div><span class="ivm-q-rep-e">{d.rep.email}</span></div>
+                    </div>
+                  </div>
+                  <div class="ivm-q-bs">
+                    <div class="ivm-q-box">
+                      <div class="ivm-q-box-h">BILL TO</div>
+                      <dl>
+                        <dt>NAME</dt><dd>{d.customer}</dd>
+                        <dt>ADDRESS</dt><dd>{d.city}</dd>
+                        <dt>PHONE</dt><dd>{d.phone}</dd>
+                        {d.email && <><dt>EMAIL</dt><dd>{d.email}</dd></>}
+                      </dl>
+                    </div>
+                    <div class="ivm-q-box">
+                      <div class="ivm-q-box-h">SITE DETAILS</div>
+                      <dl>
+                        <dt>CONTACT</dt><dd>{d.customer}</dd>
+                        <dt>ADDRESS</dt><dd>{d.city}</dd>
+                        <dt>PHONE</dt><dd>{d.phone}</dd>
+                      </dl>
+                    </div>
+                  </div>
+                  {d.sections.map((_, i) => <div class="ivm-q-sec" set:html={renderIvmPSection(d, i)} />)}
+                  <div data-ivm-phone set:html={renderIvmPhone(d, s)} />
+                  <div class="ivm-q-footer">{d.shop.name} | {d.shop.address}, {d.shop.city} | {d.shop.phone}<em>Thank you for choosing {d.shop.name}!</em></div>
+                </div>
+              </div>
+            </div>
+          </div>
+          <div class="ivm-home" aria-hidden="true"></div>
         </div>
-      </figure>
+      </div>
     </div>
   </div>
 
   <p class="sr-only" data-ivm-live aria-live="polite"></p>
-  <p class="mod-foot">Sample invoice for fictional customers. Nothing is charged, saved or sent. <button type="button" class="ivm-reset" data-ivm-reset hidden>Start over</button></p>
+  <p class="mod-foot">Same rules as the app: what the live invoice asks for follows the payment terms, the deposit % and Final Invoice; Net terms come due by the invoice’s age. Sample invoice for fictional customers — nothing is charged, saved or sent. <button type="button" class="ivm-reset" data-ivm-reset hidden>Start over</button></p>
   <script type="application/json" data-ivm-data set:html={json}></script>
 </article>
 
 <script>
-  // Hydrate on approach, like the quote module: the island loads when the module nears the
+  // Hydrate on approach, like the other modules: the island loads when the module nears the
   // viewport (an inactive tab loads when it is first shown). The server-rendered picture stands until then.
   import { whenNear } from '../../lib/when-near';
   whenNear('[data-ivm]', () => import('../../islands/invoice-terms').then((m) => m.initInvoiceModules()));
 </script>
 
 <style is:global>
-  .ivm { container: ivm / inline-size; }
-
+  /* ================= InvoiceModule (.ivm-) — DOM is patched by script, so global + prefixed ================= */
+  .ivm { --ivm-primary: #0074d3; --ivm-green: #047857; }
   .ivm [hidden] { display: none !important; }
-  .ivm-grid { display: grid; grid-template-columns: minmax(0, 1fr); gap: 16px; min-width: 0; }
-  .ivm-app { container: ivmoffice / inline-size; display: flex; flex-direction: column; min-width: 0; }
-  .ivm-frame { flex: 1; }
-  .ivm .app-top h4, .ivm-app h4, .ivm-app h5 { font-family: var(--font-app); letter-spacing: 0; color: var(--app-text); }
-  .ivm .app-crumb { white-space: nowrap; overflow: hidden; text-overflow: ellipsis; min-width: 0; }
-  .ivm-body { flex: 1; display: grid; gap: 12px; align-content: start; }
-  .ivm-num, .ivm-chk { font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace; }
+  .ivm .mod-head h3 { text-wrap: balance; }
+  .ivm .mod-foot { line-height: 1.55; max-width: 92ch; }
+  .ivm-mono, .ivm-top-num, .ivm-chk { font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace; }
 
-  /* Invoice header (main L16006-16012) */
-  .ivm-head { display: grid; gap: 10px; padding: 14px 16px; }
-  .ivm-title { display: flex; flex-wrap: wrap; align-items: center; gap: 4px 10px; }
-  .ivm-doc { font: 800 19px/1.15 var(--font-app); color: var(--app-primary); letter-spacing: -.01em; }
-  .ivm-num { font-size: 14px; font-weight: 700; color: var(--app-muted); letter-spacing: .04em; }
-  .ivm-cust { display: inline-flex; align-items: center; gap: 8px; justify-self: start; max-width: 100%; min-width: 0; padding: 4px 10px 4px 4px; border: 1px solid var(--app-border); border-radius: 999px; background: #fff; }
-  .ivm-ava { flex: none; width: 28px; height: 28px; border-radius: 50%; display: grid; place-items: center; background: linear-gradient(135deg, #2563eb, #1e40af); color: #fff; font: 700 11px/1 system-ui, -apple-system, sans-serif; letter-spacing: .02em; }
-  .ivm-cname { min-width: 0; font: 600 13px/1.25 var(--font-app); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
-  .ivm-ctag { flex: none; font-size: 10px; line-height: 1.5; background: #b6d7a8; color: #333; padding: 0 6px; border-radius: 8px; }
-  .ivm-actions { display: flex; flex-wrap: wrap; align-items: center; gap: 8px; }
+  /* ---------- Demo clock (a site control, outside the frame) ---------- */
+  .ivm-clock { margin-bottom: 16px; }
+  .ivm-clock-l { display: inline-flex; align-items: center; gap: 6px; white-space: nowrap; }
+  .ivm-clock-r { flex: 1 1 180px; min-width: 140px; max-width: 360px; margin: 0; accent-color: var(--blue); cursor: pointer; }
+  .ivm-clock-o { font-variant-numeric: tabular-nums; white-space: nowrap; }
+  .ivm-clock-h { flex-basis: 100%; }
+
+  .ivm-stage { display: grid; gap: 28px; align-items: start; }
+  @media (min-width: 1100px) {
+    .ivm-stage { grid-template-columns: minmax(0, 1fr) minmax(340px, 392px); gap: 32px; }
+    .ivm-p { position: sticky; top: var(--app-stick); }
+  }
+  .ivm-b { position: relative; min-width: 0; }
+
+  /* ---------- Invoice header (main L18378-18389): title + badge, customer + Take Payment; Final Invoice + Balance Due ---------- */
+  .ivm .app-top.ivm-top { position: sticky; top: var(--app-stick); z-index: 4; min-height: 60px; padding: 9px 14px; gap: 12px; box-shadow: 0 8px 18px -16px rgba(15,23,42,.45); }
+  .ivm-top-main { display: grid; gap: 7px; min-width: 0; flex: 1 1 auto; }
+  .ivm-top-l { display: flex; align-items: center; gap: 8px; min-width: 0; }
+  .ivm-top-title { display: inline-flex; align-items: center; gap: 5px; font: 800 19px/1.1 var(--font-app); color: var(--ivm-primary); letter-spacing: -.01em; white-space: nowrap; }
+  .ivm-top-num { font-size: 13.5px; font-weight: 700; line-height: 1; color: #6b7280; letter-spacing: .04em; }
+  .ivm-top-l .a-pill { font-size: 10px; }
+  .ivm-top-meta { display: flex; align-items: center; flex-wrap: wrap; gap: 6px 8px; min-width: 0; }
+  .ivm-cust { display: inline-flex; align-items: center; gap: 8px; min-width: 0; max-width: 100%; padding: 3px 9px 3px 3px; border: 1px solid var(--app-border); border-radius: 999px; background: #fff; }
+  .ivm-cust-av { flex: none; width: 26px; height: 26px; border-radius: 50%; display: grid; place-items: center; background: linear-gradient(135deg, #2563eb, #1e40af); color: #fff; font: 700 11px/1 var(--font-app); letter-spacing: .02em; }
+  .ivm-cust-name { min-width: 0; font: 600 13px/1.25 var(--font-app); color: #0f172a; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+  .ivm-ctag { flex: none; padding: 0 6px; border-radius: 8px; background: #b6d7a8; color: #1f2d1a; font-size: 10px; line-height: 1.5; }
+  .ivm-act { display: inline-flex; }
+  .ivm-take { min-height: 32px; }
+  .ivm-paidtext { display: inline-flex; align-items: center; gap: 5px; padding: 4px 8px; border-radius: 6px; color: var(--ivm-green); font: 600 13px/1.3 var(--font-app); }
+  .ivm-paidtext:focus { outline: none; }
+  .ivm-paidtext:focus-visible { outline: 3px solid var(--dot); outline-offset: 2px; }
+  .ivm-top-r { flex: none; margin-left: auto; display: flex; align-items: center; gap: 10px; }
+  /* .hdr-final-btn (main L1469): 13px/600 #1e3a8a, radius 8; on = green with a soft glow (the app's #10B981, one step darker for AA) */
   .ivm-final { display: inline-flex; align-items: center; gap: 6px; min-height: 36px; padding: 7px 13px; border: 1px solid var(--app-border); border-radius: 8px; background: #fff; color: #1e3a8a; font: 600 13px/1.2 var(--font-app); white-space: nowrap; cursor: pointer; transition: border-color .15s, color .15s, background-color .15s, box-shadow .15s; }
-  .ivm-final:hover { border-color: #047857; background: #ecfdf5; color: #047857; box-shadow: 0 1px 4px rgba(16,185,129,.12); }
-  .ivm-final.is-final, .ivm-final.is-final:hover { background: #047857; border-color: #047857; color: #fff; box-shadow: 0 2px 8px rgba(16,185,129,.35); }
-  .ivm-take { min-height: 36px; }
-  .ivm-paidtext { padding: 4px 8px; color: #047857; font: 600 13px/1.3 var(--font-app); border-radius: 6px; }
+  .ivm-final:hover { border-color: #047857; background: #ecfdf5; color: #047857; }
+  .ivm-final.is-final, .ivm-final.is-final:hover { border-color: #047857; background: #047857; color: #fff; box-shadow: 0 2px 8px rgba(16,185,129,.35); }
+  /* .hdr-totals-btn (main L1483): Balance Due, red while owed, green otherwise, "of $total" */
+  .ivm-hbal { display: inline-flex; flex-direction: column; align-items: flex-end; padding: 5px 12px 6px; border: 1px solid #bfdbfe; border-radius: 12px; background: linear-gradient(135deg, #eff6ff, #f0f9ff); line-height: 1.1; font-family: var(--font-app); }
+  .ivm-hbal-cap { font-size: 9.5px; font-weight: 700; line-height: 1.2; text-transform: uppercase; letter-spacing: .06em; color: #1e3a8a; }
+  .ivm-hbal-val { margin-top: 1px; font-size: 19px; font-weight: 700; line-height: 1.15; color: var(--ivm-green); }
+  .ivm-hbal-val.is-due { color: #dc2626; }
+  .ivm-hbal-of { margin-top: 1px; font-size: 10px; color: #6b7280; }
+  .ivm .a-tdock { top: calc(var(--app-stick) + var(--ivm-head, 64px)); }
+  .ivm .ivm-toast { top: 10px; }
+  .ivm .ivm-body { padding: 14px; background: var(--app-bg); display: grid; gap: 14px; align-content: start; }
 
-  /* Payment Terms + Payment Schedule (main L16044, L16086-16090) */
-  .ivm-terms { display: grid; gap: 12px; padding: 12px 14px 14px; }
-  .ivm-lbl { display: block; margin-bottom: 4px; font: 700 9.5px/1.2 var(--font-app); color: #6b7280; text-transform: uppercase; letter-spacing: .04em; }
-  .ivm-terms .a-select { width: 100%; min-height: 36px; font-size: 13px; }
-  .ivm-sched-h { padding: 5px 10px; border-radius: 4px 4px 0 0; background: #0074d3; color: #fff; font: 700 10px/1.2 var(--font-app); text-transform: uppercase; letter-spacing: .06em; }
-  .ivm-sched-b { display: flex; flex-wrap: wrap; align-items: center; gap: 6px 8px; padding: 10px 12px; border: 1px solid #bfdbfe; border-top: 0; border-radius: 0 0 4px 4px; font-size: 12px; color: #555; }
-  .ivm-sched-b label { font-weight: 600; color: #333; }
-  .ivm-sched-b .a-input { width: 4.25rem; min-height: 32px; padding: 4px 6px; text-align: center; font-size: 13px; }
-  .ivm-sched-b > span[aria-hidden] { font-weight: 600; color: #333; }
-  .ivm-upfront { color: var(--app-muted); font-size: 11.5px; }
+  /* ---------- The invoice paper (Arial, like the app's doc-paper) ---------- */
+  .ivm-paper { container: ivmpaper / inline-size; background: #fff; border-radius: 10px; padding: 16px; font-family: Arial, Helvetica, sans-serif; color: #111827; box-shadow: 0 1px 2px rgba(15,23,42,.06), 0 0 0 1px rgba(15,23,42,.06); }
+  .ivm-info { display: grid; grid-template-columns: minmax(0, 1fr) 216px; gap: 14px; align-items: start; margin-bottom: 18px; }
+  .ivm-box { border: 1px solid #bfdbfe; border-radius: 4px; background: #fff; }
+  .ivm-box-h { padding: 4px 10px; border-radius: 3px 3px 0 0; background: var(--ivm-primary); color: #fff; font-size: 10px; font-weight: 700; text-transform: uppercase; letter-spacing: .06em; }
+  .ivm-box-b { padding: 10px; font-size: 12px; }
+  .ivm-bill-name { margin-bottom: 4px; font-size: 13px; font-weight: 600; }
+  .ivm-bill-line { margin-top: 2px; color: #4b5563; overflow-wrap: anywhere; }
+  .ivm-bill-line b { color: #374151; }
+  .ivm-taxrow { display: flex; gap: 10px; margin-top: 10px; padding-top: 8px; border-top: 1px dashed #d1d5db; }
+  .ivm-taxrow > div { flex: 1; min-width: 0; }
+  .ivm-lbl { display: block; margin-bottom: 3px; font-size: 9px; font-weight: 700; color: #6b7280; text-transform: uppercase; letter-spacing: .04em; white-space: nowrap; }
+  .ivm-pillbox { display: flex; align-items: center; justify-content: space-between; gap: 6px; min-height: 32px; padding: 5px 8px; border: 1px solid #e5e7eb; border-radius: 3px; background: #f3f4f6; font-size: 12px; }
+  .ivm-pillbox small { font-size: 9.5px; color: #6b7280; font-weight: 500; text-align: right; }
+  .ivm-terms { width: 100%; min-height: 32px; padding: 5px 6px; border: 1px solid #d1d5db; border-radius: 3px; background: #fff; color: #111; font: 12px/1.3 Arial, Helvetica, sans-serif; cursor: pointer; }
+  .ivm-terms:hover { border-color: #93c5fd; }
+  .ivm-terms:focus { outline: none; border-color: var(--ivm-primary); box-shadow: 0 0 0 3px rgba(0,116,211,.2); }
+  .ivm-qn-box { overflow: hidden; margin-bottom: 10px; border: 1px solid #bfdbfe; border-radius: 4px; text-align: center; }
+  .ivm-qn-h { padding: 4px 10px; background: var(--ivm-primary); color: #fff; font-size: 10px; font-weight: 700; text-transform: uppercase; letter-spacing: .06em; }
+  .ivm-qn-n { padding: 6px 10px; color: var(--ivm-primary); font-size: 16px; font-weight: 700; }
+  .ivm-qn-meta { display: grid; grid-template-columns: 78px 1fr; column-gap: 8px; row-gap: 5px; margin: 0; font-size: 11px; color: #374151; }
+  .ivm-qn-meta dt { padding-top: 1px; color: #6b7280; font-size: 9px; font-weight: 700; text-transform: uppercase; letter-spacing: .04em; white-space: nowrap; }
+  .ivm-qn-meta dd { margin: 0; font-weight: 700; }
 
-  .ivm-cols, .ivm-col-l, .ivm-col-r { display: contents; }
-  /* Line items (shown when the office pane is wide) */
-  .ivm-lines { display: none; padding: 12px 14px 6px; }
-  .ivm-lines h5 { margin: 0 0 6px; font: 700 10.5px/1.2 var(--font-app); text-transform: uppercase; letter-spacing: .06em; color: var(--app-muted); }
-  .ivm-ltable { width: 100%; border-collapse: collapse; table-layout: fixed; font-size: 12px; }
-  .ivm-ltable .c-q { width: 3.9rem; }
-  .ivm-ltable .c-u { width: 3.6rem; }
-  .ivm-ltable .c-p { width: 3.9rem; }
-  .ivm-ltable .c-t { width: 4.9rem; }
-  .ivm-ltable td:first-child { overflow-wrap: anywhere; }
-  .ivm-ltable th { padding: 5px 6px; border-bottom: 2px solid var(--app-border); text-align: left; font-size: 10px; font-weight: 700; color: var(--app-muted); text-transform: uppercase; letter-spacing: .04em; }
-  .ivm-ltable td { padding: 6px; border-bottom: 1px solid #f1f2f4; vertical-align: top; }
-  .ivm-ltable tr:last-child td { border-bottom: 0; }
-  .ivm-ltable .r { text-align: right; white-space: nowrap; }
+  /* Section card (_ibSecHeader, main L18530): band #0074D3 (Pick One, required) / #9333EA (optional) */
+  .ivm-sec { margin-bottom: 18px; }
+  .ivm-band { display: flex; align-items: center; gap: 7px; min-height: 32px; padding: 5px 10px; border-radius: 4px 4px 0 0; background: var(--ivm-primary); color: #fff; }
+  .ivm-band-opt { background: #9333ea; }
+  .ivm-band-ic { display: inline-flex; font-size: 13px; line-height: 1; }
+  .ivm .ivm-band-t { min-width: 0; margin: 0; color: #fff; font: 700 10.5px/1.3 Arial, Helvetica, sans-serif; text-transform: uppercase; letter-spacing: .06em; overflow-wrap: anywhere; }
+  .ivm-secbody { padding: 10px 12px 8px; border: 1px solid #bfdbfe; border-top: 0; border-radius: 0 0 4px 4px; background: #fafbfc; }
+  .ivm-tbl { width: 100%; border-collapse: collapse; font-size: 13px; }
+  .ivm-tbl th { padding: 7px 8px; border-bottom: 2px solid #e5e7eb; color: #6b7280; font-size: 10.5px; font-weight: 700; text-align: left; text-transform: uppercase; letter-spacing: .04em; white-space: nowrap; }
+  .ivm-th-sub { font-weight: 600; color: #9ca3af; }
+  .ivm-tbl td { padding: 9px 8px; border-bottom: 1px solid #e5e7eb; vertical-align: top; }
+  .ivm-tbl .c { text-align: center; }
+  .ivm-tbl .r { text-align: right; white-space: nowrap; }
+  .ivm-tbl th:nth-child(2) { width: 150px; }
+  .ivm-tbl th:nth-child(3) { width: 92px; }
+  .ivm-tbl th:nth-child(4) { width: 104px; }
+  .ivm-ln { display: block; font-size: 13px; font-weight: 500; line-height: 1.35; }
+  .ivm-ln-mat { color: var(--ivm-primary); }
+  .ivm-ln-lab { color: #9333ea; }
+  .ivm-ld { display: block; margin-top: 2px; color: #6b7280; font-size: 11.5px; line-height: 1.35; }
+  .ivm-uom { color: #6b7280; font-size: 11px; }
+  .ivm-c-total { color: var(--ivm-green); font-weight: 700; }
+  .ivm-sectot { margin-top: 8px; font-size: 12px; }
+  .ivm-sectot-h { padding: 0 8px 4px; color: #6b7280; font-size: 10px; font-weight: 700; text-align: right; text-transform: uppercase; letter-spacing: .06em; }
+  .ivm-sectot table { width: 100%; border-collapse: collapse; }
+  .ivm-sectot td { padding: 4px 8px; color: #374151; font-weight: 700; text-align: right; }
+  .ivm-sectot td:last-child { width: 110px; color: #111; white-space: nowrap; }
+  .ivm-sectot tr.ivm-sectot-tax td { color: #6b7280; font-weight: 400; }
+  .ivm-sectot tr.ivm-sectot-tax td:last-child { color: #374151; font-weight: 600; }
 
-  /* Totals (main L16068-16078) */
-  .ivm-totwrap { overflow: hidden; }
-  .ivm-tot { width: 100%; border-collapse: collapse; font-size: 13px; }
-  .ivm-tot td { padding: 5px 14px; text-align: right; color: #111; }
-  .ivm-tot td:first-child { color: #555; }
-  .ivm-tot td.num { width: 8.5rem; }
-  .ivm-tot tr:first-child td { padding-top: 10px; }
-  .ivm-tot tr.ivm-grand td { padding: 9px 14px; background: #e8f0fe; border-top: 2px solid #0074d3; color: #0074d3; font-size: 17px; font-weight: 800; }
-  .ivm-tot tr.ivm-grand td:first-child { font-size: 15px; text-transform: uppercase; letter-spacing: .02em; }
-  .ivm-tot tr.ivm-paid td { color: #047857; }
-  .ivm-tot tr.ivm-bal td { padding: 8px 14px 9px; background: #f0fff4; color: #047857; font-size: 16px; font-weight: 800; transition: background-color .3s, color .3s; }
-  .ivm-tot tr.ivm-bal td:first-child { font-size: 14px; font-weight: 700; text-transform: uppercase; letter-spacing: .02em; }
-  .ivm-tot tr.ivm-bal.is-due td { background: #fff5f5; color: #dc2626; }
+  /* Totals (main L18444-18454) and the 💳 Payment Schedule (L18458-18462) */
+  .ivm-bottom { display: grid; gap: 18px; margin-top: 6px; }
+  .ivm-tot { justify-self: end; width: min(100%, 360px); border-collapse: collapse; font-size: 13px; }
+  .ivm-tot td { padding: 5px 12px; text-align: right; color: #555; }
+  .ivm-tot td:last-child { width: 130px; padding-right: 16px; color: #111; white-space: nowrap; }
+  .ivm-tot tr.ivm-grand td { padding: 10px 12px; border-top: 2px solid var(--ivm-primary); background: #e8f0fe; color: var(--ivm-primary); font-weight: 800; }
+  .ivm-tot tr.ivm-grand td:first-child { border-radius: 0 0 0 6px; font-size: 16px; text-transform: uppercase; letter-spacing: .02em; }
+  .ivm-tot tr.ivm-grand td:last-child { border-radius: 0 0 6px 0; padding-right: 16px; font-size: 18px; }
+  .ivm-tot tr.ivm-paid td, .ivm-tot tr.ivm-paid td:last-child { color: var(--ivm-green); }
+  .ivm-tot tr.ivm-bal td { padding: 8px 12px; background: #f0fff4; color: var(--ivm-green); font-weight: 700; transition: background-color .3s, color .3s; }
+  .ivm-tot tr.ivm-bal td:first-child { font-size: 14px; text-transform: uppercase; letter-spacing: .02em; }
+  .ivm-tot tr.ivm-bal td:last-child { padding-right: 16px; font-size: 16px; font-weight: 800; color: var(--ivm-green); }
+  .ivm-tot tr.ivm-bal.is-due td, .ivm-tot tr.ivm-bal.is-due td:last-child { background: #fff5f5; color: #dc2626; }
+  .ivm-sched-h { display: flex; align-items: center; gap: 5px; padding: 5px 10px; border-radius: 4px 4px 0 0; background: var(--ivm-primary); color: #fff; font-size: 10px; font-weight: 700; text-transform: uppercase; letter-spacing: .06em; }
+  .ivm-sched-b { display: flex; align-items: center; flex-wrap: wrap; gap: 6px 10px; padding: 12px 16px; border: 1px solid #bfdbfe; border-top: 0; border-radius: 0 0 4px 4px; background: #fff; color: #555; font-size: 12px; }
+  .ivm-sched-l { color: #333; font-weight: 600; }
+  .ivm-pct { width: 64px; min-height: 32px; padding: 3px 6px; border: 1px solid #d1d5db; border-radius: 3px; background: #fff; color: #111; font: 13px/1.2 Arial, Helvetica, sans-serif; text-align: center; }
+  .ivm-pct:focus { outline: none; border-color: var(--ivm-primary); box-shadow: 0 0 0 3px rgba(0,116,211,.2); }
+  .ivm-sched-pc { color: #333; font-weight: 600; }
+  .ivm-upfront { color: #6b7280; font-size: 11.5px; }
+  .ivm-foot { margin-top: 20px; padding-top: 14px; border-top: 1px solid #eee; color: #666; font-size: 11px; line-height: 1.5; text-align: center; }
+  .ivm-foot em { display: block; }
 
-  /* Payments card (main L15990) */
-  .ivm-pays { padding: 12px 14px; }
-  .ivm-pays h5 { margin: 0 0 8px; font: 600 13.5px/1.3 var(--font-app); }
-  .ivm-nopay { font-size: 13px; color: var(--app-muted); }
-  .ivm-ptable { width: 100%; border-collapse: collapse; font-size: 12.5px; }
-  .ivm-ptable th { padding: 5px 8px; text-align: left; font-size: 10.5px; font-weight: 700; color: var(--app-muted); text-transform: uppercase; letter-spacing: .04em; border-bottom: 2px solid var(--app-border); }
-  .ivm-ptable td { padding: 7px 8px; border-bottom: 1px solid var(--app-border); }
+  /* 💳 Payments card (paymentsHTML, main L18364) */
+  .ivm-pays { padding: 16px 18px; font-family: var(--font-app); }
+  .ivm-pays-h { display: flex; align-items: center; justify-content: space-between; gap: 10px; margin-bottom: 10px; }
+  .ivm .ivm-pays-h h5 { display: inline-flex; align-items: center; gap: 6px; font: 600 14px/1.3 var(--font-app); }
+  .ivm-nopay { margin: 0; padding: 6px 0; color: var(--app-muted); font-size: 13px; }
+  .ivm-ptwrap { overflow-x: auto; }
+  .ivm-ptable { width: 100%; border-collapse: collapse; font-size: 13px; }
+  .ivm-ptable th { padding: 6px 10px; border-bottom: 2px solid var(--app-border); color: var(--app-muted); font-size: 11px; font-weight: 700; text-align: left; text-transform: uppercase; letter-spacing: .04em; }
+  .ivm-ptable td { padding: 8px 10px; border-bottom: 1px solid var(--app-border); white-space: nowrap; }
   .ivm-ptable .r { text-align: right; }
   .ivm-ptd td { background: #f3f4f6; font-weight: 700; text-align: right; }
-  .ivm-green { color: #047857; font-weight: 600; }
-  .ivm-chk { font-size: 11px; color: var(--app-muted); }
+  .ivm-green { color: var(--ivm-green); font-weight: 600; }
+  .ivm-chk { color: var(--app-muted); font-size: 11px; }
 
-  /* Toast + Take Payment modal */
-  /* Centred with left/right instead of left:50% + translate, so a long message can use the frame's width */
-  .app .ivm-toast { left: 14px; right: 14px; width: max-content; max-width: calc(100% - 28px); margin-inline: auto; transform: translateY(8px); display: flex; align-items: flex-start; gap: 8px; z-index: 30; border-left: 4px solid #10b981; }
-  .app .ivm-toast.is-on { transform: none; }
-  .app .ivm-toast[data-type='warning'] { border-left-color: #f59e0b; }
-  .ivm-modal { position: absolute; inset: 0; z-index: 20; display: flex; align-items: flex-start; justify-content: center; padding: 16px 12px; overflow-y: auto; overscroll-behavior: contain; background: rgba(15,23,42,.42); backdrop-filter: blur(3px); -webkit-backdrop-filter: blur(3px); }
-  .ivm-dlg { width: min(100%, 420px); margin: auto 0; display: flex; flex-direction: column; background: #fff; border-radius: 12px; box-shadow: 0 25px 50px -12px rgba(0,0,0,.4); }
-  .ivm-dlg-h { display: flex; align-items: center; justify-content: space-between; gap: 12px; padding: 14px 14px 12px 18px; border-bottom: 1px solid var(--app-border); }
-  .ivm-dlg-h h4 { font: 600 15px/1.35 var(--font-app); }
-  .ivm-x { flex: none; width: 32px; height: 32px; border: 0; border-radius: 50%; background: transparent; color: var(--app-muted); font-size: 14px; cursor: pointer; }
-  .ivm-x:hover { background: #f3f4f6; color: var(--app-text); }
-  .ivm-dlg-b { display: grid; gap: 12px; padding: 14px 18px 16px; }
-  .ivm-dlg-f { display: flex; flex-wrap: wrap; justify-content: flex-end; gap: 8px; padding: 12px 18px; border-top: 1px solid var(--app-border); }
-  .ivm-fg { display: grid; gap: 4px; }
-  .ivm-fg label { font: 500 13px/1.3 var(--font-app); color: var(--app-text); }
-  .ivm-fg .a-input, .ivm-fg .a-select { width: 100%; min-height: 38px; font-size: 14px; }
-  .ivm-tabs { display: flex; gap: 4px; margin: -4px -18px 0; padding: 0 18px; border-bottom: 1px solid var(--app-border); }
-  .ivm-tab { padding: 8px 12px; margin-bottom: -1px; border-bottom: 3px solid transparent; font: 600 13px/1.2 var(--font-app); color: var(--app-muted); }
-  .ivm-tab.is-on { color: var(--app-primary); border-bottom-color: var(--app-primary); }
-  .ivm-tab.is-off { opacity: .6; cursor: not-allowed; }
-
-  /* Customer side: invoice age + the phone */
-  .ivm-side { display: grid; gap: 14px; align-content: start; justify-items: center; min-width: 0; }
-  .ivm-clock { width: 100%; max-width: 300px; display: grid; gap: 2px; padding: 11px 13px 12px; border: 1px solid var(--ice-300); border-radius: 12px; background: #fff; font-family: var(--font-body); }
-  .ivm-clock label { font-size: .875rem; font-weight: 700; color: var(--navy-900); }
-  .ivm-clock output { font-size: .8125rem; font-weight: 600; color: var(--grey-700); font-variant-numeric: tabular-nums; }
-  .ivm-clock input[type='range'] { width: 100%; margin: 6px 0 2px; accent-color: var(--blue); cursor: pointer; }
-  .ivm-clock-hint { font-size: .78rem; line-height: 1.35; color: var(--grey-600); }
-  .ivm-phone { width: 100%; min-width: 0; max-width: 300px; margin: 0; }
-  /* Same device as the quote module's phone, drawn smaller */
-  .ivm-cap { margin: 0 0 10px; color: var(--navy-900); font: 700 13px/1.35 var(--font-body); text-align: center; text-wrap: balance; }
-  .ivm-livedot { display: inline-block; width: 8px; height: 8px; margin: 0 8px 1px 0; vertical-align: middle; border-radius: 50%; background: #10b981; box-shadow: 0 0 0 3px rgba(16,185,129,.2); }
-  .ivm-device { position: relative; padding: 9px; border-radius: 42px; background: linear-gradient(150deg, #2c3441 0%, #121821 46%, #222a36 100%); box-shadow: inset 0 0 0 1.5px rgba(255,255,255,.14), inset 0 0 0 4px #0b0f15, 0 2px 4px rgba(2,49,91,.12), 0 40px 64px -30px rgba(2,49,91,.6); }
-  .ivm-device::before, .ivm-device::after { content: ''; position: absolute; width: 3px; border-radius: 2px; background: #2c3441; }
-  .ivm-device::before { left: -3px; top: 104px; height: 40px; box-shadow: 0 54px 0 #2c3441; }
-  .ivm-device::after { right: -3px; top: 132px; height: 66px; }
-  .ivm-screen { position: relative; overflow: hidden; padding: 0 7px 20px; border-radius: 34px; background: #eef0f4; color: #222; font: 400 12px/1.4 Helvetica, Arial, sans-serif; -webkit-font-smoothing: antialiased; }
-  .ivm-island { position: absolute; top: 9px; left: 50%; z-index: 2; width: 70px; height: 21px; border-radius: 12px; background: #05070a; transform: translateX(-50%); }
-  .ivm-status { display: flex; align-items: flex-end; justify-content: space-between; height: 38px; padding: 0 14px 7px 20px; color: #111; font: 600 12px/1 -apple-system, 'SF Pro Text', 'Segoe UI', system-ui, sans-serif; }
-  .ivm-status-ic { display: flex; align-items: center; gap: 4px; }
-  .ivm-status-ic svg { display: block; width: auto; height: 10px; }
-  .ivm-home { position: absolute; bottom: 7px; left: 50%; width: 86px; height: 4px; border-radius: 3px; background: rgba(17,17,17,.82); transform: translateX(-50%); }
-  .ivm-paper { padding: 11px 10px 13px; border-radius: 4px; background: #fff; box-shadow: 0 4px 18px rgba(0,0,0,.06); }
-  .ivm-q-head { display: flex; align-items: center; justify-content: space-between; gap: 8px; padding-bottom: 10px; margin-bottom: 8px; border-bottom: 1px solid #e5e7eb; }
-  .ivm-q-shop { min-width: 0; }
-  .ivm-q-shop b { display: block; font-size: 12px; color: #02315b; }
-  .ivm-q-shop span { display: block; margin-top: 2px; font-size: 9.5px; color: #6b7280; }
-  .ivm-qbox { flex: none; text-align: right; }
-  .ivm-qbox-h { margin-bottom: 1px; font-size: 8.5px; font-weight: 700; letter-spacing: .06em; color: #6b7280; }
-  .ivm-qbox-n { font-size: 17px; font-weight: 700; line-height: 1.1; color: #0074d3; }
-
-  /* q.html totals + PAYMENT card (q L313-319, L456-472) */
-  .ivm-q-tot { font-size: 11.5px; }
-  .ivm-row { display: flex; justify-content: space-between; align-items: center; gap: 8px; padding: 5px 9px; }
-  .ivm-row span:first-child { color: #444; }
-  .ivm-row span:last-child { font-weight: 600; color: #111; }
-  .ivm-row-grand { margin-top: 3px; padding: 10px 9px; background: #dbeafe; font-size: 13px; font-weight: 700; }
-  .ivm-row-grand span:last-child { white-space: nowrap; }
-  .ivm-row-grand span:first-child, .ivm-row-grand span:last-child { color: #0074d3; font-weight: 700; }
-  .ivm-row-grand span:first-child { letter-spacing: .04em; }
-  .ivm-pay-h { margin: 16px 0 10px; padding: 5px 10px; border-radius: 2px; background: #0074d3; color: #fff; font-size: 9.5px; font-weight: 700; letter-spacing: .06em; }
-  .ivm-pay-card { padding: 12px 11px; border: 1.5px solid #bfdbfe; border-radius: 8px; background: #f8fbff; }
-  .ivm-due-row { display: flex; flex-wrap: wrap; justify-content: space-between; align-items: baseline; gap: 0 8px; }
-  .ivm-due-lbl { font-size: 10px; font-weight: 700; letter-spacing: .05em; text-transform: uppercase; color: #005ba8; }
-  .ivm-due-amt { font-size: 20px; font-weight: 800; color: #0074d3; white-space: nowrap; }
-  .ivm-due-lbl { white-space: nowrap; }
-  .ivm-due-sub { margin: 3px 0 12px; font-size: 10.5px; line-height: 1.4; color: #555; }
-  .ivm-pay-btn { display: block; width: 100%; padding: 11px 8px; border: 0; border-radius: 8px; background: #9ca3af; color: #fff; font: 700 12.5px/1.25 Helvetica, Arial, sans-serif; letter-spacing: .01em; cursor: not-allowed; }
-  .ivm-paycap { margin-top: 7px; text-align: center; font-size: 10.5px; font-weight: 600; color: #374151; }
-  .ivm-pay-note { margin-top: 6px; text-align: center; font-size: 9.5px; color: #6b7280; }
-  .ivm-pay-done { padding: 15px 12px; border: 1px solid #6ee7b7; border-radius: 8px; background: #d1fae5; color: #065f46; text-align: center; }
-  .ivm-big { margin-bottom: 4px; font-size: 14px; font-weight: 700; }
-  .ivm-meta { font-size: 11px; }
-  .ivm-pay-none { padding: 13px 12px; border: 1px solid #e2e8f0; border-radius: 8px; background: #f8fafc; color: #475569; text-align: center; font-size: 11.5px; line-height: 1.6; }
-  .ivm-sec-h { margin-top: 14px; padding: 5px 10px; background: #0074d3; color: #fff; font-size: 9.5px; font-weight: 700; letter-spacing: .06em; }
-  .ivm-lt { width: 100%; border-collapse: collapse; font-size: 10.5px; }
-  .ivm-lt th { padding: 5px 7px; text-align: left; font-size: 9px; font-weight: 700; color: #6b7280; letter-spacing: .04em; border-bottom: 1px solid #e5e7eb; }
-  .ivm-lt td { padding: 6px 7px; border-bottom: 1px solid #e5e7eb; color: #111; }
-  .ivm-lt .num { text-align: right; white-space: nowrap; }
+  /* Take Payment window */
+  .ivm-pane { display: grid; gap: 14px; }
+  .ivm-cardbox { padding: 12px 14px; border: 1px dashed #cbd5e1; border-radius: 8px; background: #f8fafc; color: #334155; font-size: 13px; line-height: 1.55; }
+  .ivm-cardbox p { margin: 0; }
+  .ivm-cardbox p + p { margin-top: 6px; }
 
   .ivm-reset { margin-left: 4px; padding: 4px 2px; border: 0; background: none; color: var(--blue-ink); font: 700 var(--fs-small)/1.2 var(--font-body); text-decoration: underline; text-underline-offset: .18em; cursor: pointer; }
   .ivm-reset:hover { color: var(--navy-900); }
 
-  @container ivm (min-width: 520px) {
-    .ivm-grid { grid-template-columns: minmax(0, 1fr) clamp(232px, 41%, 258px); align-items: start; }
-    .ivm-side { justify-items: stretch; }
-    .ivm-clock, .ivm-phone { max-width: none; }
+  /* Narrow paper: each line becomes a two-row card; boxes stack */
+  @container ivmpaper (max-width: 560px) {
+    .ivm-info { grid-template-columns: minmax(0, 1fr); }
+    .ivm-qn { display: grid; grid-template-columns: minmax(0, 150px) minmax(0, 1fr); gap: 12px; align-items: start; }
+    .ivm-qn-box { margin-bottom: 0; }
+    .ivm-tbl thead { position: absolute; width: 1px; height: 1px; overflow: hidden; clip: rect(0 0 0 0); white-space: nowrap; }
+    .ivm-tbl, .ivm-tbl tbody { display: block; }
+    .ivm-tbl tr { display: grid; grid-template-columns: minmax(0, 1.3fr) minmax(0, 1fr) minmax(0, 1fr); grid-template-areas: 'item item item' 'qty price total'; gap: 6px 10px; padding: 10px 2px; border-bottom: 1px solid #e5e7eb; }
+    .ivm-tbl td { display: block; min-width: 0; padding: 0; border: 0; }
+    .ivm-tbl td[data-label]::before { content: attr(data-label); display: block; margin-bottom: 2px; color: #6b7280; font: 700 9.5px/1.2 Arial, Helvetica, sans-serif; text-transform: uppercase; letter-spacing: .06em; }
+    .ivm-c-item { grid-area: item; }
+    .ivm-tbl td.ivm-c-qty { grid-area: qty; text-align: left; }
+    .ivm-tbl td.ivm-c-price { grid-area: price; text-align: left; }
+    .ivm-tbl td.ivm-c-total { grid-area: total; text-align: right; }
+    .ivm-sectot td:last-child { width: 96px; }
+    .ivm-tot { width: 100%; }
+    .ivm-tot td:last-child { width: 118px; }
   }
-  /* Full-width tab: header across the top; terms + line items left, totals + payments right */
-  @container ivmoffice (min-width: 800px) {
-    .ivm-head { display: flex; flex-wrap: wrap; align-items: center; gap: 10px 16px; }
-    .ivm-actions { margin-left: auto; }
-    .ivm-cols { display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, 1fr); gap: 12px; align-items: start; }
-    .ivm-col-l, .ivm-col-r { display: grid; gap: 12px; min-width: 0; }
-    .ivm-lines { display: block; }
+  @container ivmpaper (max-width: 380px) {
+    .ivm-taxrow { flex-direction: column; }
+    .ivm-qn { grid-template-columns: minmax(0, 1fr); }
+    .ivm-tot tr.ivm-grand td:first-child { font-size: 14px; }
+    .ivm-tot tr.ivm-grand td:last-child { font-size: 16px; }
   }
-  @container ivmoffice (max-width: 470px) {
-    .ivm-frame { grid-template-columns: minmax(0, 1fr); }
-    .ivm-frame > .app-rail { display: none; }
-    .ivm-body { padding: 12px; }
-    .ivm-head { padding: 12px; }
-    .ivm-tot td { padding-inline: 12px; }
+  @media (max-width: 560px) {
+    .ivm .app-frame { grid-template-columns: minmax(0, 1fr); }
+    .ivm .app-rail { display: none; }
+    .ivm .ivm-body { padding: 10px; }
+    .ivm-paper { padding: 12px; }
+    .ivm-secbody { padding: 8px 10px; }
+    .ivm-pays { padding: 14px; }
+    /* Two steady rows: title + Balance Due, then Take Payment + Final Invoice */
+    .ivm .app-top.ivm-top { display: grid; grid-template-columns: minmax(0, 1fr) auto; grid-template-areas: 'title bal' 'act final'; align-items: center; gap: 8px 10px; padding: 8px 10px 9px 12px; }
+    .ivm-top-main, .ivm-top-r { display: contents; }
+    .ivm-top-l { grid-area: title; gap: 6px; flex-wrap: wrap; }
+    .ivm-top-meta { grid-area: act; }
+    .ivm-cust { display: none; }
+    .ivm-final { grid-area: final; justify-self: end; min-height: 34px; padding: 6px 11px; font-size: 12.5px; }
+    .ivm-hbal { grid-area: bal; padding: 4px 9px 5px; border-radius: 10px; }
+    .ivm-hbal-cap { font-size: 8.5px; }
+    .ivm-hbal-val { font-size: 15.5px; }
+    .ivm-hbal-of { font-size: 9.5px; }
+    .ivm-top-title { font-size: 16px; }
+    .ivm-top-num { font-size: 11.5px; }
+    .ivm .ivm-toast { right: 10px; max-width: calc(100% - 20px); }
   }
-  @container ivmoffice (max-width: 330px) {
-    .ivm-actions > * { flex: 1 1 auto; justify-content: center; }
-    .ivm-tot td.num { width: auto; }
-    .ivm-terms .a-select { font-size: 12.5px; padding-inline: 8px 4px; }
-  }
-  @container ivmoffice (max-width: 300px) {
-    .ivm-terms .a-select { font-size: 12px; }
+  /* Desktop: keep the module about one screen tall — the invoice scrolls inside its window, like the app. */
+  @media (min-width: 1100px) { .ivm .ivm-body { max-height: min(74vh, 720px); overflow-y: auto; scrollbar-width: thin; } }
+
+  /* ---------- Phone (the customer's live invoice, q.html at phone width) ---------- */
+  .ivm-p { width: 100%; min-width: 0; max-width: 392px; margin-inline: auto; }
+  .ivm-pcap { display: flex; align-items: center; justify-content: center; gap: 8px; margin: 0 0 12px; color: var(--navy-900); font: 700 13.5px/1.3 var(--font-body); text-align: center; }
+  .ivm-livedot { flex: none; width: 8px; height: 8px; border-radius: 50%; background: #10b981; box-shadow: 0 0 0 3px rgba(16,185,129,.2); }
+  @keyframes ivm-ping { from { box-shadow: 0 0 0 0 rgba(16,185,129,.6); } to { box-shadow: 0 0 0 11px rgba(16,185,129,0); } }
+  .ivm-pcap.is-sync .ivm-livedot { animation: ivm-ping .75s ease-out; }
+  .ivm-phone { container: ivmphone / inline-size; position: relative; width: min(100%, 380px); margin-inline: auto; padding: 11px; border-radius: 54px; background: linear-gradient(150deg, #2c3441 0%, #121821 46%, #222a36 100%); box-shadow: inset 0 0 0 1.5px rgba(255,255,255,.14), inset 0 0 0 5px #0b0f15, 0 2px 4px rgba(2,49,91,.12), 0 44px 70px -30px rgba(2,49,91,.6); }
+  .ivm-phone::before, .ivm-phone::after { content: ''; position: absolute; width: 3px; border-radius: 2px; background: #2c3441; }
+  .ivm-phone::before { left: -3px; top: 132px; height: 52px; box-shadow: 0 70px 0 #2c3441; }
+  .ivm-phone::after { right: -3px; top: 170px; height: 86px; }
+  /* Laid out at a 430 px phone viewport and zoomed to the drawn screen (zoom, not a transform — text
+     stays crisp). JS sets the exact zoom; these steps are the no-JS fallback. */
+  .ivm-screen { --ivm-qz: .8326; }
+  @container ivmphone (max-width: 379px) { .ivm-screen { --ivm-qz: .76; } }
+  @container ivmphone (max-width: 348px) { .ivm-screen { --ivm-qz: .68; } }
+  .ivm-screen { position: relative; isolation: isolate; display: flex; flex-direction: column; height: clamp(540px, calc(100vh - 168px), 700px); overflow: hidden; border-radius: 43px; background: #eef0f4; }
+  @supports (height: 100svh) { .ivm-screen { height: clamp(540px, calc(100svh - 168px), 700px); } }
+  .ivm-island { position: absolute; top: 10px; left: 0; right: 0; z-index: 3; width: 96px; height: 28px; margin-inline: auto; border-radius: 16px; background: #05070a; }
+  .ivm-status { flex: none; display: flex; align-items: flex-end; justify-content: space-between; height: 48px; padding: 0 24px 6px 34px; background: #eef0f4; color: #111; font: 600 14.5px/1 -apple-system, 'SF Pro Text', 'Segoe UI', system-ui, sans-serif; }
+  .ivm-status-ic { display: flex; align-items: center; gap: 5px; }
+  .ivm-status-ic svg { display: block; width: auto; height: 12px; }
+  .ivm-pscroll { position: relative; flex: 1; min-height: 0; overflow-x: hidden; overflow-y: auto; overscroll-behavior: contain; scrollbar-width: none; }
+  .ivm-pscroll::-webkit-scrollbar { display: none; }
+  @media (pointer: coarse) { .ivm-pscroll { overscroll-behavior: auto; } }
+  .ivm-pscroll:focus-visible { outline: 3px solid var(--dot); outline-offset: -3px; }
+  .ivm-home { position: absolute; bottom: 7px; left: 0; right: 0; z-index: 3; width: 118px; height: 5px; margin-inline: auto; border-radius: 3px; background: rgba(17,17,17,.82); pointer-events: none; }
+
+  .ivm-q { width: 430px; zoom: var(--ivm-qz); background: #eef0f4; color: #222; font: 13px/normal Helvetica, Arial, sans-serif; -webkit-font-smoothing: antialiased; text-align: left; }
+  .ivm-q *, .ivm-q *::before, .ivm-q *::after { box-sizing: border-box; }
+  .ivm-q dl, .ivm-q dd { margin: 0; }
+  .ivm-q-wrap { padding: 12px 8px 30px; }
+  .ivm-q-paper { position: relative; padding: 18px 14px; border-radius: 4px; background: #fff; box-shadow: 0 4px 18px rgba(0,0,0,.06); overflow-wrap: break-word; }
+  .ivm-q-header { overflow: hidden; margin-bottom: 16px; padding: 14px; border: 1px solid #bfdbfe; border-radius: 2px; background: #fff; }
+  .ivm-q-top { display: flex; align-items: center; justify-content: space-between; gap: 10px; margin: 0 0 12px; padding: 0 0 12px; border-bottom: 1px solid #e5e7eb; }
+  .ivm-q-logo { display: flex; align-items: center; gap: 7px; min-width: 0; max-width: 150px; }
+  .ivm-q-logo svg { flex: none; width: 34px; height: 34px; }
+  .ivm-q-logo-t { display: grid; line-height: 1; }
+  .ivm-q-logo-t b { color: #24382c; font: 800 19px/1 Georgia, 'Times New Roman', serif; letter-spacing: -.01em; }
+  .ivm-q-logo-t small { margin-top: 3px; color: #6b5a44; font-size: 8.5px; font-weight: 700; letter-spacing: .16em; text-transform: uppercase; }
+  .ivm-q-topr { display: flex; flex: none; flex-direction: column; align-items: flex-end; gap: 4px; }
+  .ivm-q-qbox { text-align: right; }
+  .ivm-q-qbox-h { margin-bottom: 1px; color: #6b7280; font-size: 9px; font-weight: 700; letter-spacing: .06em; }
+  .ivm-q-qbox-n { color: #0074d3; font-size: 20px; font-weight: 700; line-height: 1.1; }
+  .ivm-q-dates { display: flex; flex-direction: column; align-items: flex-end; gap: 2px; }
+  .ivm-q-rrow { display: flex; align-items: baseline; justify-content: flex-end; gap: 6px; }
+  .ivm-q-rlbl { color: #6b7280; font-size: 9px; font-weight: 700; letter-spacing: .04em; }
+  .ivm-q-rval { color: #111; font-size: 10px; font-weight: 600; white-space: nowrap; }
+  .ivm-q-meta dl { display: grid; grid-template-columns: 90px 1fr; gap: 6px 14px; font-size: 11.5px; }
+  .ivm-q-meta dt, .ivm-q-box dt { padding-top: 1px; color: #6b7280; font-size: 9.5px; font-weight: 700; letter-spacing: .04em; text-transform: uppercase; }
+  .ivm-q-meta dd { color: #111; font-size: 11.5px; line-height: 1.45; }
+  .ivm-q-rep { margin: 12px 0 0; padding: 12px 0 0; border-top: 1px solid #e5e7eb; }
+  .ivm-q-rep-l { margin-bottom: 3px; color: #6b7280; font-size: 9.5px; font-weight: 700; letter-spacing: .04em; text-transform: uppercase; }
+  .ivm-q-rep-n { color: #111; font-size: 12.5px; font-weight: 700; line-height: 1.3; }
+  .ivm-q-rep-e { display: block; margin-top: 2px; color: #0074d3; font-size: 11px; line-height: 1.3; word-break: break-all; }
+  .ivm-q-bs { display: grid; gap: 12px; margin-bottom: 18px; }
+  .ivm-q-box { overflow: hidden; border: 1px solid #bfdbfe; border-radius: 2px; }
+  .ivm-q-box-h, .ivm-q-sh, .ivm-q-payh { padding: 5px 12px; background: #0074d3; color: #fff; font-size: 10px; font-weight: 700; letter-spacing: .06em; }
+  .ivm-q-box dl { display: grid; grid-template-columns: auto 1fr; gap: 5px 14px; padding: 10px 12px; font-size: 11.5px; }
+  .ivm-q-box dd { color: #111; font-size: 11.5px; }
+  .ivm-q-box dd:first-of-type { color: #111; font-size: 12.5px; font-weight: 700; }
+  .ivm-q-ltwrap { overflow-x: auto; margin-bottom: 18px; -webkit-overflow-scrolling: touch; scrollbar-width: thin; }
+  .ivm-q-sec .ivm-q-ltwrap { margin-bottom: 6px; }
+  .ivm-q-lt { width: 100%; border-collapse: collapse; }
+  .ivm-q-lt thead th { padding: 6px 8px; border-bottom: 1px solid #e5e7eb; background: #f1f5f9; color: #374151; font-size: 9px; font-weight: 700; letter-spacing: .04em; text-align: left; text-transform: uppercase; }
+  .ivm-q-lt thead th.num { text-align: right; }
+  .ivm-q-lt tbody td { padding: 6px 8px; border-bottom: 1px solid #e5e7eb; color: #111; font-size: 11px; vertical-align: top; }
+  .ivm-q-lt .num { font-variant-numeric: tabular-nums; text-align: right; white-space: nowrap; }
+  .ivm-q-sectot { margin: 0 0 14px; }
+  .ivm-q-sectot td { padding: 6px 8px; border-bottom: 0 !important; color: #374151 !important; font-size: 12px !important; font-weight: 600; text-align: right; }
+  .ivm-q-sectot td:last-child { width: 96px; color: #111 !important; font-weight: 700; }
+  .ivm-q-bot { display: grid; gap: 20px; margin: 8px 0 0; }
+  .ivm-q-pterms { font-size: 12px; }
+  .ivm-q-lbl { margin-right: 8px; color: #6b7280; font-size: 9.5px; font-weight: 700; letter-spacing: .04em; text-transform: uppercase; }
+  .ivm-q-totals { font-size: 12px; }
+  .ivm-q-row { display: flex; align-items: center; justify-content: space-between; gap: 10px; padding: 6px 12px; }
+  .ivm-q-row span:first-child { color: #444; }
+  .ivm-q-row span:last-child { color: #111; font-weight: 600; font-variant-numeric: tabular-nums; white-space: nowrap; }
+  .ivm-q-grand { margin-top: 4px; padding: 14px 12px; background: #dbeafe; font-size: 18px; font-weight: 700; }
+  .ivm-q-grand span:first-child, .ivm-q-grand span:last-child { color: #0074d3; font-weight: 700; }
+  .ivm-q-grand span:first-child { letter-spacing: .04em; }
+  /* q.html PAYMENT area (q L456-472) */
+  .ivm-q-payh { margin: 26px 0 14px; border-radius: 2px; }
+  .ivm-q-pay-card { padding: 18px; border: 1.5px solid #bfdbfe; border-radius: 8px; background: #f8fbff; }
+  .ivm-q-due-row { display: flex; align-items: baseline; justify-content: space-between; gap: 12px; }
+  .ivm-q-due-lbl { color: #005ba8; font-size: 11px; font-weight: 700; letter-spacing: .05em; text-transform: uppercase; }
+  .ivm-q-due-amt { color: #0074d3; font-size: 26px; font-weight: 800; font-variant-numeric: tabular-nums; white-space: nowrap; }
+  .ivm-q-due-sub { margin: 3px 0 14px; color: #666; font-size: 11.5px; }
+  .ivm-q-el { min-height: 56px; margin-bottom: 12px; padding: 12px; border: 1px solid #e5e7eb; border-radius: 6px; background: #fff; color: #888; font-size: 12px; line-height: 1.5; text-align: center; }
+  .ivm-q-pay-btn { display: block; width: 100%; padding: 13px 20px; border: 0; border-radius: 8px; background: #9ca3af; color: #fff; font: 700 15px/1.25 Helvetica, Arial, sans-serif; letter-spacing: .02em; cursor: not-allowed; }
+  .ivm-q-pay-note { margin-top: 10px; color: #888; font-size: 10.5px; text-align: center; }
+  .ivm-q-pay-done { padding: 18px; border: 1px solid #6ee7b7; border-radius: 8px; background: #d1fae5; color: #065f46; text-align: center; }
+  .ivm-q-big { margin-bottom: 4px; font-size: 15px; font-weight: 700; }
+  .ivm-q-metax { font-size: 12px; opacity: .85; }
+  .ivm-q-pay-none { padding: 16px 18px; border: 1px solid #e2e8f0; border-radius: 8px; background: #f8fafc; color: #475569; font-size: 12.5px; line-height: 1.6; text-align: center; }
+  .ivm-q-pay-none strong { color: #334155; }
+  [data-ivm-paybox] + .ivm-q-sh { margin-top: 26px; }
+  .ivm-q-footer { margin-top: 32px; padding-top: 16px; border-top: 1px solid #e5e7eb; color: #6b7280; font-size: 10.5px; line-height: 1.5; text-align: center; }
+  .ivm-q-footer em { display: block; margin-top: 4px; font-style: italic; }
+
+  @media (prefers-reduced-motion: reduce) {
+    .ivm *, .ivm *::before, .ivm *::after { animation: none !important; transition: none !important; }
   }
 </style>

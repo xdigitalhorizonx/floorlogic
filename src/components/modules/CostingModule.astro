@@ -1,291 +1,279 @@
 ---
 /**
- * "Know the profit" — WO-330's Job Costing page (main L26482-26560), set the
- * day the balance cleared: materials, freight and supplies recorded, the
- * installer's payout not yet. Server-renders that picture; the island
- * (src/islands/job-costing.ts) re-runs jobFinance as costs are added.
+ * "Know the profit" — WO-330's own Job Costing page in today's app (renderJobCostingDetail,
+ * main L32113-32260), set the morning the installer is paid out: the seven-figure bar, 📐
+ * Estimate vs Actual, the profit box, 🧾 Billing, 📦 Purchase orders and 🧾 Recorded Costs.
+ * Server-renders that picture; the island (src/islands/job-costing.ts) re-runs jobFinance as
+ * costs are added, edited, paid or deleted, signs the commission off and marks the job Paid.
+ * Sample data only (src/data/modules/costing.ts ← src/data/sample-data.ts); no network.
  */
-import { thread, installers, reps } from '../../data/sample-data';
-import { JOB_COST_KINDS, PRIVACY_MODE, fmtMoney } from '../../lib/logic';
+import { costingData as d } from '../../data/modules/costing';
+import { PRIVACY_MODE, fmtWeekdayShort } from '../../lib/logic';
 import {
-  jcmInitialState, renderJcmStats, renderJcmBuckets, renderJcmProfit, renderJcmBilling, renderJcmCostsHead, renderJcmRows, jcmStatusPill,
-  type JcmData, type JcmEntry,
+  jcmInitialState, jcmStatusPill, renderJcmActions, renderJcmMetrics, renderJcmBuckets, renderJcmProfit, renderJcmBilling, renderJcmPOs,
+  renderJcmCostsHead, renderJcmRows,
 } from '../../islands/job-costing';
+import { appRailHtml, iconSvg, withAppIcons } from '../../data/modules/app-icons';
 
-const wo = thread.workOrder;
-const inv = thread.invoice;
-const jc = thread.jobCosts;
-// The day IN-330 was paid in full: the work order sits in Costing & Payout.
-const atPaidInFull = wo.history.find((h) => h.status === 'ready_to_be_paid')!;
-// true: open before the installer's payout (JC-017) is entered, so Labor shows the
-// app's "showing quoted" fallback and the pre-filled Add Cost lands exactly on
-// thread.jobCosts.finance. false: open on the finished job with every cost recorded.
-const START_BEFORE_PAYOUT = true;
-const payout = jc.entries.find((e) => e.kind === 'contractor')!;
-const rep = reps.find((r) => r.id === wo.salesRepId)!;
-const toEntry = (e: (typeof jc.entries)[number]): JcmEntry => ({
-  number: e.number!, kind: e.kind, category: e.category, description: e.description ?? '', amount: e.amount ?? 0,
-  quantity: e.quantity ?? null, unitCost: e.unitCost ?? null, paid: !!e.paid, status: 'active', date: e.date,
-  who: e.contractorName || e.vendor || '', method: e.method,
-});
-const entries = jc.entries.filter((e) => !START_BEFORE_PAYOUT || e !== payout).map(toEntry);
-const lastNo = Math.max(...entries.map((e) => parseInt(e.number.replace(/\D/g, ''), 10) || 0));
-
-const d: JcmData = {
-  wo: wo.number,
-  customer: wo.customerName,
-  site: wo.city,
-  status: atPaidInFull.status,
-  today: atPaidInFull.date,
-  rep: { name: rep.name, rate: rep.commissionRate },
-  installer: installers.find((i) => i.id === wo.installerId)?.name ?? '',
-  materials: wo.materials,
-  labors: wo.labors,
-  invoice: { number: inv.number, subtotal: inv.subtotal, tax: inv.tax, total: inv.total, status: inv.status, payments: inv.payments },
-  pos: jc.pos.map((p) => ({ number: p.number, productName: p.productName, totalCost: p.totalCost, status: p.status })),
-  entries,
-  draft: START_BEFORE_PAYOUT
-    ? { kind: payout.kind, description: payout.description ?? '', amount: payout.amount ?? 0 }
-    : { kind: 'receipt', description: '', amount: 0 },
-  nextNumber: lastNo + 1,
-};
 const s = jcmInitialState(d);
 const json = JSON.stringify(d).replace(/</g, '\\u003c');
 ---
 <article class="mod jcm" aria-labelledby="jcm-title" data-jcm>
   <header class="mod-head">
     <div><span class="mod-kicker">Know the profit</span><h3 id="jcm-title">Estimate vs actual, on every job.</h3></div>
-    <p class="mod-task" data-task>Try it: add a cost and watch the margin move.</p>
+    <p class="mod-task" data-task>Try it: record the installer’s payout and watch the margin move.</p>
   </header>
 
-  <div class="app jcm-app" data-jcm-app>
+  <div class="app jcm-app" data-jcm-app data-privacy="off" role="region" aria-label={`FloorLogic job costing for ${d.wo} (sample data)`}>
     <div class="app-frame jcm-frame">
-      <div class="app-rail" aria-hidden="true"><span></span><span></span><span></span><span></span><span></span><span class="on"></span><span></span></div>
+      <div class="app-rail" aria-hidden="true" set:html={appRailHtml('job-costing')} />
       <div class="app-main">
-        <div class="app-top">
-          <h4>Job Costing</h4><span class="app-crumb">› {wo.number}</span>
-          <button type="button" class="jcm-priv" data-jcm-priv aria-pressed="false" title={PRIVACY_MODE.tooltip}><span class="jcm-priv-i" data-jcm-privicon aria-hidden="true">👁</span><span>Privacy Mode</span></button>
+        <div class="app-top jcm-top">
+          <span class="app-clock" aria-hidden="true"><b>{fmtWeekdayShort(d.today)}</b></span>
+          <span class="jcm-topsep" aria-hidden="true"></span>
+          <h4>Job Costing</h4><span class="app-crumb">› {d.wo}</span>
+          <button type="button" class="a-privbtn jcm-priv" data-jcm-priv aria-pressed="false" aria-label="Privacy mode" title={PRIVACY_MODE.tooltip} set:html={iconSvg('eye')} />
         </div>
+        <div class="a-tdock"><div class="a-toast" data-jcm-toast aria-hidden="true"></div></div>
+
         <div class="app-body jcm-body">
           <div class="jcm-ph">
             <div class="jcm-ph-l">
-              <h4 class="jcm-h"><span aria-hidden="true">🧮</span> {d.site}</h4>
-              <p class="jcm-sub">{d.customer} · <span class="jcm-mono">{d.wo}</span> · <Fragment set:html={jcmStatusPill(d.status)} /></p>
+              <h4 class="jcm-h" set:html={withAppIcons(`🧮 ${d.site}`)} />
+              <p class="jcm-sub" data-jcm-subline tabindex="-1">{d.customer} · <span class="jcm-mono">{d.wo}</span> · <span data-jcm-subpill set:html={jcmStatusPill(s.status)} /></p>
               <div class="jcm-chips">
-                <span class="jcm-chip" title={`Sales rep: ${d.rep.name}`}><span aria-hidden="true">💼</span> {d.rep.name}</span>
-                <span class="jcm-chip" title="Installer"><span aria-hidden="true">👷</span> {d.installer}</span>
+                <span class="jcm-chip" title={`Sales rep: ${d.rep.name}`} set:html={withAppIcons(`💼 ${d.rep.name}`)} />
+                <span class="jcm-chip" title="Installer" set:html={withAppIcons(`👷 ${d.installer.name}`)} />
               </div>
             </div>
-            <button type="button" class="a-btn a-primary jcm-addcost" data-jcm-addcost>➕ Add Cost</button>
+            <div class="jcm-ph-r" data-jcm-actions set:html={withAppIcons(renderJcmActions(s))} />
           </div>
 
-          <div class="jcm-stats" data-jcm-stats set:html={renderJcmStats(d, s)} />
+          <div class="app-card jcm-metrics" data-jcm-metrics set:html={renderJcmMetrics(d, s)} />
 
           <div class="jcm-grid">
             <section class="app-card jcm-card" aria-labelledby="jcm-eva-h">
-              <h5 id="jcm-eva-h">📐 Estimate vs Actual</h5>
+              <h5 id="jcm-eva-h" set:html={withAppIcons('📐 Estimate vs Actual')} />
               <p class="jcm-desc">The work order is the reference. Each bucket switches to actuals once something real is recorded against it.</p>
               <table class="jcm-btable">
                 <thead><tr><th scope="col">Bucket</th><th scope="col" class="num">Estimate</th><th scope="col" class="num">Actual</th><th scope="col" class="num"><abbr title="Variance">Δ</abbr></th></tr></thead>
-                <tbody data-jcm-buckets set:html={renderJcmBuckets(d, s)} />
+                <tbody data-jcm-buckets set:html={withAppIcons(renderJcmBuckets(d, s))} />
               </table>
               <div class="jcm-profitbox is-private" data-jcm-profitbox set:html={renderJcmProfit(d, s)} />
               <div class="jcm-box">
-                <h6>🧾 Billing · {d.invoice.number}</h6>
+                <h6 set:html={withAppIcons(`🧾 Billing · ${d.invoice.number}`)} />
                 <div data-jcm-billing set:html={renderJcmBilling(d, s)} />
               </div>
-              <div class="jcm-box">
-                <h6>📦 Purchase orders</h6>
-                {d.pos.map((p) => <div class="jcm-pl jcm-po"><span>{p.number} · {p.productName}</span><span class="num">{fmtMoney(p.totalCost)}</span></div>)}
+              <div class="jcm-pos">
+                <h6 set:html={withAppIcons('📦 Purchase orders')} />
+                <div set:html={renderJcmPOs(d)} />
               </div>
             </section>
 
             <section class="app-card jcm-card" aria-labelledby="jcm-rc-h">
-              <div class="jcm-rc-head"><h5 id="jcm-rc-h">🧾 Recorded Costs</h5><span class="jcm-rc-sum" data-jcm-costshead set:html={renderJcmCostsHead(d, s)} /></div>
-              <form class="jcm-form" data-jcm-form novalidate aria-label="Add a job cost">
-                <fieldset class="jcm-kinds">
-                  <legend>What kind of cost?</legend>
-                  {JOB_COST_KINDS.map((k) => (
-                    <label class="jcm-kind"><input type="radio" name="jcm-kind" value={k.key} checked={k.key === d.draft.kind} /><span><span aria-hidden="true">{k.icon}</span> {k.label}</span></label>
-                  ))}
-                </fieldset>
-                <div class="jcm-fields">
-                  <div class="jcm-fg"><label for="jcm-desc">Description <span class="jcm-req" aria-hidden="true">*</span></label><input class="a-input" id="jcm-desc" data-jcm-desc type="text" placeholder="What was bought or done" value={d.draft.description} autocomplete="off" required /></div>
-                  <div class="jcm-fg"><label for="jcm-amt">Total Amount <span class="jcm-req" aria-hidden="true">*</span></label><input class="a-input num" id="jcm-amt" data-jcm-amount type="number" step="0.01" min="0" inputmode="decimal" placeholder="0.00" value={d.draft.amount ? d.draft.amount.toFixed(2) : ''} required /></div>
-                  <button type="submit" class="a-btn a-primary jcm-submit">Add Cost</button>
-                </div>
-                <p class="jcm-hint" data-jcm-hint hidden={!START_BEFORE_PAYOUT}>{d.installer}’s install payout isn’t recorded yet, so it’s filled in. Change it, or pick another kind.</p>
-              </form>
-              <table class="app-table jcm-ctable">
-                <thead><tr><th scope="col" class="jcm-datecol">Date</th><th scope="col">Cost</th><th scope="col" class="jcm-whocol">Who / Where</th><th scope="col" class="r">Amount</th><th scope="col" class="c">Paid</th></tr></thead>
-                <tbody data-jcm-rows set:html={renderJcmRows(s)} />
-              </table>
+              <div class="jcm-rc-head"><h5 id="jcm-rc-h" set:html={withAppIcons('🧾 Recorded Costs')} /><span class="jcm-rc-sum" data-jcm-costshead set:html={renderJcmCostsHead(d, s)} /></div>
+              <div class="jcm-rc-tools"><button type="button" class="a-btn a-primary a-btn-sm" data-jcm-addcost title="One cost — receipt, contractor payment, freight, supply or other. Pick which at the top of the form." set:html={withAppIcons('➕ Add Cost')} /></div>
+              <div class="jcm-twrap">
+                <table class="app-table jcm-ctable">
+                  <thead><tr><th scope="col">Date</th><th scope="col">Cost</th><th scope="col">Who / Where</th><th scope="col" class="r">Amount</th><th scope="col" class="c">Paid</th><th scope="col"><span class="sr-only">Edit</span></th></tr></thead>
+                  <tbody data-jcm-rows set:html={withAppIcons(renderJcmRows(s))} />
+                </table>
+              </div>
             </section>
           </div>
         </div>
       </div>
-      <div class="a-toast jcm-toast" data-jcm-toast role="status" aria-live="polite" aria-atomic="true"></div>
     </div>
+    <dialog class="a-modal" data-jcm-dlg></dialog>
   </div>
 
   <p class="sr-only" data-jcm-live aria-live="polite"></p>
-  <p class="mod-foot">Sample job for fictional customers; tax is never counted as revenue. Nothing is saved or sent. <button type="button" class="jcm-reset" data-jcm-reset hidden>Start over</button></p>
+  <p class="mod-foot">Same math as the app: a PO costs its goods plus estimated freight, card fees count as cost, and sales tax is never revenue. Sample job for fictional customers — nothing is saved or sent. <button type="button" class="jcm-reset" data-jcm-reset hidden>Start over</button></p>
   <script type="application/json" data-jcm-data set:html={json}></script>
 </article>
 
 <script>
-  // Hydrate on approach, like the quote module: the island loads when the module nears the
+  // Hydrate on approach, like the other modules: the island loads when the module nears the
   // viewport (an inactive tab loads when it is first shown). The server-rendered picture stands until then.
   import { whenNear } from '../../lib/when-near';
   whenNear('[data-jcm]', () => import('../../islands/job-costing').then((m) => m.initJobCostingModules()));
 </script>
 
 <style is:global>
+  /* ================= CostingModule (.jcm-) — DOM is patched by script, so global + prefixed ================= */
   .jcm { container: jcm / inline-size; }
   .jcm [hidden] { display: none !important; }
-  .jcm-app h4, .jcm-app h5, .jcm-app h6 { margin: 0; font-family: var(--font-app); letter-spacing: 0; color: var(--app-text); }
-  .jcm .app-crumb { white-space: nowrap; }
+  .jcm .mod-foot { line-height: 1.55; max-width: 92ch; }
   .jcm-mono { font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace; }
   .jcm-body { display: grid; gap: 16px; }
-  .num { font-variant-numeric: tabular-nums; }
+  .jcm .app-crumb { white-space: nowrap; }
+  .jcm-topsep { width: 1px; height: 24px; background: var(--app-border); }
+  .jcm-priv { margin-left: auto; }
 
-  /* Privacy Mode toggle (main L3621, L2989) */
-  .jcm-priv { margin-left: auto; display: inline-flex; align-items: center; gap: 6px; min-height: 32px; padding: 4px 12px 4px 8px; border: 1px solid var(--app-border); border-radius: 999px; background: #fff; color: #4b5563; font: 600 12.5px/1 var(--font-app); cursor: pointer; transition: background-color .15s, color .15s, box-shadow .15s; }
-  .jcm-priv:hover { color: var(--app-primary); border-color: var(--app-primary); }
-  .jcm-priv-i { font-size: 15px; }
-  .jcm-priv.is-on { background: rgba(0,116,211,.15); color: #005ba8; border-color: transparent; box-shadow: inset 0 0 0 2px rgba(0,116,211,.3); }
-
-  /* Page header (main L26508-26520) */
+  /* Page header (main L32133-32151) */
   .jcm-ph { display: flex; flex-wrap: wrap; align-items: flex-start; justify-content: space-between; gap: 12px 16px; }
   .jcm-ph-l { min-width: 0; }
-  .jcm-app .jcm-h { font: 800 22px/1.2 var(--font-app); }
-  .jcm-sub { margin-top: 3px; font-size: 13px; color: var(--app-muted); }
+  .jcm-app .jcm-h { display: flex; align-items: center; gap: 8px; font: 800 22px/1.2 var(--font-app); }
+  .jcm-sub { margin: 3px 0 0; font-size: 13px; color: var(--app-muted); }
+  .jcm-sub .a-pill { font-size: 10px; vertical-align: 1px; }
   .jcm-chips { display: flex; flex-wrap: wrap; gap: 6px; margin-top: 8px; }
-  .jcm-chip { display: inline-flex; align-items: center; gap: 4px; padding: 2px 10px; border: 1px solid var(--app-border); border-radius: 999px; background: #f3f4f6; font-size: 12px; }
-  .jcm-addcost { min-height: 38px; }
+  .jcm-chip { display: inline-flex; align-items: center; gap: 4px; padding: 2px 10px; border: 1px solid var(--app-border); border-radius: 999px; background: #f3f4f6; font-size: 12px; line-height: 1.6; }
+  .jcm-ph-r { display: flex; flex-wrap: wrap; align-items: center; gap: 8px; }
+  .jcm-hstatus { display: inline-flex; }
+  .jcm-hstatus:focus { outline: none; }
+  .jcm-markpaid { min-height: 38px; }
 
-  /* Stat cards (main L1542-1548, L24936) */
-  .jcm-stats { display: grid; grid-template-columns: repeat(5, minmax(0, 1fr)); gap: 12px; }
-  .jcm-stat { min-width: 0; padding: 14px 16px; border-radius: 12px; border-left: 4px solid var(--app-primary); background: #fff; box-shadow: 0 1px 3px rgba(0,0,0,.1), 0 1px 2px rgba(0,0,0,.06); }
-  .jcm-stat.is-green { border-left-color: #10b981; }
-  .jcm-stat.is-amber { border-left-color: #f59e0b; }
-  .jcm-stat.is-red { border-left-color: #ef4444; }
-  .jcm-stat-v { font-size: clamp(20px, 2.15cqi, 26px); font-weight: 700; line-height: 1.1; white-space: nowrap; }
-  .jcm-stat-l { margin-top: 4px; font-size: 13px; color: var(--app-muted); }
-  .jcm-stat-s { margin-top: 2px; font-size: 11px; color: var(--app-muted); }
+  /* The seven-figure bar (_jcMetric, main L32100): label · value · note, thin rules between */
+  .jcm-metrics { display: grid; grid-template-columns: repeat(7, minmax(0, 1fr)); gap: 1px; overflow: hidden; background: var(--app-border); }
+  .jcm-m { min-width: 0; padding: 10px 14px; background: #fff; }
+  .jcm-m-l { font-size: 9.5px; font-weight: 700; color: var(--app-muted); text-transform: uppercase; letter-spacing: .05em; white-space: nowrap; }
+  .jcm-m-v { font-size: 16px; font-weight: 700; line-height: 1.3; white-space: nowrap; color: var(--app-text); }
+  .jcm-m-v > span { display: inline-block; border-radius: 4px; }
+  .jcm-m-n { font-size: 9.5px; color: var(--app-muted); white-space: nowrap; }
+  .jcm-blue { color: var(--app-primary); }
+  .jcm-red { color: #dc2626; }
+  .jcm-green { color: #047857; }
+  .jcm-amber { color: #b45309; }
+  .jcm-gray { color: var(--app-muted); }
+  .jcm-warn { color: #b45309; }
 
   .jcm-grid { display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, 1.4fr); gap: 16px; align-items: start; }
   .jcm-card { min-width: 0; padding: 16px; }
-  .jcm-app .jcm-card h5 { font-size: 15px; font-weight: 700; }
+  .jcm-app .jcm-card h5 { display: flex; align-items: center; gap: 6px; font-size: 15px; font-weight: 700; }
   .jcm-desc { margin: 4px 0 12px; font-size: 12px; line-height: 1.5; color: var(--app-muted); }
 
-  /* Estimate vs Actual */
+  /* 📐 Estimate vs Actual */
   .jcm-btable { width: 100%; border-collapse: collapse; }
   .jcm-btable thead th { padding: 6px 4px; border-bottom: 2px solid var(--app-border); text-align: left; font-size: 10px; font-weight: 700; color: #6b7280; text-transform: uppercase; letter-spacing: .04em; }
   .jcm-btable thead th.num { text-align: right; }
   .jcm-btable abbr { text-decoration: none; }
   .jcm-btable tbody th { padding: 9px 4px; border-bottom: 1px solid var(--app-border); text-align: left; font-size: 13px; font-weight: 500; }
-  .jcm-btable tbody td { padding: 9px 4px; border-bottom: 1px solid var(--app-border); text-align: right; font-size: 13px; white-space: nowrap; }
+  .jcm-btable tbody td { padding: 9px 4px; border-bottom: 1px solid var(--app-border); text-align: right; font-size: 13px; white-space: nowrap; vertical-align: top; }
+  .jcm-bl { display: inline-flex; align-items: center; gap: 6px; }
   .jcm-note { display: block; margin-top: 1px; font-size: 10.5px; font-weight: 400; color: var(--app-muted); }
   .jcm-btable tr.jcm-noterow { display: none; }
   .jcm-btable tr.jcm-noterow td { padding: 0 4px 8px; border-bottom: 1px solid var(--app-border); text-align: left; white-space: normal; font-size: 11px; color: var(--app-muted); }
+  .jcm-sub:focus { outline: none; }
+  .jcm-sub:focus-visible { outline: 3px solid var(--dot); outline-offset: 2px; border-radius: 4px; }
   .jcm-est { color: var(--app-muted); }
   .jcm-act { font-weight: 600; }
-  .jcm-red { color: #dc2626; }
-  .jcm-green { color: #047857; }
-  .jcm-gray { color: var(--app-muted); }
-  .jcm-warn { color: #b45309; }
   .jcm-btable tr.jcm-total th, .jcm-btable tr.jcm-total td { padding: 10px 4px; border-top: 2px solid var(--app-border); border-bottom: 0; font-weight: 700; }
   .jcm-btable tr.jcm-total .jcm-act { font-weight: 800; }
 
+  /* Profit box (main L32191-32202) */
   .jcm-profitbox { margin-top: 14px; padding: 12px; border: 1px solid rgba(16,185,129,.3); border-radius: 8px; background: rgba(16,185,129,.08); }
   .jcm-profitbox.is-loss { border-color: rgba(239,68,68,.3); background: rgba(239,68,68,.08); }
   .jcm-pl { display: flex; justify-content: space-between; align-items: baseline; gap: 12px; margin-bottom: 3px; font-size: 12px; }
   .jcm-pl > span:first-child { min-width: 0; color: var(--app-muted); }
   .jcm-pl > span:last-child { white-space: nowrap; }
   .jcm-pl small { font-size: 10.5px; opacity: .85; }
-  .jcm-pl.jcm-profit { align-items: center; margin: 6px 0 0; padding-top: 6px; border-top: 1px solid var(--app-border); }
-  .jcm-pl.jcm-profit > span:first-child { font-size: 13px; font-weight: 700; color: var(--app-text); }
-  .jcm-pl.jcm-profit b { font-size: 18px; font-weight: 800; }
-  .jcm-pl.jcm-profit small { font-size: 12px; }
+  .jcm-pl.jcm-pl-comm { margin-bottom: 6px; }
+  .jcm-signoff { display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: 8px; margin: -2px 0 8px; font-size: 11px; color: var(--app-muted); }
+  .jcm-ready { min-height: 30px; }
+  .jcm-ready.is-on { border-color: #047857; background: #047857; color: #fff; }
+  .jcm-ready.is-on:hover { background: #065f46; }
+  .jcm-jp { display: flex; justify-content: space-between; align-items: center; gap: 12px; padding-top: 6px; border-top: 1px solid var(--app-border); }
+  .jcm-jp > span:first-child { font-size: 13px; font-weight: 700; }
+  .jcm-jp > span:last-child { font-size: 18px; font-weight: 800; border-radius: 4px; }
+  .jcm-mb { display: flex; justify-content: space-between; align-items: center; gap: 12px; margin-top: 3px; font-size: 11px; color: var(--app-muted); }
+  .jcm-mb > span:last-child { font-weight: 600; white-space: nowrap; }
+  .jcm-after { opacity: .7; }
+
   .jcm-box { margin-top: 14px; padding: 12px; border: 1px solid var(--app-border); border-radius: 8px; }
-  .jcm-app .jcm-box h6 { margin-bottom: 6px; font-size: 11px; font-weight: 700; color: var(--app-muted); text-transform: uppercase; letter-spacing: .06em; }
+  .jcm-app .jcm-box h6, .jcm-app .jcm-pos h6 { display: flex; align-items: center; gap: 5px; margin-bottom: 6px; font-size: 11px; font-weight: 700; color: var(--app-muted); text-transform: uppercase; letter-spacing: .06em; }
   .jcm-pl.jcm-out { margin: 5px 0 0; padding-top: 5px; border-top: 1px solid var(--app-border); font-size: 13px; font-weight: 700; }
   .jcm-pl.jcm-out > span:first-child { color: var(--app-text); }
-  .jcm-po { padding: 4px 0; border-bottom: 1px solid var(--app-border); margin: 0; }
-  .jcm-po:last-child { border-bottom: 0; }
+  .jcm-pos { margin-top: 14px; }
+  .jcm-po { display: flex; justify-content: space-between; gap: 8px; padding: 4px 0; border-bottom: 1px solid var(--app-border); font-size: 12px; }
+  .jcm-po-t { min-width: 0; color: var(--app-muted); }
+  .jcm-po-tag { font-size: 10px; font-weight: 600; }
+  .jcm-po-v { white-space: nowrap; }
+  .jcm-frt { color: var(--app-muted); font-size: 11px; }
 
-  /* Recorded Costs (main L26543-26557) */
-  .jcm-rc-head { display: flex; flex-wrap: wrap; justify-content: space-between; align-items: baseline; gap: 4px 12px; }
+  /* 🧾 Recorded Costs (main L32230-32256) */
+  .jcm-rc-head { display: flex; flex-wrap: wrap; justify-content: space-between; align-items: center; gap: 4px 12px; margin-bottom: 4px; }
   .jcm-rc-sum { font-size: 12px; color: var(--app-muted); }
-  .jcm-form { display: grid; gap: 10px; margin: 12px 0 10px; padding: 12px; border: 1px solid #bfdbfe; border-radius: 10px; background: #f8fbff; }
-  .jcm-kinds { display: flex; flex-wrap: wrap; gap: 6px; min-width: 0; margin: 0; padding: 0; border: 0; }
-  .jcm-kinds legend { margin-bottom: 6px; padding: 0; font: 500 13px/1.3 var(--font-app); color: var(--app-text); }
-  .jcm-kind { position: relative; }
-  .jcm-kind input { position: absolute; inset: 0; width: 100%; height: 100%; margin: 0; opacity: 0; cursor: pointer; }
-  .jcm-kind > span { display: inline-flex; align-items: center; gap: 4px; min-height: 30px; padding: 5px 10px; border: 1px solid var(--app-border); border-radius: 8px; background: #fff; color: var(--app-text); font: 500 12px/1.2 var(--font-app); white-space: nowrap; transition: background-color .15s, border-color .15s, color .15s; }
-  .jcm-kind:hover > span { border-color: var(--app-primary); color: var(--app-primary); }
-  .jcm-kind input:checked + span { background: var(--app-primary); border-color: var(--app-primary); color: #fff; }
-  .jcm-kind input:focus-visible + span { outline: 3px solid var(--dot); outline-offset: 2px; }
-  .jcm-fields { display: grid; grid-template-columns: minmax(0, 1fr) 8.5rem auto; align-items: end; gap: 10px; }
-  .jcm-fg { display: grid; gap: 4px; min-width: 0; }
-  .jcm-fg label { font: 500 13px/1.3 var(--font-app); color: var(--app-text); }
-  .jcm-fg .a-input { width: 100%; min-height: 36px; font-size: 13.5px; }
-  .jcm-req { color: #dc2626; }
-  .jcm-submit { min-height: 36px; }
-  .jcm-hint { font-size: 11.5px; line-height: 1.45; color: var(--app-muted); }
+  .jcm-rc-tools { display: flex; flex-wrap: wrap; gap: 6px; margin-bottom: 12px; }
+  .jcm-twrap { overflow-x: auto; }
+  .jcm-ctable { min-width: 540px; }
+  .jcm-ctable thead th { background: #f3f4f6; white-space: nowrap; }
   .jcm-ctable th.c, .jcm-ctable td.jcm-paidc { text-align: center; }
   .jcm-ctable td { vertical-align: top; }
   .jcm-date { white-space: nowrap; font-size: 12px; }
-  .jcm-date .jcm-mono { display: block; font-size: 10px; color: var(--app-muted); }
-  .jcm-cost { display: block; font-weight: 600; }
+  .jcm-date .jcm-mono, .jcm-chk { display: block; font-size: 10px; color: var(--app-muted); }
+  .jcm-cost { display: inline-flex; align-items: center; gap: 5px; font-weight: 600; }
   .jcm-ksub { display: block; margin-top: 1px; font-size: 11px; color: var(--app-muted); }
-  .jcm-whosub, .jcm-datesub { display: none; margin-top: 1px; font-size: 11px; color: var(--app-muted); }
   .jcm-who { font-size: 12px; }
   .jcm-amt { font-weight: 700; text-align: right; white-space: nowrap; }
-  .jcm-empty { padding: 20px 10px; text-align: center; color: var(--app-muted); }
+  .jcm-actc { text-align: right; white-space: nowrap; }
+  .jcm-edit { min-height: 30px; padding: 4px 8px; }
   .jcm-paid { padding: 4px 6px; border: 0; border-radius: 6px; background: none; font-size: 15px; line-height: 1; cursor: pointer; filter: grayscale(1); opacity: .45; transition: opacity .15s, filter .15s; }
+  .jcm-paid .lf-icon { width: 17px; height: 17px; vertical-align: -3px; }
   .jcm-paid.is-paid { filter: none; opacity: 1; }
   .jcm-paid:hover { background: #f3f4f6; }
+  .jcm-empty { padding: 26px 12px; text-align: center; color: var(--app-muted); }
+  .jcm-empty-i { font-size: 34px; line-height: 1; }
+  .jcm-app .jcm-empty h6 { margin: 8px 0 4px; font-size: 15px; }
+  .jcm-empty p { margin: 0; font-size: 13px; }
 
-  /* Centred with left/right instead of left:50% + translate, so a long message can use the frame's width */
-  .app .jcm-toast { left: 14px; right: 14px; width: max-content; max-width: calc(100% - 28px); margin-inline: auto; transform: translateY(8px); display: flex; align-items: flex-start; gap: 8px; z-index: 30; border-left: 4px solid #10b981; }
-  .app .jcm-toast.is-on { transform: none; }
-  .app .jcm-toast[data-type='info'] { border-left-color: #3b82f6; }
-  .app .jcm-toast[data-type='error'] { border-left-color: #ef4444; }
+  /* ➕ Add Job Cost window */
+  .jcm-form { gap: 14px; }
+  .jcm-kinds { display: flex; flex-wrap: wrap; gap: 6px; }
+  .jcm-kbtn[aria-pressed='true'] { background: linear-gradient(135deg, #2563eb, #1d4ed8); border-color: transparent; color: #fff; }
+  .jcm-opt { margin-left: 4px; font-weight: 400; color: var(--app-muted); }
+  .jcm-check { display: inline-flex; align-items: center; gap: 8px; font: 600 13px/1.3 var(--font-app); cursor: pointer; justify-self: start; }
+  .jcm-check input { width: 16px; height: 16px; margin: 0; accent-color: var(--app-primary); }
+  .jcm-paidrow { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 12px; align-items: start; }
+  .jcm-form .a-field { align-content: start; }
+  /* A pair whose partner is hidden for this kind (Vendor on a contractor payment) takes the full row. */
+  .jcm-form .a-row2:has(> [hidden]) { grid-template-columns: minmax(0, 1fr); }
+  .jcm-paidrow > [hidden] { display: none !important; }
+  .jcm-notes { width: 100%; min-height: 60px; resize: vertical; font-size: 14px; }
+  .jcm-amtin { font-weight: 700; }
+  @container (max-width: 520px) { .jcm-paidrow { grid-template-columns: minmax(0, 1fr); } }
+
   .jcm-reset { margin-left: 4px; padding: 4px 2px; border: 0; background: none; color: var(--blue-ink); font: 700 var(--fs-small)/1.2 var(--font-body); text-decoration: underline; text-underline-offset: .18em; cursor: pointer; }
   .jcm-reset:hover { color: var(--navy-900); }
 
-  @container jcm (max-width: 1100px) {
-    .jcm-stats { grid-template-columns: repeat(auto-fit, minmax(9.5rem, 1fr)); }
-  }
-  @container jcm (max-width: 940px) {
+  @container jcm (max-width: 1000px) {
     .jcm-grid { grid-template-columns: minmax(0, 1fr); }
+    .jcm-metrics { grid-template-columns: repeat(4, minmax(0, 1fr)); }
+    .jcm-m:last-child { grid-column: span 2; }
   }
   @container jcm (max-width: 620px) {
     .jcm .jcm-frame { grid-template-columns: minmax(0, 1fr); }
     .jcm .jcm-frame > .app-rail { display: none; }
     .jcm-body { padding: 12px; gap: 12px; }
     .jcm-card { padding: 14px 12px; }
-    .jcm-stats { grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 10px; }
-    .jcm-stat { padding: 12px; }
-    .jcm-stat-v { font-size: 21px; }
-    .jcm-fields { grid-template-columns: minmax(0, 1fr) minmax(0, 1fr); }
-    .jcm-fields .jcm-fg:first-child { grid-column: 1 / -1; }
-    .jcm-ctable .jcm-whocol, .jcm-ctable .jcm-who, .jcm-ctable .jcm-datecol, .jcm-ctable .jcm-date { display: none; }
-    .jcm-datesub { display: block; }
-    .jcm-stat:last-child:nth-child(odd) { grid-column: 1 / -1; }
-    .jcm-btable .jcm-note { display: none; }
-    .jcm-btable tr.jcm-noterow { display: table-row; }
-    .jcm-btable tr.has-note th, .jcm-btable tr.has-note td { border-bottom: 0; padding-bottom: 3px; }
+    .jcm-metrics { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+    .jcm-m { padding: 9px 12px; }
+    .jcm-m:last-child { grid-column: 1 / -1; }
     .jcm-btable tbody th, .jcm-btable tbody td { font-size: 12.5px; }
-    .jcm-whosub { display: block; }
-    .jcm-ctable th, .jcm-ctable td { padding-inline: 6px; }
+    /* Bucket notes get their own line under the bucket */
+    .jcm-btable .jcm-note { position: absolute; width: 1px; height: 1px; overflow: hidden; clip: rect(0 0 0 0); white-space: nowrap; }
+    .jcm-btable tr.jcm-noterow { display: table-row; }
+    .jcm-btable tr.has-note th, .jcm-btable tr.has-note td { border-bottom: 0; padding-bottom: 2px; }
+    /* The badge already sits on the line under the title; the button takes the row */
+    .jcm-ph-r { width: 100%; }
+    .jcm-hstatus { display: none; }
+    .jcm-markpaid { flex: 1 1 auto; }
+    /* Recorded Costs: each cost becomes a two-line card — what and how much, then when, who, paid, edit */
+    .jcm-twrap { overflow: visible; }
+    .jcm-ctable { min-width: 0; }
+    .jcm-ctable thead { position: absolute; width: 1px; height: 1px; overflow: hidden; clip: rect(0 0 0 0); white-space: nowrap; }
+    .jcm-ctable, .jcm-ctable tbody { display: block; }
+    .jcm-ctable tr { display: grid; grid-template-columns: auto minmax(0, 1fr) auto auto; grid-template-areas: 'cost cost cost amt' 'date who paid act'; align-items: center; gap: 6px 12px; padding: 10px 2px; border-bottom: 1px solid #f1f2f4; }
+    .jcm-ctable td { display: block; padding: 0; border: 0; min-width: 0; }
+    .jcm-ctable td.jcm-costc { grid-area: cost; }
+    .jcm-ctable td.jcm-amt { grid-area: amt; align-self: start; }
+    .jcm-ctable td.jcm-date { grid-area: date; }
+    .jcm-ctable td.jcm-who { grid-area: who; overflow-wrap: anywhere; }
+    .jcm-ctable td.jcm-paidc { grid-area: paid; }
+    .jcm-ctable td.jcm-actc { grid-area: act; }
+    .jcm-ctable tr:has(> td[colspan]) { display: block; }
   }
   @container jcm (max-width: 420px) {
-    .jcm-priv > span:last-child { position: absolute; width: 1px; height: 1px; overflow: hidden; clip: rect(0 0 0 0); white-space: nowrap; }
-    .jcm-priv { padding: 4px 8px; }
     .jcm-app .jcm-h { font-size: 19px; }
-    .jcm-addcost { width: 100%; }
+    .jcm .app-top .app-clock, .jcm-topsep { display: none; }
   }
 </style>

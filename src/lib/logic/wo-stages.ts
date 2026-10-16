@@ -31,7 +31,7 @@
  * - Paid work orders leave the board for an Archive tab (no Done column);
  *   Job Costing's "💰 Mark Paid" closes a job out.
  */
-import { addDays, fmtDate, localDateOnly, type ISODate } from './dates';
+import { addDays, fmtDate, fmtWeekdayShort, localDateOnly, type ISODate } from './dates';
 import { JOB_STATUS_COLOR_NAMES, appHex, siteHex } from './status-colors';
 
 export const WO_STATUSES = [
@@ -216,6 +216,33 @@ export function installRangeLabel(start: ISODate, days?: number | null): string 
   return d > 1 ? `${fmtDate(start)} → ${fmtDate(addDays(start, d - 1))} (${d} days)` : fmtDate(start);
 }
 
+export type InstallRangeHint =
+  | { kind: 'empty'; text: string }
+  | { kind: 'error'; text: string }
+  | { kind: 'span'; days: number; icon: '📅'; label: string; rest: string; text: string };
+
+/**
+ * The line under the Schedule Install window's End date (`_rangeHintHTML`,
+ * main L19431): "No install dates yet.", "⚠ <what to fix>", or
+ * "📅 2-day install · Wed, Oct 21 → Thu, Oct 22" (the app bolds the label).
+ */
+export function installRangeHint(start: ISODate | null | undefined, end: ISODate | null | undefined): InstallRangeHint {
+  if (!start && !end) return { kind: 'empty', text: 'No install dates yet.' };
+  const sp = installSpan(start, end);
+  if (sp.error !== undefined) return { kind: 'error', text: '⚠ ' + sp.error };
+  const label = sp.days === 1 ? 'One-day install' : `${sp.days}-day install`;
+  const rest = ` · ${fmtWeekdayShort(start)}${sp.days > 1 ? ` → ${fmtWeekdayShort(end)}` : ''}`;
+  return { kind: 'span', days: sp.days, icon: '📅', label, rest, text: `📅 ${label}${rest}` };
+}
+
+/**
+ * `_rangeStartChanged` (main L19418): moving the start carries the end with
+ * it — the same number of days on site (1 for a fresh window).
+ */
+export function endFollowingStart(start: ISODate | null | undefined, days: number | null | undefined): ISODate | '' {
+  return start ? installEnd(start, days) ?? '' : '';
+}
+
 // ------------------------------------------------------------ transitions --
 
 export type WoEvent =
@@ -357,6 +384,41 @@ export function orderMaterials(
 
 /** Refusal when a ticked line has no PO # (`submitOrderMaterials`). */
 export const ORDER_NEEDS_PO_TOAST = 'Every selected line needs a PO #';
+
+/** Refusal when nothing was ticked (`submitOrderMaterials`). */
+export const ORDER_NOTHING_TICKED_TOAST = 'Tick at least one line to mark as ordered';
+
+/**
+ * What a line opens with in the Order Materials window
+ * (`openOrderMaterialsModal`, main L21032): PO # "WO-330-1" (the work order
+ * number + the line's place), Order Date today, Est. Delivery two weeks out,
+ * Est. Freight blank.
+ */
+export function orderMaterialsLineDefaults(woNumber: string, index: number, today: ISODate): { poNumber: string; orderDate: ISODate; estimatedDelivery: ISODate; freight: '' } {
+  return { poNumber: `${woNumber}-${index + 1}`, orderDate: today, estimatedDelivery: addDays(today, 14), freight: '' };
+}
+
+/**
+ * `_nextJobPONumber` (main L21030): each purchase order Finish creates gets
+ * the next "JPO-0000" record number (the vendor-facing PO # stays the
+ * line's "WO-330-1").
+ */
+export function nextJobPONumber(counter: number): { number: string; counter: number } {
+  const n = (Number(counter) || 0) + 1;
+  return { number: 'JPO-' + String(n).padStart(4, '0'), counter: n };
+}
+
+/** The window's "💡 How this works" copy (main L21115): still to order, and everything done. */
+export const ORDER_MATERIALS_INFO = {
+  todo: "Tick the checkbox on each line you've placed an order for. PO #s are auto-numbered (editable). Order Date defaults to today; Est. Delivery defaults to two weeks out (editable, not required). Pressing Finish creates the selected POs in the Ordered tab. Unticked lines stay here for next time. Rows already allocated or PO'd show as locked — a PO'd row's dates and est. freight can still change and save to its PO.",
+  done: "Every material line is either allocated from on-hand inventory or already has a PO. Rows are shown for reference — a PO'd row's dates and est. freight can still change and save to its PO.",
+} as const;
+
+/** Toast after a PO'd line's date or freight is changed in the window (`_omUpdatePO`, main L21160). */
+export function poFieldSavedToast(poNumber: string, field: 'orderDate' | 'estimatedDelivery' | 'freight'): string {
+  const label = field === 'orderDate' ? 'order date' : field === 'estimatedDelivery' ? 'est. delivery' : 'est. freight';
+  return `✓ ${poNumber} ${label} saved`;
+}
 
 /** The confirm Order Materials asks on a work order with no material lines. */
 export function noMaterialsConfirm(hasDate: boolean): { text: string; to: WoStatus } {

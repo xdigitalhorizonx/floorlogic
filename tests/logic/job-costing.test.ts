@@ -180,3 +180,57 @@ describe('privacy mode', () => {
     expect(['companyCost', 'margin', 'profit', 'commission', 'retailPrice', 'total'].map(isPrivateField)).toEqual([true, true, true, true, false, false]);
   });
 });
+
+describe('the job costing page (October app)', () => {
+  it('form lists: categories and methods as the app has them', async () => {
+    const m = await import('../../src/lib/logic');
+    expect(m.JOB_COST_CATEGORIES).toEqual(['Materials', 'Freight', 'Labor', 'Supplies', 'Equipment Rental', 'Disposal', 'Permits', 'Fuel / Travel', 'Job Costs', 'Other']);
+    expect(m.JOB_COST_METHODS).toEqual(['', 'Check', 'Cash', 'Card', 'ACH / Transfer', 'Zelle', 'Venmo', 'Other']);
+  });
+  it('JC numbers: one past the highest, three digits', async () => {
+    const { nextJobCostNumber } = await import('../../src/lib/logic');
+    expect(nextJobCostNumber(['JC-015'])).toBe('JC-016');
+    expect(nextJobCostNumber(['JC-9', 'jc-0102', 'x', null])).toBe('JC-103');
+    expect(nextJobCostNumber([])).toBe('JC-001');
+  });
+  it('saving: a blank contractor payment names the person; refusals in order', async () => {
+    const m = await import('../../src/lib/logic');
+    expect(m.jobCostDescription('', 'contractor', 'Ruben Ortiz')).toBe('Labor — Ruben Ortiz');
+    expect(m.jobCostDescription('  ', 'contractor')).toBe('Labor');
+    expect(m.jobCostDescription(' Strips ', 'supply')).toBe('Strips');
+    expect(m.jobCostRefusal('', 'receipt', 10)).toBe('Describe what this cost was for');
+    expect(m.jobCostRefusal('', 'contractor', 0)).toBe('Enter an amount greater than zero');
+    expect(m.jobCostRefusal('Install', 'contractor', 1690)).toBeNull();
+    expect(m.jobCostAddedToast('contractor', 1690)).toBe('Contractor payment added · $1,690.00');
+    expect(m.jobCostAddedToast('supply', 43.5)).toBe('Misc supply item added · $43.50');
+    expect(m.jobCostDeleteConfirm({ number: 'JC-016', description: 'Install', amount: 1690 })).toBe('Delete JC-016 — Install ($1,690.00)?');
+    expect(m.jobCostDeleteConfirm({ description: 'Strips', quantity: 3, unitCost: 14.5 })).toBe('Delete this cost — Strips ($43.50)?');
+  });
+  it('Recorded Costs cells', async () => {
+    const m = await import('../../src/lib/logic');
+    expect(m.jobCostPaidTitle({ paid: true, paidDate: '2026-10-26', method: 'Check', checkNumber: '1188' })).toBe('Paid Oct 26, 2026 by Check #1188 — click to mark unpaid');
+    expect(m.jobCostPaidTitle({ paid: true })).toBe('Paid — click to mark unpaid');
+    expect(m.jobCostPaidTitle({ paid: false, paidDate: '2026-10-26' })).toBe('Not paid — click to mark paid');
+    expect(m.jobCostSubline({ category: 'Supplies', quantity: 3, unitCost: 14.5 })).toBe('Supplies · 3 × $14.50');
+    expect(m.jobCostSubline({ category: 'Labor', quantity: 1, unitCost: 0 })).toBe('Labor');
+  });
+  it('bucket notes, margin line and the commission sign-off', async () => {
+    const m = await import('../../src/lib/logic');
+    const costs = rollupJobCosts([]);
+    expect(m.materialsBucketNote({ matActual: true, poCost: 3214.06, costs }, 4)).toBe('4 POs $3,214.06');
+    expect(m.materialsBucketNote({ matActual: true, poCost: 3169.06, costs: { ...costs, material: 45 } }, 4)).toBe('4 POs $3,169.06 + $45.00 in receipts');
+    expect(m.materialsBucketNote({ matActual: true, poCost: 120, costs }, 1)).toBe('1 PO $120.00');
+    expect(m.materialsBucketNote({ matActual: false, poCost: 0, costs }, 0)).toBe('nothing recorded yet — showing quoted');
+    expect(m.laborBucketNote({ laborActual: false })).toBe('nothing recorded yet — showing quoted');
+    expect(m.laborBucketNote({ laborActual: true })).toBe('contractor payments recorded');
+    expect(m.marginLine({ margin: 38.0145, commission: 248.89, revenue: 8184.07, profit: 2862.26 })).toEqual({ before: '38.0%', after: '35.0% after' });
+    expect(m.marginLine({ margin: 20, commission: 0, revenue: 100, profit: 20 })).toEqual({ before: '20.0%', after: null });
+    expect(m.commissionSignOffText(null, 'ready_to_be_paid')).toBe('Not signed off for payout yet');
+    expect(m.commissionSignOffText('2026-10-26T17:00:00Z', 'ready_to_be_paid')).toBe('Signed off Oct 26, 2026 — showing on their profile');
+    expect(m.commissionSignOffText(null, 'final_invoice')).toBe('Commission waits on the job: waiting on the final invoice to be paid in full');
+    expect(m.commissionSignOffAllowed('paid')).toBe(true);
+    expect(m.commissionSignOffAllowed('scheduled')).toBe(false);
+    expect(m.commissionSignOffToast('WO-330', true)).toBe('WO-330 commission marked ready to pay');
+    expect(m.commissionSignOffToast('WO-330', false)).toBe('WO-330 commission un-marked');
+  });
+});

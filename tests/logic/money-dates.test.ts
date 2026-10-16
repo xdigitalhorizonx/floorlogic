@@ -101,3 +101,14 @@ describe('document dates (DocumentDates, new)', () => {
     expect(localDateOnly(new Date(2026, 9, 14, 23, 0).toISOString())).toBe('2026-10-14');
   });
 });
+
+describe('weekday dates', () => {
+  it('fmtWeekdayShort: "Wed, Oct 21" on any host', async () => {
+    const { fmtWeekdayShort } = await import('../../src/lib/logic');
+    expect(fmtWeekdayShort('2026-10-21')).toBe('Wed, Oct 21');
+    expect(fmtWeekdayShort('2026-10-15')).toBe('Thu, Oct 15');
+    expect(fmtWeekdayShort('2026-11-01')).toBe('Sun, Nov 1');
+    expect(fmtWeekdayShort('')).toBe('');
+    expect(fmtWeekdayShort('soon')).toBe('');
+  });
+});

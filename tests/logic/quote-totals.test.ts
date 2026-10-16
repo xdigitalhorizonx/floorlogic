@@ -163,3 +163,21 @@ describe('approval → work order + invoice', () => {
     expect(approveQuote({ number: 'QT-330', sections, taxRate: 0.08265 }, null, { job: 0, invoice: 0 }, '2026-10-15').convertedLead).toBeNull();
   });
 });
+
+describe('customer approval online → the office converts (site module copy)', () => {
+  it('Create WO & Invoice button, its confirm and the customer toast', async () => {
+    const { CREATE_WO_INVOICE, CUSTOMER_APPROVED_TOAST, convertApprovedQuoteDialog } = await import('../../src/lib/logic');
+    expect(CREATE_WO_INVOICE.label).toBe('🔨 Create WO & Invoice');
+    expect(CREATE_WO_INVOICE.title).toBe('The customer approved this quote. Nothing is created automatically — this makes its work order and invoice.');
+    expect(CUSTOMER_APPROVED_TOAST).toBe('Quote approved! Thank you.');
+    expect(convertApprovedQuoteDialog('QT-330', 'Dev & Anjali Prasad', true)).toEqual({
+      title: '🔨 Create the work order and invoice for QT-330?',
+      strong: 'Dev & Anjali Prasad',
+      rest: ' approved this quote but it has no work order or invoice yet. This creates WO-330 and IN-330 from it, and turns the lead into a customer.',
+      body: 'Dev & Anjali Prasad approved this quote but it has no work order or invoice yet. This creates WO-330 and IN-330 from it, and turns the lead into a customer.',
+      button: '🔨 Create Work Order & Invoice',
+      cancel: 'Cancel',
+    });
+    expect(convertApprovedQuoteDialog('QT-12', '', false).body).toBe('This quote is approved but it has no work order or invoice yet. This creates WO-12 and IN-12 from it.');
+  });
+});

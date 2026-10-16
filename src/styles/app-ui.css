@@ -1,43 +1,63 @@
-/* Product UI recreations (the live app = demo main: Inter, primary #0074D3, 8px radius buttons,
-   12px cards, uppercase pill badges). Everything is scoped under .app so it never leaks into the
-   marketing styles. Status/lane colors use the AA-safe site variants from tokens.css. */
+/* Product UI recreations — the four try-it modules. Everything app-looking is scoped under .app
+   so it never leaks into the marketing styles. Source of every value: the current app
+   (demo-main-index.html, Oct 2026) — Inter, primary #0074D3, 8px buttons, 12px cards, uppercase
+   pill badges, white top-right toasts, the navy sidebar. Colours that carry white text use the
+   AA-safe site variants from tokens.css (the app's #10B981 / #F59E0B fail with white text). */
+
+/* How far below the viewport top sticky product chrome sits (the site's masthead + a gap). */
+.mod { --app-stick: 84px; }
+@media (max-width: 820px) { .mod { --app-stick: 72px; } }
 
 .app { font-family: var(--font-app); font-size: 14px; line-height: 1.45; color: var(--app-text); -webkit-font-smoothing: antialiased; }
 .app *, .app *::before, .app *::after { box-sizing: border-box; }
+.app h4, .app h5, .app h6 { margin: 0; font-family: var(--font-app); letter-spacing: 0; color: var(--app-text); }
+/* base.css makes every svg a block; the app's icons sit inline in their text, 1em square. */
+.app .lf-icon { display: inline-block; width: 1em; height: 1em; vertical-align: -0.15em; flex: none; }
 
-/* Window chrome: navy sidebar strip + white top bar, like the real app */
-.app-frame { position: relative; display: grid; grid-template-columns: 56px 1fr; background: var(--app-bg); border-radius: 14px; overflow: hidden;
+/* ---------- Window chrome: the app's collapsed navy sidebar + white top bar ---------- */
+/* overflow: clip (not hidden) so sticky bars, toasts and dialogs inside can stick to the viewport. */
+.app-frame { position: relative; display: grid; grid-template-columns: 56px minmax(0, 1fr); background: var(--app-bg); border-radius: 14px; overflow: clip;
   box-shadow: 0 0 0 1px rgba(2,49,91,.1), 0 30px 70px -30px rgba(2,49,91,.45); }
-.app-rail { background: var(--app-sidebar); display: flex; flex-direction: column; align-items: center; gap: 14px; padding: 14px 0; }
-.app-rail img { width: 30px; height: 30px; }
-.app-rail span { width: 22px; height: 22px; border-radius: 6px; background: rgba(255,255,255,.12); }
-.app-rail span.on { background: rgba(59,130,246,.55); box-shadow: inset 3px 0 0 #3b82f6; }
-.app-main { min-width: 0; display: flex; flex-direction: column; }
-.app-top { height: 48px; flex: none; display: flex; align-items: center; gap: 10px; padding: 0 16px; background: #fff; border-bottom: 1px solid var(--app-border); }
-.app-top h4 { font: 700 15px/1 var(--font-app); color: var(--app-text); letter-spacing: 0; }
+.app-rail { display: flex; flex-direction: column; align-items: center; gap: 6px; padding: 12px 0; background: linear-gradient(180deg, #0f1a2e 0%, #1a2d4d 40%, #1e3a5f 100%); }
+.app-rail-mark { width: 30px; height: 31px; margin: 2px 0 10px; }
+.app-rail-i { display: grid; place-items: center; width: 38px; height: 34px; border-radius: 8px; color: rgba(255,255,255,.65); }
+.app-rail-i .lf-icon { width: 18px; height: 18px; vertical-align: 0; }
+.app-rail-i.on { background: rgba(255,255,255,.12); box-shadow: inset 3px 0 0 #3b82f6; color: #fff; }
+.app-main { position: relative; min-width: 0; display: flex; flex-direction: column; }
+.app-top { min-height: 48px; flex: none; display: flex; align-items: center; gap: 10px; padding: 0 16px; background: #fff; border-bottom: 1px solid var(--app-border); }
+.app-top h4 { font: 700 15px/1 var(--font-app); }
 .app-top .app-crumb { color: var(--app-muted); font-size: 12px; }
+/* The app's topbar clock (top-left of the real app). */
+.app-clock { display: grid; gap: 1px; line-height: 1.1; font-family: var(--font-app); }
+.app-clock small { font-size: 10.5px; font-weight: 500; color: var(--app-muted); }
+.app-clock b { font-size: 13px; font-weight: 700; color: var(--app-text); }
 .app-body { padding: 16px; min-width: 0; }
 
-/* Cards / tables */
-.app-card { background: #fff; border-radius: 12px; box-shadow: 0 1px 2px rgba(15,23,42,.06), 0 0 0 1px rgba(15,23,42,.05); }
+/* ---------- Cards / tables ---------- */
+.app-card { background: #fff; border-radius: 12px; box-shadow: 0 1px 3px rgba(0,0,0,.1), 0 1px 2px rgba(0,0,0,.06); }
 .app-table { width: 100%; border-collapse: collapse; font-size: 13px; }
 .app-table th { text-align: left; font-size: 11px; font-weight: 600; text-transform: uppercase; letter-spacing: .3px; color: var(--app-muted); padding: 8px 10px; border-bottom: 1px solid var(--app-border); }
 .app-table td { padding: 9px 10px; border-bottom: 1px solid #f1f2f4; vertical-align: middle; }
 .app-table .r { text-align: right; font-variant-numeric: tabular-nums; }
 
-/* Buttons (app: .btn padding 8px 16px, radius 8px, weight 500; .btn-sm 5px 10px / 12px) */
-.a-btn { display: inline-flex; align-items: center; justify-content: center; gap: 6px; min-height: 36px; padding: 8px 16px; border-radius: 8px; border: 1px solid transparent; font: 500 14px/1.2 var(--font-app); cursor: pointer; white-space: nowrap; transition: background .15s, border-color .15s, color .15s; }
-.a-btn:disabled { opacity: .55; cursor: not-allowed; }
+/* ---------- Buttons (.btn: inline-flex, gap 6px, padding 8px 16px, radius 8px, weight 500; .btn-sm 5px 10px / 12px) ---------- */
+.a-btn { display: inline-flex; align-items: center; justify-content: center; gap: 6px; min-height: 36px; padding: 8px 16px; border-radius: 8px; border: 1px solid transparent; font: 500 14px/1.2 var(--font-app); cursor: pointer; white-space: nowrap; text-decoration: none; transition: background .15s, border-color .15s, color .15s, box-shadow .15s; }
+.a-btn:disabled, .a-btn[aria-disabled='true'] { opacity: .5; cursor: not-allowed; }
 .a-btn-sm { min-height: 30px; padding: 5px 10px; font-size: 12px; }
-.a-primary { background: var(--app-primary); color: #fff; }
-.a-primary:hover:not(:disabled) { background: #005ba8; }
-.a-success { background: #047857; color: #fff; }
-.a-success:hover:not(:disabled) { background: #065f46; }
+/* Primary: the app's gradient #2563EB → #1D4ED8 (white text 5.2:1). */
+.a-primary { background: linear-gradient(135deg, #2563eb, #1d4ed8); color: #fff; box-shadow: 0 2px 8px rgba(37,99,235,.3); }
+.a-primary:hover:not(:disabled):not([aria-disabled='true']) { background: linear-gradient(135deg, #1d4ed8, #1e40af); box-shadow: 0 4px 12px rgba(37,99,235,.35); }
+/* Success: the app's green, one step darker so white text passes AA. */
+.a-success { background: #047857; color: #fff; box-shadow: 0 2px 8px rgba(16,185,129,.3); }
+.a-success:hover:not(:disabled):not([aria-disabled='true']) { background: #065f46; }
 .a-warning { background: #b45309; color: #fff; }
+.a-warning:hover:not(:disabled):not([aria-disabled='true']) { background: #92400e; }
+.a-danger { background: #b91c1c; color: #fff; }
 .a-outline { background: #fff; border-color: var(--app-border); color: var(--app-text); }
-.a-outline:hover:not(:disabled) { border-color: var(--app-primary); color: var(--app-primary); }
+.a-outline:hover:not(:disabled):not([aria-disabled='true']) { border-color: var(--app-primary); color: var(--app-primary); }
+.a-link { padding: 0; border: 0; background: none; color: var(--app-primary); font: 600 12.5px/1.3 var(--font-app); text-decoration: underline; text-underline-offset: 2px; cursor: pointer; }
 
-/* Badges (app .badge-pill: uppercase, 11px, 600, 20px radius, tinted bg) */
+/* ---------- Badges (.badge-pill: uppercase 11px/600, 20px radius, 10% tint) ---------- */
 .a-pill { display: inline-flex; align-items: center; gap: 4px; padding: 2px 10px; border-radius: 20px; font: 600 11px/1.6 var(--font-app); text-transform: uppercase; letter-spacing: .3px; white-space: nowrap; }
 .a-blue { background: rgba(59,130,246,.1); color: #2563eb; }
 .a-indigo { background: rgba(99,102,241,.1); color: #4f46e5; }
@@ -49,18 +69,82 @@
 .a-red { background: rgba(239,68,68,.1); color: #c81e1e; }
 .a-gray { background: rgba(107,114,128,.12); color: #374151; }
 
-/* Inputs */
+/* ---------- Inputs ---------- */
 .a-input, .a-select { min-height: 34px; padding: 6px 10px; border: 1px solid var(--app-border); border-radius: 8px; background: #fff; font: 400 13px/1.3 var(--font-app); color: var(--app-text); }
 .a-input:focus, .a-select:focus { outline: none; border-color: var(--app-primary); box-shadow: 0 0 0 3px rgba(0,116,211,.18); }
+.a-input:disabled, .a-select:disabled { background: #f4f6fa; color: #4b5563; cursor: not-allowed; }
 .a-label { font: 600 11px/1.2 var(--font-app); text-transform: uppercase; letter-spacing: .3px; color: var(--app-muted); }
+.a-field { display: grid; gap: 5px; min-width: 0; }
+.a-field > label, .a-field > .a-flabel { font: 600 13px/1.3 var(--font-app); color: var(--app-text); }
+.a-field .a-input, .a-field .a-select { width: 100%; min-height: 38px; font-size: 14px; }
+.a-req { color: #dc2626; }
+.a-help { font-size: 11.5px; line-height: 1.5; color: var(--app-muted); }
 
-/* Privacy Mode (app: html[data-privacy=on] .qb-private { filter: blur(6px) }) */
+/* ---------- Privacy Mode (app: [data-privacy="on"] .qb-private { filter: blur(6px) }, hover reveals) ---------- */
 .app[data-privacy='on'] .is-private { filter: blur(6px); user-select: none; transition: filter .2s; }
-.app[data-privacy='on'] .is-private:hover { filter: none; }
+.app[data-privacy='on'] .is-private:hover, .app[data-privacy='on'] .is-private:focus-within { filter: none; }
+.a-privbtn { display: grid; place-items: center; width: 38px; height: 38px; flex: none; border-radius: 50%; border: 1px solid var(--app-border); background: #fff; color: #4b5563; cursor: pointer; transition: background .15s, color .15s, box-shadow .15s; }
+.a-privbtn .lf-icon { width: 19px; height: 19px; vertical-align: 0; }
+.a-privbtn:hover { color: var(--app-primary); border-color: #bfdbfe; }
+.a-privbtn[aria-pressed='true'] { background: rgba(0,116,211,.15); color: var(--app-primary); border-color: transparent; box-shadow: inset 0 0 0 2px rgba(0,116,211,.3); }
 
-/* Toast like the app's (dark, bottom) */
-.a-toast { position: absolute; left: 50%; bottom: 14px; transform: translate(-50%, 8px); background: #111827; color: #fff; font: 500 13px/1.35 var(--font-app); padding: 10px 14px; border-radius: 10px; box-shadow: 0 16px 36px -12px rgba(0,0,0,.45); opacity: 0; pointer-events: none; transition: opacity .25s, transform .25s; max-width: calc(100% - 28px); z-index: 5; }
-.a-toast.is-on { opacity: 1; transform: translate(-50%, 0); }
+/* ---------- Toasts (showToast: white, blurred, icon + 4px coloured edge, top-right, 3 s) ---------- */
+/* A zero-height sticky dock at the top of the frame, so a toast is always in view while the frame is. */
+.a-tdock { position: sticky; top: var(--app-stick); z-index: 35; height: 0; }
+.a-toast { position: absolute; top: 12px; right: 12px; display: flex; align-items: center; gap: 10px; width: max-content; max-width: min(360px, calc(100% - 24px)); padding: 12px 18px 12px 14px; border: 1px solid rgba(0,0,0,.06); border-left: 4px solid #10b981; border-radius: 12px; background: rgba(255,255,255,.96); color: #111827; font: 500 13px/1.4 var(--font-app); box-shadow: 0 10px 40px rgba(0,0,0,.14); -webkit-backdrop-filter: blur(12px); backdrop-filter: blur(12px); opacity: 0; transform: translateX(24px); transition: opacity .25s, transform .3s var(--ease-out); pointer-events: none; }
+.a-toast.is-on { opacity: 1; transform: none; }
+.a-toast[data-type='info'] { border-left-color: #0074d3; }
+.a-toast[data-type='warning'] { border-left-color: #f59e0b; }
+.a-toast[data-type='error'] { border-left-color: #ef4444; }
+.a-toast-ic { flex: none; font-size: 15px; line-height: 1; }
+
+/* ---------- Dialogs (openModal: white card, 18px/600 title, ✕, footer buttons) ----------
+   A native modal <dialog> kept inside the module's .app (so the app's styles apply) but shown in
+   the top layer: never clipped by the frame, always centred in the viewport, page inert behind it. */
+.a-modal { width: min(calc(100vw - 24px), var(--dlg-w, 480px)); max-width: none; max-height: calc(100vh - 24px); padding: 0; border: 0; background: transparent; color: var(--app-text); overflow: visible; }
+@supports (height: 100dvh) { .a-modal { max-height: calc(100dvh - 24px); } }
+.a-modal::backdrop { background: rgba(15,23,42,.45); -webkit-backdrop-filter: blur(3px); backdrop-filter: blur(3px); }
+.a-dlg { container-type: inline-size; display: flex; flex-direction: column; max-height: calc(100vh - 24px); background: #fff; border-radius: 12px; box-shadow: 0 25px 50px -12px rgba(0,0,0,.4); overflow: hidden; font-family: var(--font-app); }
+@supports (height: 100dvh) { .a-dlg { max-height: calc(100dvh - 24px); } }
+.a-dlg-h { flex: none; display: flex; align-items: center; justify-content: space-between; gap: 12px; padding: 16px 14px 13px 20px; border-bottom: 1px solid var(--app-border); }
+.a-dlg-h h4 { min-width: 0; font: 600 17px/1.35 var(--font-app); }
+.a-dlg-h h4 .a-pill { margin-left: 6px; vertical-align: 2px; }
+.a-x { flex: none; display: grid; place-items: center; width: 32px; height: 32px; border: 0; border-radius: 50%; background: transparent; color: var(--app-muted); font-size: 14px; cursor: pointer; }
+.a-x .lf-icon { width: 16px; height: 16px; vertical-align: 0; }
+.a-x:hover { background: #f3f4f6; color: var(--app-text); }
+.a-dlg-b { flex: 1 1 auto; min-height: 0; overflow-y: auto; overscroll-behavior: contain; display: grid; gap: 14px; align-content: start; padding: 18px 20px; font-size: 14px; line-height: 1.6; }
+.a-dlg-f { flex: none; display: flex; flex-wrap: wrap; justify-content: flex-end; gap: 8px; padding: 12px 20px 14px; border-top: 1px solid var(--app-border); background: #fff; }
+/* Narrow: the footer buttons share the row evenly, or each take a full row — never a ragged stack. */
+@container (max-width: 430px) { .a-dlg-f > .a-btn { flex: 1 1 0; } .a-dlg-h { padding-left: 16px; } .a-dlg-b { padding: 16px; } .a-dlg-f { padding-inline: 16px; } }
+.a-info { padding: 10px 12px; border: 1px solid #bfdbfe; border-radius: 6px; background: #eff6ff; color: #1d4ed8; font-size: 12px; line-height: 1.6; }
+.a-warnbox { padding: 9px 12px; border: 1px solid #fcd34d; border-radius: 6px; background: #fef3c7; color: #78350f; font-size: 12px; line-height: 1.5; }
+.a-custbox { display: grid; gap: 2px; padding: 10px 12px; border-radius: 8px; background: #f3f4f6; font-size: 13px; line-height: 1.5; }
+.a-custbox .a-label { font-size: 10px; letter-spacing: .06em; }
+.a-row2 { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 12px; }
+@container (max-width: 460px) { .a-row2 { grid-template-columns: minmax(0, 1fr); } }
+
+/* Take Payment tabs (active tab = primary + 3px underline) */
+.a-tabs { display: flex; gap: 4px; margin: -6px -20px 0; padding: 0 20px; border-bottom: 1px solid var(--app-border); }
+.a-tab { margin-bottom: -1px; padding: 9px 12px; border: 0; border-bottom: 3px solid transparent; background: none; font: 600 13px/1.2 var(--font-app); color: var(--app-muted); cursor: pointer; }
+.a-tab[aria-selected='true'] { color: var(--app-primary); border-bottom-color: var(--app-primary); }
+
+/* The site's demo controls that sit outside an app frame (a clock, a slider) */
+.mod-ctl { display: flex; flex-wrap: wrap; align-items: center; gap: 8px 12px; padding: 10px 14px; border: 1px solid var(--ice-300); border-radius: 12px; background: #fff; font: 600 13.5px/1.35 var(--font-body); color: var(--navy-900); }
+.mod-ctl small { font: 500 12.5px/1.4 var(--font-body); color: var(--grey-600); }
+.mod-ctl-btn { display: inline-flex; align-items: center; gap: 6px; min-height: 36px; padding: 6px 14px; border: 1px solid var(--blue); border-radius: var(--r-ui); background: #fff; color: var(--blue-ink); font: 700 13.5px/1.2 var(--font-body); cursor: pointer; }
+.mod-ctl-btn:hover:not(:disabled) { background: var(--ice-100); }
+.mod-ctl-btn:disabled { opacity: .45; cursor: not-allowed; }
+.mod-note { display: flex; gap: 8px; align-items: flex-start; padding: 9px 12px; border-radius: 10px; background: #ecfdf5; border: 1px solid #a7f3d0; color: #065f46; font: 600 13px/1.45 var(--font-body); }
+.mod-note[hidden] { display: none; }
 
 .app :focus-visible { outline: 3px solid var(--dot); outline-offset: 2px; }
 .app .num { font-variant-numeric: tabular-nums; }
+.app .a-nowrap { white-space: nowrap; }
+
+@media (prefers-reduced-motion: reduce) {
+  .a-toast, .a-btn, .a-privbtn { transition: none; }
+}
+
+/* A toast raised above an open dialog (src/data/modules/app-toast.ts): the top layer, fixed top-right like the app's. */
+.app .a-toast:popover-open { position: fixed; inset: 16px 16px auto auto; margin: 0; overflow: visible; }
+@media (max-width: 560px) { .app .a-toast:popover-open { inset: 12px 12px auto auto; } }

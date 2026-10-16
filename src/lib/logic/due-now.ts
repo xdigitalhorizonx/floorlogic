@@ -147,6 +147,17 @@ export function invoiceBalance(inv: { total?: number | string | null; payments?:
   return Math.max(0, (Number(inv.total) || 0) - (inv.payments || []).reduce((a, p) => a + (Number(p.amount) || 0), 0));
 }
 
+/** Methods on the Take Payment window's "📝 Record Payment" tab (`openTakePaymentModal`, main L20865). */
+export const RECORD_PAYMENT_METHODS = ['Cash', 'Check', 'Bank Transfer', 'Other'] as const;
+
+/** `recordPayment` toast (main L21005): "Payment of $4,312.35 recorded on IN-330". */
+export function paymentRecordedToast(amount: number, invoiceNumber: string): string {
+  return `Payment of ${fmtMoney(amount)} recorded on ${invoiceNumber}`;
+}
+
+/** `recordPayment`'s refusal for a blank or non-positive amount (an alert in the app). */
+export const ENTER_VALID_AMOUNT = 'Enter valid amount';
+
 // ------------------------------------------------------- payment labels --
 
 /** Card brands as the app names them (`CARD_BRANDS`, q L584 / `_CARD_BRANDS` main L29192). */

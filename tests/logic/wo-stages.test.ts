@@ -207,3 +207,30 @@ describe('toasts and colours', () => {
     expect(WO_COLORS.paid).toBe('#047857');
   });
 });
+
+describe('schedule window and Order Materials helpers (site modules)', () => {
+  it('span line under the End date (_rangeHintHTML)', async () => {
+    const { installRangeHint, endFollowingStart } = await import('../../src/lib/logic');
+    expect(installRangeHint('', '')).toEqual({ kind: 'empty', text: 'No install dates yet.' });
+    expect(installRangeHint('2026-10-21', '2026-10-21')).toMatchObject({ kind: 'span', days: 1, label: 'One-day install', text: '📅 One-day install · Wed, Oct 21' });
+    expect(installRangeHint('2026-10-21', '2026-10-22')).toMatchObject({ kind: 'span', days: 2, label: '2-day install', rest: ' · Wed, Oct 21 → Thu, Oct 22' });
+    expect(installRangeHint('2026-10-22', '2026-10-21')).toEqual({ kind: 'error', text: '⚠ The end date (Oct 21, 2026) is before the start (Oct 22, 2026).' });
+    expect(installRangeHint('', '2026-10-21')).toEqual({ kind: 'error', text: '⚠ Pick a start date — the end date counts from it.' });
+    // Moving the start carries the end with it, same number of days.
+    expect(endFollowingStart('2026-10-21', 1)).toBe('2026-10-21');
+    expect(endFollowingStart('2026-10-28', 2)).toBe('2026-10-29');
+    expect(endFollowingStart('', 2)).toBe('');
+  });
+
+  it('Order Materials line defaults, JPO numbers, freight toast', async () => {
+    const { orderMaterialsLineDefaults, nextJobPONumber, poFieldSavedToast, ORDER_MATERIALS_INFO, ORDER_NOTHING_TICKED_TOAST } = await import('../../src/lib/logic');
+    expect(orderMaterialsLineDefaults('WO-330', 0, '2026-10-15')).toEqual({ poNumber: 'WO-330-1', orderDate: '2026-10-15', estimatedDelivery: '2026-10-29', freight: '' });
+    expect(orderMaterialsLineDefaults('WO-330', 3, '2026-10-30').estimatedDelivery).toBe('2026-11-13');
+    expect(nextJobPONumber(1192)).toEqual({ number: 'JPO-1193', counter: 1193 });
+    expect(nextJobPONumber(7).number).toBe('JPO-0008');
+    expect(poFieldSavedToast('WO-330-2', 'freight')).toBe('✓ WO-330-2 est. freight saved');
+    expect(poFieldSavedToast('WO-330-2', 'estimatedDelivery')).toBe('✓ WO-330-2 est. delivery saved');
+    expect(ORDER_MATERIALS_INFO.todo).toContain('Pressing Finish creates the selected POs in the Ordered tab.');
+    expect(ORDER_NOTHING_TICKED_TOAST).toBe('Tick at least one line to mark as ordered');
+  });
+});

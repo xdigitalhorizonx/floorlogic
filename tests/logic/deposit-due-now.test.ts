@@ -141,3 +141,12 @@ describe('what the screens show for an invoice', () => {
     expect(paymentTypeLabel({})).toBe('Payment');
   });
 });
+
+describe('Take Payment window (site modules)', () => {
+  it('methods and toast', async () => {
+    const { RECORD_PAYMENT_METHODS, paymentRecordedToast, ENTER_VALID_AMOUNT } = await import('../../src/lib/logic');
+    expect(RECORD_PAYMENT_METHODS).toEqual(['Cash', 'Check', 'Bank Transfer', 'Other']);
+    expect(paymentRecordedToast(4312.35, 'IN-330')).toBe('Payment of $4,312.35 recorded on IN-330');
+    expect(ENTER_VALID_AMOUNT).toBe('Enter valid amount');
+  });
+});

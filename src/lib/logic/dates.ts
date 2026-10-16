@@ -75,3 +75,19 @@ export function fmtDate(iso: ISODate | null | undefined): string {
   if (!p) return '—';
   return `${MONTHS[p[1] - 1]} ${p[2]}, ${p[0]}`;
 }
+
+const WEEKDAYS = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'] as const;
+
+/**
+ * Weekday + short date, "Wed, Oct 21" — what the app gets from
+ * `toLocaleDateString('en-US', {weekday:'short', month:'short', day:'numeric'})`
+ * in the schedule window's span line (`_rangeHintHTML`, main L19431) and its
+ * topbar clock. Built by hand (no ICU, no host time zone). '' when unusable.
+ */
+export function fmtWeekdayShort(iso: ISODate | null | undefined): string {
+  if (!iso) return '';
+  const p = parts(iso);
+  if (!p) return '';
+  const wd = new Date(Date.UTC(p[0], p[1] - 1, p[2])).getUTCDay();
+  return `${WEEKDAYS[wd]}, ${MONTHS[p[1] - 1]} ${p[2]}`;
+}

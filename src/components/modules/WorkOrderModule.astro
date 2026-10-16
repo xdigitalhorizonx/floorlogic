@@ -1,226 +1,162 @@
 ---
 /**
- * "Run the install" — WO-330's header and the app's one status-driven button
- * (main L14572). Server-renders the starting picture (Order Materials); the
- * island (src/islands/wo-button.ts) walks it through the real sequence.
+ * "Run the install" — WO-330's header and the app's one status-driven button (renderJobDetail,
+ * main L16824-16922) in today's sequence, with the Projects pipeline above it and a demo clock
+ * beside it (the app completes the job itself the day after the install ends). Server-renders
+ * the starting picture (Order Materials); the island (src/islands/wo-button.ts) walks it.
  */
-import { thread, installers, products, reps } from '../../data/sample-data';
-import { jobFinance, num, MANAGE_POS, MARK_PAID_DISABLED_TITLE } from '../../lib/logic';
-import {
-  womInitialState, womPrimaryView, womPill, renderWomBoard, renderWomMeta, renderWomInv, renderWomMats, type WomData,
-} from '../../islands/wo-button';
+import { workOrderData as data } from '../../data/modules/work-order';
+import { fmtMoney } from '../../lib/logic';
+import { womInitialState, womPill, renderWomActions, renderWomBoard, renderWomMeta, renderWomMats, renderWomClock } from '../../islands/wo-button';
+import { appRailHtml, withAppIcons } from '../../data/modules/app-icons';
 
-const wo = thread.workOrder;
-const inv = thread.invoice;
-const vendorOf = (matNum: string | undefined) => products.find((p) => p.matNum === matNum)?.vendor ?? '';
-// `_custInitials` (main L23224): first letter of the first and last words.
-const words = wo.customerName.trim().split(/\s+/);
-const initials = words.length === 1 ? words[0]!.slice(0, 2).toUpperCase() : (words[0]![0]! + words[words.length - 1]![0]!).toUpperCase();
-
-const data: WomData = {
-  wo: wo.number,
-  customer: wo.customerName,
-  initials,
-  phone: thread.lead.phone,
-  site: wo.city,
-  issued: wo.createdAt,
-  today: thread.approval.date,
-  rep: reps.find((r) => r.id === wo.salesRepId)?.name ?? '',
-  invoice: { number: inv.number, total: inv.total },
-  people: installers.map((p) => ({ id: p.id, name: p.name, trade: p.trade })),
-  lines: wo.materials.map((m) => ({
-    name: m.name, matNum: m.matNum ?? '', vendor: vendorOf(m.matNum), uom: m.costUOM ?? '', qty: num(m.quantity), cost: num(m.companyCost),
-  })),
-  // `_techJobLaborCost` (main L17853) = the work order's quoted labor.
-  laborOwed: jobFinance({ materials: wo.materials, labors: wo.labors }).laborQuoted,
-  start: wo.history[0]!.status,
-};
 const s = womInitialState(data);
-const pv = womPrimaryView(data, s);
 const pill = womPill(s.status);
 const json = JSON.stringify(data).replace(/</g, '\\u003c');
+const matCost = data.lines.reduce((a, l) => a + l.qty * l.cost, 0);
 ---
 <article class="mod wom" aria-labelledby="wom-title" data-wom>
   <header class="mod-head">
     <div><span class="mod-kicker">Run the install</span><h3 id="wom-title">One button runs the job.</h3></div>
-    <p class="mod-task" data-task>Try it: press the blue button until the job is done.</p>
+    <p class="mod-task" data-task>Try it: press the work order’s button until the job is paid.</p>
   </header>
+
+  <div class="mod-ctl wom-clock" data-wom-clock set:html={renderWomClock(data, s)} />
 
   <div class="app wom-app">
     <div class="app-frame wom-frame">
-      <div class="app-rail" aria-hidden="true"><span></span><span></span><span></span><span class="on"></span><span></span><span></span><span></span></div>
-      <div class="app-main wom-main" data-wom-main>
-        <div class="app-top"><h4>Work Orders</h4><span class="app-crumb">› {wo.number}</span></div>
+      <div class="app-rail" aria-hidden="true" set:html={appRailHtml('jobs')} />
+      <div class="app-main" data-wom-main>
+        <div class="app-top wom-top">
+          <span class="app-clock" aria-hidden="true"><b data-wom-topdate>Thu, Oct 15</b></span>
+          <span class="wom-topsep" aria-hidden="true"></span>
+          <h4>Work Orders</h4><span class="app-crumb">› {data.wo}</span>
+        </div>
+        <div class="a-tdock"><div class="a-toast" data-wom-toast aria-hidden="true"></div></div>
         <div class="app-body wom-body">
-          <div class="wom-board" data-wom-board set:html={renderWomBoard(data, s)} />
+          <div class="wom-board" data-wom-board set:html={withAppIcons(renderWomBoard(data, s))} />
 
           <div class="wom-split">
-          <div class="wom-left">
-          <section class="app-card wom-head" aria-label={`Work order ${wo.number}`}>
-            <div class="wom-title">
-              <span class="wom-doc"><span aria-hidden="true">🔨</span> Work Order</span>
-              <span class="wom-num">{wo.number}</span>
-              <span class={pill.cls} data-wom-pill>{pill.label}</span>
-            </div>
-            <div class="wom-cust"><span class="wom-ava" aria-hidden="true">{initials}</span><span class="wom-cname">{wo.customerName}</span><span class="wom-ctag">Customer</span></div>
-            <dl class="wom-meta" data-wom-meta set:html={renderWomMeta(data, s)} />
-            <div class="wom-actions">
-              <button type="button" class="a-btn a-outline wom-pos" data-wom-pos title={MANAGE_POS.title} hidden>{MANAGE_POS.label}</button>
-              <button type="button" class={pv.cls} data-wom-primary data-action={pv.action}>{pv.text}</button>
-            </div>
-            <p class="wom-lock" id="wom-lock" data-wom-lock hidden><span aria-hidden="true">🔒</span> {MARK_PAID_DISABLED_TITLE}</p>
-          </section>
+            <section class="app-card wom-head" aria-label={`Work order ${data.wo}`}>
+              <div class="wom-title">
+                <span class="wom-doc" set:html={withAppIcons('🔨 Work Order')} />
+                <span class="wom-num">{data.wo}</span>
+                <span class={pill.cls} data-wom-pill>{pill.label}</span>
+              </div>
+              <div class="wom-cust"><span class="wom-ava" aria-hidden="true">{data.initials}</span><span class="wom-cname">{data.customer}</span><span class="wom-ctag">Customer</span></div>
+              <dl class="wom-meta" data-wom-meta set:html={renderWomMeta(data, s)} />
+              <div class="wom-actions" data-wom-actions set:html={withAppIcons(renderWomActions(data, s))} />
+            </section>
 
-          <div class="wom-inv" data-wom-inv set:html={renderWomInv(data, s)} />
-          </div>
-
-          <section class="app-card wom-mats" aria-labelledby="wom-mats-h">
-            <h4 class="wom-sec-h" id="wom-mats-h">Materials</h4>
-            <table class="app-table wom-mtable">
-              <thead><tr><th scope="col">Item</th><th scope="col" class="r wom-qcol">Qty</th><th scope="col">PO / delivery</th></tr></thead>
-              <tbody data-wom-mats set:html={renderWomMats(data, s)} />
-            </table>
-          </section>
+            <section class="app-card wom-mats" aria-labelledby="wom-mats-h">
+              <div class="wom-band"><h5 id="wom-mats-h" set:html={withAppIcons('📦 Materials')} /><span class="num">Cost: {fmtMoney(matCost)}</span></div>
+              <table class="app-table wom-mtable">
+                <thead><tr><th scope="col">Item</th><th scope="col" class="wom-c-qty">Qty <span class="wom-th-sub">/ UOM</span></th><th scope="col" class="r wom-c-cost">Co. Cost</th><th scope="col" class="r wom-c-tot">Total</th></tr></thead>
+                <tbody data-wom-mats set:html={withAppIcons(renderWomMats(data, s))} />
+              </table>
+            </section>
           </div>
         </div>
       </div>
-      <div class="wom-modal" data-wom-modal hidden></div>
-      <div class="a-toast wom-toast" data-wom-toast role="status" aria-live="polite" aria-atomic="true"></div>
     </div>
+    <dialog class="a-modal" data-wom-dlg></dialog>
   </div>
 
   <p class="sr-only" data-wom-live aria-live="polite"></p>
-  <p class="mod-foot">Sample work order for fictional customers. Nothing is saved or sent. <button type="button" class="wom-reset" data-wom-reset hidden>Start over</button></p>
+  <p class="mod-foot">Sample work order for fictional customers. The deposit was paid by card on the invoice’s link the day the job was won. Nothing is saved or sent. <button type="button" class="wom-reset" data-wom-reset hidden>Start over</button></p>
   <script type="application/json" data-wom-data set:html={json}></script>
 </article>
 
 <script>
-  // Hydrate on approach, like the quote module: the island loads when the module nears the
-  // viewport (an inactive tab loads when it is first shown). The server-rendered picture stands until then.
+  // Hydrate on approach: the island loads when the module nears the viewport (an inactive tab
+  // loads when it is first shown). The server-rendered picture stands until then.
   import { whenNear } from '../../lib/when-near';
   whenNear('[data-wom]', () => import('../../islands/wo-button').then((m) => m.initWorkOrderModules()));
 </script>
 
 <style is:global>
   .wom { container: wom / inline-size; }
-
   .wom [hidden] { display: none !important; }
-  .wom-app { display: flex; flex-direction: column; min-width: 0; }
-  .wom-frame { flex: 1; }
-  .wom-main { min-height: 0; }
-  .wom-body { flex: 1; display: grid; gap: 12px; align-content: start; }
-  .wom .app-top h4, .wom-app h4, .wom-app h5 { font-family: var(--font-app); letter-spacing: 0; color: var(--app-text); }
+  .wom-app { min-width: 0; }
+  .wom-body { display: grid; gap: 14px; align-content: start; }
   .wom .app-crumb { white-space: nowrap; overflow: hidden; text-overflow: ellipsis; min-width: 0; }
   .wom-mono, .wom-num, .wom-chip { font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace; }
+  .wom-topsep { width: 1px; height: 24px; background: var(--app-border); }
 
-  .wom-split, .wom-left { display: grid; gap: 12px; align-content: start; min-width: 0; }
-  /* Full-width tab: header + invoice on the left, the materials beside them */
-  @container wom (min-width: 900px) {
-    .wom-split { grid-template-columns: minmax(0, 1fr) minmax(0, 1.12fr); align-items: start; }
-  }
+  /* Demo clock (site control, outside the frame) */
+  .wom-clock { justify-content: space-between; }
+  .wom-clock-l { display: inline-flex; align-items: center; gap: 6px; }
+  .wom-clock .mod-note { flex-basis: 100%; }
 
-  /* Job board strip (main L18567-18575): which column the work order sits in */
+  .wom-split { display: grid; gap: 14px; align-content: start; min-width: 0; }
+  @container wom (min-width: 900px) { .wom-split { grid-template-columns: minmax(0, 1fr) minmax(0, 1.1fr); align-items: start; } }
+
+  /* Projects pipeline (JOB_BUCKETS, main L21252): light column heads, the WO's folder in its stage */
   .wom-board { display: grid; gap: 7px; }
   .wom-board-cap { display: flex; flex-wrap: wrap; align-items: baseline; gap: 2px 8px; font: 600 12.5px/1.35 var(--font-app); color: var(--app-text); }
   .wom-cap-k { font: 700 10px/1 var(--font-app); letter-spacing: .07em; text-transform: uppercase; color: var(--app-muted); }
   .wom-cap-sub { color: var(--app-muted); font-weight: 500; }
-  .wom-cols { list-style: none; margin: 0; padding: 0; display: grid; grid-template-columns: repeat(6, minmax(0, 1fr)); gap: 4px; }
-  .wom-col { display: grid; grid-template-rows: minmax(26px, auto) 24px; align-items: center; gap: 4px; min-width: 0; padding: 7px 4px 5px; border-radius: 7px; background: #f3f4f6; box-shadow: inset 0 3px 0 var(--c); text-align: center; transition: background-color .3s; }
+  .wom-cols { list-style: none; margin: 0; padding: 0; display: grid; grid-template-columns: repeat(5, minmax(0, 1fr)) minmax(0, .82fr); gap: 5px; }
+  .wom-col { display: grid; grid-template-rows: auto 28px; align-items: center; gap: 5px; min-width: 0; padding: 8px 5px 6px; border-radius: 8px; background: #f3f4f6; box-shadow: inset 0 3px 0 var(--c); text-align: center; transition: background-color .3s; }
+  .wom-col-h { display: inline-flex; align-items: center; justify-content: center; gap: 4px; min-width: 0; }
   .wom-col-l { font: 600 10.5px/1.2 var(--font-app); color: #4b5563; }
-  .wom-col-i { display: none; font-size: 14px; line-height: 1; }
+  .wom-col-i { font-size: 12px; line-height: 1; }
   .wom-col.is-on { background: var(--t); }
   .wom-col.is-on .wom-col-l { color: var(--c); font-weight: 700; }
+  .wom-col-arch { --c: #4b5563; --t: rgba(107,114,128,.14); background: #fff; box-shadow: inset 0 0 0 1px var(--app-border); }
+  .wom-col-arch.is-on { box-shadow: inset 0 0 0 2px #4b5563; }
   .wom-slot { display: flex; align-items: center; justify-content: center; min-width: 0; }
-  .wom-chip { display: inline-block; max-width: 100%; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; font-size: 10px; font-weight: 700; line-height: 1; letter-spacing: .02em; padding: 5px 6px; border-radius: 5px; background: #fff; color: var(--app-text); border-left: 3px solid var(--c); box-shadow: 0 1px 2px rgba(15,23,42,.16), 0 0 0 1px rgba(15,23,42,.07); }
+  .wom-chip { display: inline-block; max-width: 100%; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; font-size: 10px; font-weight: 700; line-height: 1; letter-spacing: .02em; padding: 6px 7px; border-radius: 6px; background: #fff; color: var(--app-text); border-left: 3px solid var(--c); box-shadow: 0 1px 2px rgba(15,23,42,.16), 0 0 0 1px rgba(15,23,42,.07); }
 
-  /* Work-order header (main L14566-14572) */
-  .wom-head { padding: 14px 16px; display: grid; gap: 11px; }
+  /* Work-order header (renderJobDetail, main L16916) */
+  .wom-head { padding: 14px 16px; display: grid; gap: 12px; }
   .wom-title { display: flex; flex-wrap: wrap; align-items: center; gap: 4px 10px; }
-  .wom-doc { font: 800 19px/1.15 var(--font-app); color: var(--app-primary); letter-spacing: -.01em; }
+  .wom-doc { display: inline-flex; align-items: center; gap: 6px; font: 800 20px/1.15 var(--font-app); color: var(--app-primary); letter-spacing: -.01em; }
   .wom-num { font-size: 14px; font-weight: 700; color: var(--app-muted); letter-spacing: .04em; }
   .wom-cust { display: inline-flex; align-items: center; gap: 8px; justify-self: start; max-width: 100%; min-width: 0; padding: 4px 10px 4px 4px; border: 1px solid var(--app-border); border-radius: 999px; background: #fff; }
-  .wom-ava { width: 28px; height: 28px; flex: none; border-radius: 50%; display: grid; place-items: center; background: linear-gradient(135deg, #2563eb, #1e40af); color: #fff; font: 700 11px/1 system-ui, -apple-system, sans-serif; letter-spacing: .02em; }
+  .wom-ava { width: 28px; height: 28px; flex: none; border-radius: 50%; display: grid; place-items: center; background: linear-gradient(135deg, #2563eb, #1e40af); color: #fff; font: 700 11px/1 var(--font-app); letter-spacing: .02em; }
   .wom-cname { min-width: 0; font: 600 13px/1.25 var(--font-app); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
-  .wom-ctag { flex: none; font-size: 10px; line-height: 1.5; background: #b6d7a8; color: #333; padding: 0 6px; border-radius: 8px; }
-  .wom-meta { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 8px 12px; margin: 0; padding-top: 10px; border-top: 1px solid #f1f2f4; }
+  .wom-ctag { flex: none; font-size: 10px; line-height: 1.5; background: #b6d7a8; color: #1f2d1a; padding: 0 6px; border-radius: 8px; }
+  .wom-meta { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 9px 12px; margin: 0; padding-top: 11px; border-top: 1px solid #f1f2f4; }
   .wom-meta div { min-width: 0; }
-  .wom-meta dt { font: 700 9.5px/1.2 var(--font-app); color: #6b7280; text-transform: uppercase; letter-spacing: .04em; }
+  .wom-meta dt { font: 700 9.5px/1.2 var(--font-app); color: #6b7280; text-transform: uppercase; letter-spacing: .05em; }
   .wom-meta dd { margin: 3px 0 0; font: 600 12.5px/1.3 var(--font-app); color: var(--app-text); overflow-wrap: anywhere; }
-  .wom-actions { display: flex; flex-wrap: wrap; justify-content: flex-end; align-items: center; gap: 8px; }
+  .wom-actions { display: grid; gap: 6px; justify-items: end; }
+  .wom-btns { display: flex; flex-wrap: wrap; justify-content: flex-end; align-items: center; gap: 8px; }
   .wom-primary { min-width: 12.5rem; min-height: 40px; }
-  .wom-primary.is-locked { opacity: .5; cursor: not-allowed; }
-  .wom-primary.is-locked.a-success:hover { background: #047857; }
-  .wom-primary-text, .wom-primary-text:hover { background: transparent; border-color: transparent; color: #047857; font-weight: 600; cursor: default; }
   .wom-pos { min-height: 40px; }
-  .wom-lock { justify-self: end; max-width: 100%; text-align: right; font-size: 11.5px; line-height: 1.4; color: #4b5563; }
+  .wom-paidtext { display: inline-flex; align-items: center; gap: 6px; min-height: 40px; padding: 0 6px; color: #047857; font: 600 13px/1.3 var(--font-app); border-radius: 6px; }
+  .wom-lock { max-width: 100%; text-align: right; font-size: 11.5px; line-height: 1.4; color: #4b5563; }
 
-  /* Linked invoice — the visitor's way to unlock "Mark as Paid…" */
-  .wom-inv { display: flex; flex-wrap: wrap; align-items: center; gap: 6px 8px; padding: 9px 12px; border-radius: 10px; background: #fff; box-shadow: 0 1px 2px rgba(15,23,42,.06), 0 0 0 1px rgba(15,23,42,.05); font-size: 12.5px; transition: box-shadow .3s; }
-  .wom-inv.is-hint { box-shadow: 0 0 0 2px #f59e0b, 0 0 0 6px rgba(245,158,11,.22); }
-  .wom-inv-k { font-weight: 600; color: var(--app-text); }
-  .wom-inv-arrow { color: var(--app-muted); }
-  .wom-inv-btn { min-height: 30px; padding: 5px 10px; border-radius: 7px; border: 1px solid rgba(0,116,211,.3); background: rgba(0,116,211,.07); color: #005ba8; font: 600 12.5px/1 var(--font-app); cursor: pointer; transition: background-color .15s, border-color .15s; }
-  .wom-inv-btn:hover { background: rgba(0,116,211,.14); border-color: var(--app-primary); }
-  .wom-inv-bal { margin-left: auto; font-size: 12px; color: var(--app-muted); }
-  .wom-inv-done { color: #047857; font-weight: 600; }
-
-  /* Materials on the work order (main L11585-11614) */
-  .wom-mats { padding: 12px 4px 4px; min-width: 0; }
-  .wom-app .wom-sec-h { font: 700 11px/1 var(--font-app); letter-spacing: .06em; text-transform: uppercase; color: var(--app-muted); padding: 0 10px 4px; }
+  /* Materials (woBuildMatRowHtml, main L13821): a band like the paper's, rows with the delivery line */
+  .wom-mats { padding: 0 0 4px; min-width: 0; overflow: hidden; }
+  .wom-band { display: flex; justify-content: space-between; align-items: center; gap: 10px; padding: 7px 12px; border-radius: 12px 12px 0 0; background: var(--app-primary); color: #fff; font: 700 10.5px/1.3 var(--font-app); letter-spacing: .06em; text-transform: uppercase; }
+  .wom .wom-band h5 { display: inline-flex; align-items: center; gap: 5px; color: #fff; font: inherit; }
   .wom-mtable td { vertical-align: top; }
-  .wom-mtable td.r { white-space: nowrap; }
-  .wom-mname { display: block; font-size: 12.5px; font-weight: 600; line-height: 1.3; }
+  .wom-th-sub { color: #9ca3af; font-weight: 600; }
+  .wom-mname { display: block; font-size: 12.5px; font-weight: 600; line-height: 1.3; color: var(--app-primary); }
   .wom-msub { display: block; margin-top: 2px; font-size: 10.5px; color: var(--app-muted); overflow-wrap: anywhere; }
-  .wom-uom { font-size: 11px; color: var(--app-muted); }
-  .wom-mqty { display: none; margin-top: 3px; font-size: 11.5px; font-weight: 600; color: var(--app-text); }
-  .wom-po { display: block; font-size: 11.5px; font-weight: 600; color: var(--app-muted); }
-  .wom-po.is-on { color: #1d4ed8; }
-  .wom-eta { display: block; margin-top: 2px; font-size: 10.5px; color: var(--app-muted); }
+  .wom-eta { display: flex; align-items: center; gap: 4px; margin-top: 4px; font-size: 10.5px; color: var(--app-muted); }
   .wom-eta.is-on { color: #047857; font-weight: 600; }
+  .wom-c-qty { white-space: nowrap; text-align: center !important; }
+  .wom-uom { font-size: 11px; color: var(--app-muted); }
+  .wom-hint { display: block; margin-top: 3px; font-size: 11px; line-height: 1.4; white-space: nowrap; }
+  .wom-hint b { display: inline-flex; align-items: center; gap: 3px; color: var(--app-primary); font-weight: 700; }
+  .wom-hint span { color: var(--app-muted); }
+  .wom-c-cost { color: #4b5563; white-space: nowrap; }
+  .wom-c-tot { color: #047857; font-weight: 700; white-space: nowrap; }
 
-  /* Toast: the app's left accent by type */
-  /* Centred with left/right instead of left:50% + translate, so a long message can use the frame's width */
-  .app .wom-toast { left: 14px; right: 14px; width: max-content; max-width: calc(100% - 28px); margin-inline: auto; transform: translateY(8px); display: flex; align-items: flex-start; gap: 8px; z-index: 30; border-left: 4px solid #10b981; }
-  .app .wom-toast.is-on { transform: none; }
-  .app .wom-toast[data-type='warning'] { border-left-color: #f59e0b; }
-  .app .wom-toast[data-type='info'] { border-left-color: #3b82f6; }
-  .app .wom-toast[data-type='error'] { border-left-color: #ef4444; }
-
-  /* Modals, contained in the frame */
-  .wom-modal { position: absolute; inset: 0; z-index: 20; display: flex; align-items: flex-start; justify-content: center; padding: 16px 12px; overflow-y: auto; overscroll-behavior: contain; background: rgba(15,23,42,.42); backdrop-filter: blur(3px); -webkit-backdrop-filter: blur(3px); }
-  .wom-modal[hidden] { display: none; }
-  .wom-dlg { width: min(100%, 460px); margin: auto 0; display: flex; flex-direction: column; background: #fff; border-radius: 12px; box-shadow: 0 25px 50px -12px rgba(0,0,0,.4); }
-  .wom-dlg-wide { width: min(100%, 760px); }
-  .wom-dlg-h { display: flex; align-items: center; justify-content: space-between; gap: 12px; padding: 14px 14px 12px 18px; border-bottom: 1px solid var(--app-border); }
-  .wom-dlg-h h4 { display: flex; flex-wrap: wrap; align-items: center; gap: 6px 8px; font: 600 15px/1.35 var(--font-app); }
-  .wom-x { flex: none; width: 32px; height: 32px; border: 0; border-radius: 50%; background: transparent; color: var(--app-muted); font-size: 14px; cursor: pointer; }
-  .wom-x:hover { background: #f3f4f6; color: var(--app-text); }
-  .wom-dlg-b { display: grid; gap: 12px; padding: 14px 18px 16px; }
-  .wom-dlg-f { display: flex; flex-wrap: wrap; justify-content: flex-end; gap: 8px; padding: 12px 18px; border-top: 1px solid var(--app-border); }
-  .wom-fg { display: grid; gap: 4px; min-width: 0; }
-  .wom-fg[hidden] { display: none; }
-  .wom-fg label { font: 500 13px/1.3 var(--font-app); color: var(--app-text); }
-  .wom-fg .a-input, .wom-fg .a-select { width: 100%; min-height: 38px; font-size: 14px; }
-  .wom-formrow { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 12px; }
-  .wom-req { color: #dc2626; }
-  .wom-help { font-size: 11.5px; line-height: 1.5; color: var(--app-muted); }
-  .wom-help span { font-size: 11px; }
-  .wom-custbox { display: grid; gap: 3px; padding: 10px 12px; border-radius: 8px; background: #f3f4f6; font-size: 13px; line-height: 1.5; }
-  .wom-sub { font-size: 12.5px; color: var(--app-muted); }
-  .wom-confirm { font-size: 13.5px; line-height: 1.5; }
-  .wom-muted { color: var(--app-muted); font-size: 12.5px; }
-
-  /* Order Materials (main L18466-18496) */
-  .wom-info { padding: 10px 12px; border-radius: 6px; background: #eff6ff; border: 1px solid #bfdbfe; color: #1d4ed8; font-size: 12px; line-height: 1.6; }
+  /* Order Materials window (main L21096) */
+  .wom-om-b { gap: 12px; background: var(--app-bg); }
   .wom-selall { display: flex; flex-wrap: wrap; align-items: center; gap: 6px 10px; padding: 9px 12px; border: 1px solid var(--app-border); border-radius: 6px; background: #fff; font-size: 13px; }
   .wom-selall label { font-weight: 600; cursor: pointer; }
   .wom-selcount { margin-left: auto; font-size: 12px; color: var(--app-muted); }
   .wom-selall input, .wom-line-h input { flex: none; width: 18px; height: 18px; margin: 0; accent-color: var(--app-primary); cursor: pointer; }
   .wom-line-h input:disabled { cursor: not-allowed; }
-  .wom-tiles { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 8px; }
-  .wom-tile { display: grid; gap: 2px; align-content: start; min-width: 0; padding: 8px 10px; border: 1px solid; border-radius: 6px; }
-  .wom-tile span { font: 700 9.5px/1.25 var(--font-app); text-transform: uppercase; letter-spacing: .05em; }
-  .wom-tile b { font-size: 17px; font-weight: 700; }
+  .wom-tiles { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)) minmax(0, 1.2fr); gap: 8px; }
+  .wom-tile { display: grid; gap: 2px; align-content: start; min-width: 0; padding: 9px 12px; border: 1px solid; border-radius: 6px; }
+  .wom-tile span { font: 700 9.5px/1.25 var(--font-app); text-transform: uppercase; letter-spacing: .06em; }
+  .wom-tile b { font-size: 18px; font-weight: 700; }
   .wom-tile.is-sel { background: #d1fae5; border-color: #6ee7b7; color: #065f46; }
   .wom-tile.is-sel b { color: #047857; }
   .wom-tile.is-done { background: #dbeafe; border-color: #93c5fd; color: #005ba8; }
@@ -228,89 +164,92 @@ const json = JSON.stringify(data).replace(/</g, '\\u003c');
   .wom-tile.is-total { background: linear-gradient(135deg, var(--app-primary), #1d4ed8); border-color: transparent; color: #fff; }
   .wom-lines { display: grid; gap: 10px; }
   .wom-line { overflow: hidden; border: 1px solid var(--app-border); border-left: 4px solid #cbd5e1; border-radius: 6px; background: #fff; }
-  .wom-line-h { display: flex; flex-wrap: wrap; align-items: center; gap: 8px 10px; padding: 9px 12px; background: #f8fafc; border-bottom: 1px solid var(--app-border); }
+  .wom-line-h { display: flex; flex-wrap: wrap; align-items: center; gap: 8px 12px; padding: 9px 13px; background: #f8fafc; border-bottom: 1px solid var(--app-border); }
   .wom-line[data-fate='selected'] { border-left-color: #10b981; }
   .wom-line[data-fate='selected'] .wom-line-h { background: #d1fae5; }
   .wom-line[data-fate='ordered'] { border-left-color: #0074d3; }
   .wom-line[data-fate='ordered'] .wom-line-h { background: #dbeafe; }
-  .wom-line-name { flex: 1 1 180px; min-width: 0; cursor: pointer; }
-  .wom-line-name b { display: block; font-size: 13px; font-weight: 700; line-height: 1.3; color: var(--app-text); }
-  .wom-line-name span { display: block; margin-top: 2px; font-size: 11px; color: var(--app-muted); overflow-wrap: anywhere; }
-  .wom-line-f { display: grid; grid-template-columns: repeat(5, minmax(0, 1fr)); gap: 10px; padding: 10px 12px 12px; }
+  .wom-line-name { flex: 1 1 200px; min-width: 0; cursor: pointer; }
+  .wom-line-name b { display: block; font-size: 13.5px; font-weight: 700; line-height: 1.3; color: var(--app-text); }
+  .wom-line-name > span { display: block; margin-top: 2px; font-size: 11px; color: var(--app-muted); overflow-wrap: anywhere; }
+  .wom-line-f { display: grid; grid-template-columns: repeat(6, minmax(0, 1fr)); gap: 10px 12px; padding: 12px 13px 13px; }
   .wom-line-f > div { display: grid; gap: 4px; align-content: start; min-width: 0; }
-  .wom-line-f .a-input { width: 100%; min-height: 32px; padding: 5px 8px; font-size: 12.5px; }
-  .wom-line-f .a-input:disabled { background: #f4f6fa; color: #4b5563; }
-  .wom-ro { font-size: 13px; font-weight: 600; }
+  .wom-line-f .a-label { font-size: 10px; letter-spacing: .06em; }
+  .wom-line-f .a-input { width: 100%; min-width: 0; min-height: 34px; padding: 5px 8px; font-size: 12.5px; }
+  .wom-line-f .a-input.num { text-align: right; }
+  .wom-po-in { font-weight: 600; }
+  .wom-inrow { display: flex; align-items: center; gap: 4px; min-width: 0; }
   .wom-lt { font-size: 11px; color: var(--app-muted); }
+  .wom-lt b { color: var(--app-text); }
 
-  /* Take Payment (main L18236) */
-  .wom-tabs { display: flex; gap: 4px; margin: -4px -18px 0; padding: 0 18px; border-bottom: 1px solid var(--app-border); }
-  .wom-tab { padding: 8px 12px; margin-bottom: -1px; border-bottom: 3px solid transparent; font: 600 13px/1.2 var(--font-app); color: var(--app-muted); }
-  .wom-tab.is-on { color: var(--app-primary); border-bottom-color: var(--app-primary); }
-  .wom-tab.is-off { opacity: .6; cursor: not-allowed; }
+  /* Schedule Install (main L19435) */
+  .wom-mt { margin-top: 6px; }
+  .wom-span { margin-top: 5px; font-size: 11.5px; color: var(--app-text); }
+  .wom-span.is-err { color: #b91c1c; font-weight: 600; }
+
+  /* Invoice + Take Payment */
+  .wom-sub { margin: 0; font-size: 12.5px; color: var(--app-muted); }
   .wom-itot { width: 100%; border-collapse: collapse; font-size: 13px; }
   .wom-itot td { padding: 6px 12px; text-align: right; color: #111; }
   .wom-itot td:first-child { color: #555; }
-  .wom-itot td.num { width: 8.5rem; }
-  .wom-itot .wom-green td { color: #047857; }
-  .wom-itot tr.wom-bal td { padding: 8px 12px; background: #f0fff4; color: #047857; font-size: 15px; font-weight: 800; text-transform: uppercase; letter-spacing: .02em; }
+  .wom-itot td.num { width: 9rem; }
+  .wom-itot tr.wom-grand td { background: #e8f0fe; border-top: 2px solid #0074d3; color: #0074d3; font-size: 15px; font-weight: 800; text-transform: uppercase; }
+  .wom-itot tr.wom-paidrow td { color: #047857; }
+  .wom-itot tr.wom-bal td { padding: 8px 12px; background: #f0fff4; color: #047857; font-size: 14px; font-weight: 800; text-transform: uppercase; letter-spacing: .02em; }
   .wom-itot tr.wom-bal.is-due td { background: #fff5f5; color: #dc2626; }
-  .wom-pays h5 { margin: 0 0 6px; font: 600 13.5px/1.3 var(--font-app); }
-  .wom-nopay { font-size: 13px; color: var(--app-muted); }
+  .wom .wom-pays h5 { margin: 0 0 6px; font: 600 14px/1.3 var(--font-app); }
+  .wom-nopay { margin: 0; font-size: 13px; color: var(--app-muted); }
   .wom-ptable { width: 100%; border-collapse: collapse; font-size: 12.5px; }
   .wom-ptable th { text-align: left; padding: 5px 8px; font-size: 10.5px; font-weight: 700; color: var(--app-muted); text-transform: uppercase; letter-spacing: .04em; border-bottom: 2px solid var(--app-border); }
   .wom-ptable td { padding: 7px 8px; border-bottom: 1px solid var(--app-border); }
   .wom-ptable .r { text-align: right; }
   .wom-ptd td { background: #f3f4f6; font-weight: 700; text-align: right; }
-  .wom-ptd td.r { text-align: right; }
   .wom-green { color: #047857; font-weight: 600; }
   .wom-chk { font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace; font-size: 11px; color: var(--app-muted); }
+  .wom-pane { display: grid; gap: 12px; }
+  .wom-cardbox { display: grid; gap: 6px; padding: 12px; border: 1px dashed #cbd5e1; border-radius: 8px; background: #fafbfc; }
+  .wom-cardbox p { margin: 0; font-size: 13px; line-height: 1.5; color: #4b5563; }
 
-  /* Installer payout (main L18134-18180) */
-  .wom-owed { display: flex; justify-content: space-between; gap: 12px; padding: 10px 12px; border-radius: 8px; background: #f3f4f6; }
+  /* Installer payout (openTechPaymentModal, main L20755) */
+  .wom-owed { display: flex; justify-content: space-between; gap: 12px; padding: 12px 14px; border-radius: 8px; background: #f3f4f6; }
   .wom-owed .r { text-align: right; }
-  .wom-owed-k { display: block; font: 700 10.5px/1.2 var(--font-app); color: var(--app-muted); text-transform: uppercase; letter-spacing: .04em; }
-  .wom-owed b { font-size: 19px; font-weight: 800; }
+  .wom-owed-k { display: block; font: 700 11px/1.2 var(--font-app); color: var(--app-muted); text-transform: uppercase; letter-spacing: .04em; }
+  .wom-owed b { font-size: 20px; font-weight: 800; }
   .wom-pyrow { display: flex; align-items: center; gap: 10px; padding: 9px 12px; border: 1px solid var(--app-border); border-radius: 8px; background: rgba(30,99,232,.06); font-size: 12.5px; }
-  .wom-pyrow input { flex: none; width: 16px; height: 16px; margin: 0; accent-color: var(--app-primary); }
   .wom-pyrow-t { flex: 1; min-width: 0; display: flex; flex-wrap: wrap; align-items: center; gap: 3px 8px; }
   .wom-pyrow-s { flex-basis: 100%; font-size: 11px; color: var(--app-muted); }
   .wom-pyrow .wom-mono { font-size: 11px; color: var(--app-muted); }
   .wom-this { font-size: 10px; font-weight: 700; color: var(--app-primary); }
+  .wom-muted { color: var(--app-muted); font-size: 12px; font-weight: 400; }
 
   .wom-reset { margin-left: 4px; padding: 4px 2px; border: 0; background: none; color: var(--blue-ink); font: 700 var(--fs-small)/1.2 var(--font-body); text-decoration: underline; text-underline-offset: .18em; cursor: pointer; }
   .wom-reset:hover { color: var(--navy-900); }
-  .wom-reset[hidden] { display: none; }
 
-  @container wom (max-width: 620px) {
-    .wom-line-f { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+  /* Inside a dialog these query the dialog card's own width (it is the nearest container). */
+  @container (max-width: 700px) {
+    .wom-line-f { grid-template-columns: repeat(3, minmax(0, 1fr)); }
     .wom-tiles { grid-template-columns: repeat(2, minmax(0, 1fr)); }
   }
-  @container wom (max-width: 520px) {
-    /* Icons only on narrow boards; the label stays for screen readers */
-    .wom-col-l { position: absolute; width: 1px; height: 1px; overflow: hidden; clip: rect(0 0 0 0); white-space: nowrap; }
-    .wom-col-i { display: block; }
-    .wom-col { grid-template-rows: 18px 24px; }
-    .wom-meta { grid-template-columns: repeat(2, minmax(0, 1fr)); }
-    .wom-mtable .wom-qcol { display: none; }
-    .wom-mqty { display: block; }
+  @container (max-width: 440px) {
+    .wom-line-f { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+    .wom-selcount { margin-left: 0; flex-basis: 100%; }
   }
-  @container wom (max-width: 440px) {
+  @container wom (max-width: 620px) {
+    .wom-cols { grid-template-columns: repeat(3, minmax(0, 1fr)); }
+    .wom-meta { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+    .wom-mtable .wom-c-cost { display: none; }
+  }
+  @container wom (max-width: 460px) {
     .wom .wom-frame { grid-template-columns: minmax(0, 1fr); }
     .wom .wom-frame > .app-rail { display: none; }
     .wom-body { padding: 12px; }
     .wom-head { padding: 12px; }
-    .wom-actions { justify-content: stretch; }
-    .wom-actions .a-btn { flex: 1 1 auto; }
+    .wom-actions { justify-items: stretch; }
+    .wom-btns { justify-content: stretch; }
+    .wom-btns > .a-btn { flex: 1 1 auto; }
     .wom-primary { min-width: 0; }
-    .wom-lock { justify-self: stretch; text-align: left; }
-    .wom-formrow { grid-template-columns: minmax(0, 1fr); }
-    .wom-inv-bal { margin-left: 0; flex-basis: 100%; }
-    .wom-dlg-b { padding: 12px 14px 14px; }
-    .wom-dlg-h { padding: 12px 10px 10px 14px; }
-    .wom-dlg-f { padding: 10px 14px; }
-    .wom-tabs { margin: -4px -14px 0; padding: 0 14px; }
-    .wom-line-f { grid-template-columns: minmax(0, 1fr) minmax(0, 1fr); }
-    .wom-chip { font-size: 9px; padding: 4px 3px 4px 4px; letter-spacing: 0; }
+    .wom-lock { text-align: left; }
+    .wom-mtable th, .wom-mtable td { padding-inline: 8px; }
+    .wom-clock { justify-content: flex-start; }
   }
 </style>

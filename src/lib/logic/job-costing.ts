@@ -25,6 +25,7 @@
  * grand total that includes sales tax (see quote-totals.ts `appMargin`). Job
  * costing — and the whole site — keeps tax out of revenue, as here.
  */
+import { fmtDate } from './dates';
 import { fmtMoney, num, round2 } from './money';
 
 // ------------------------------------------------------------- card fees --
@@ -461,4 +462,102 @@ export type PrivateField = (typeof PRIVATE_FIELDS)[number];
 
 export function isPrivateField(field: string): field is PrivateField {
   return (PRIVATE_FIELDS as readonly string[]).includes(field);
+}
+
+// ------------------------------------------------- the job's own costing page --
+
+/** Expense categories on the Add Job Cost form (`JC_CATEGORIES`, main L29269). */
+export const JOB_COST_CATEGORIES = ['Materials', 'Freight', 'Labor', 'Supplies', 'Equipment Rental', 'Disposal', 'Permits', 'Fuel / Travel', 'Job Costs', 'Other'] as const;
+
+/** Payment methods on the form (`JC_METHODS`, main L29243); the first, blank, prints as "—". */
+export const JOB_COST_METHODS = ['', 'Check', 'Cash', 'Card', 'ACH / Transfer', 'Zelle', 'Venmo', 'Other'] as const;
+
+/** `_nextJobCostNumber` (main L29299): one past the highest "JC-n", three digits. */
+export function nextJobCostNumber(numbers: ReadonlyArray<string | null | undefined>): string {
+  const max = Math.max(0, ...numbers.map((n) => {
+    const m = /^JC-?0*(\d+)/i.exec(String(n || ''));
+    return m ? parseInt(m[1]!, 10) || 0 : 0;
+  }));
+  return 'JC-' + String(max + 1).padStart(3, '0');
+}
+
+/** `saveJobCost` (main L31557): a contractor payment left blank says who it paid. */
+export function jobCostDescription(desc: string, kind: JobCostKind, personName = ''): string {
+  const d = String(desc || '').trim();
+  if (d) return d;
+  return kind === 'contractor' ? (personName ? `Labor — ${personName}` : 'Labor') : '';
+}
+
+/** `saveJobCost`'s refusals, in the order it checks them (an empty description is fine on a contractor payment). */
+export const JOB_COST_NEED_DESC = 'Describe what this cost was for';
+export const JOB_COST_NEED_AMOUNT = 'Enter an amount greater than zero';
+export function jobCostRefusal(desc: string, kind: JobCostKind, amount: number): string | null {
+  if (!String(desc || '').trim() && kind !== 'contractor') return JOB_COST_NEED_DESC;
+  if (!(Number(amount) > 0)) return JOB_COST_NEED_AMOUNT;
+  return null;
+}
+
+/** `saveJobCost` / `deleteJobCost` toasts. */
+export function jobCostAddedToast(kind: JobCostKind, amount: number): string {
+  const k = JOB_COST_KINDS.find((x) => x.key === kind) ?? JOB_COST_KINDS[JOB_COST_KINDS.length - 1]!;
+  return `${k.label} added · ${fmtMoney(round2(amount))}`;
+}
+export const JOB_COST_UPDATED = 'Job cost updated';
+export const JOB_COST_DELETED = 'Job cost deleted';
+
+/** `deleteJobCost`'s confirm (main L31602). */
+export function jobCostDeleteConfirm(c: { number?: string | null; description?: string | null; amount?: number | null; quantity?: number | null; unitCost?: number | null }): string {
+  return `Delete ${c.number || 'this cost'} — ${c.description || ''} (${fmtMoney(jobCostAmount({ kind: 'other', amount: c.amount, quantity: c.quantity, unitCost: c.unitCost }))})?`;
+}
+
+/** The Paid cell's tooltip on Recorded Costs (main L32252). */
+export function jobCostPaidTitle(c: { paid?: boolean; paidDate?: string | null; method?: string | null; checkNumber?: string | null }): string {
+  if (!c.paid) return 'Not paid — click to mark paid';
+  return 'Paid' + (c.paidDate ? ' ' + fmtDate(c.paidDate) : '') + (c.method ? ' by ' + c.method : '') + (c.checkNumber ? ' #' + c.checkNumber : '') + ' — click to mark unpaid';
+}
+
+/** The line under a recorded cost (main L32250): its category, then "3 × $14.50" when the qty isn't 1. */
+export function jobCostSubline(c: { category?: string | null; quantity?: number | null; unitCost?: number | null }): string {
+  const q = Number(c.quantity) || 1;
+  return (c.category || '') + (q !== 1 ? ` · ${q} × ${fmtMoney(c.unitCost || 0)}` : '');
+}
+
+/**
+ * The notes under the Materials and Labor buckets (main L32185-32186): what the
+ * actual is made of — "4 POs $3,214.06" (goods + estimated freight) "+ $x in
+ * receipts" — or the quote standing in until something is recorded.
+ */
+export function materialsBucketNote(fin: Pick<JobFinance, 'matActual' | 'poCost' | 'costs'>, poCount: number): string {
+  if (!fin.matActual) return 'nothing recorded yet — showing quoted';
+  return [poCount ? `${poCount} PO${poCount === 1 ? '' : 's'} ${fmtMoney(fin.poCost)}` : '', fin.costs.material ? `${fmtMoney(fin.costs.material)} in receipts` : ''].filter(Boolean).join(' + ');
+}
+export function laborBucketNote(fin: Pick<JobFinance, 'laborActual'>): string {
+  return fin.laborActual ? 'contractor payments recorded' : 'nothing recorded yet — showing quoted';
+}
+
+/** "Margin before commission 38.0% · 35.0% after" (main L32202) — the "after" only with a commission. */
+export function marginLine(fin: Pick<JobFinance, 'margin' | 'commission' | 'revenue' | 'profit'>): { before: string; after: string | null } {
+  return {
+    before: fin.margin.toFixed(1) + '%',
+    after: fin.commission > 0.005 && fin.revenue > 0 ? `${((fin.profit / fin.revenue) * 100).toFixed(1)}% after` : null,
+  };
+}
+
+/**
+ * The commission sign-off line in the profit box (main L32196-32200) and its
+ * toggle's toasts (`toggleCommissionReadyGroup`, main L29618). Sign-off is
+ * allowed once the job is at Ready to be Paid, Paid or Complete.
+ */
+export function commissionSignOffAllowed(status: string): boolean {
+  return status === 'ready_to_be_paid' || status === 'paid' || status === 'complete';
+}
+export function commissionSignOffText(signedOffAt: string | null, status: string): string {
+  if (signedOffAt) return `Signed off ${fmtDate(String(signedOffAt).slice(0, 10))} — showing on their profile`;
+  if (!commissionSignOffAllowed(status)) {
+    return 'Commission waits on the job: ' + (status === 'final_invoice' ? 'waiting on the final invoice to be paid in full' : status === 'cancelled' ? 'cancelled' : 'not finished yet — it has to be completed and the final invoice collected first');
+  }
+  return 'Not signed off for payout yet';
+}
+export function commissionSignOffToast(woNumber: string, ready: boolean): string {
+  return ready ? `${woNumber} commission marked ready to pay` : `${woNumber} commission un-marked`;
 }

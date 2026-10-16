@@ -10,7 +10,6 @@ import {
 } from '../lib/logic/lead-pipeline';
 import { fmtDate } from '../lib/logic/dates';
 import { fmtMoney } from '../lib/logic/money';
-import { invoiceDueDate } from '../lib/logic/document-dates';
 import { bucketHTML, docCardHTML, icon, leadCardHTML } from '../lib/board/card-html';
 import { track } from '../lib/analytics';
 
@@ -18,7 +17,7 @@ type Status = Lead['status'];
 type Counters = { lead: number; job: number; invoice: number; quote: number };
 type Rep = { id: string; name: string };
 /** The quote the visitor approves (the dataset's thread), passed in by HeroBoard.astro. */
-type Story = { leadId: string; quote: string; customer: string; total: number; wo: string; inv: string; toast: string };
+type Story = { leadId: string; quote: string; customer: string; total: number; wo: string; inv: string; toast: string; due: string };
 
 const STEP_MS = 2800;
 const IDLE_AFTER_USER_MS = 9000;
@@ -247,10 +246,9 @@ export function initLivingBoard() {
     // The lead becomes a customer and leaves the board; the work order and invoice exist now.
     leads.delete(story.leadId);
     removeCard(story.leadId);
-    const due = invoiceDueDate(DEMO_TODAY);
     const box = document.createElement('div');
     box.innerHTML = docCardHTML('wo', story.wo, 'Work order · Order Materials', 'Order Materials', 'kc-pill-purple')
-      + docCardHTML('inv', story.inv, `Invoice · ${fmtMoney(story.total)} · due ${fmtDate(due)}`, 'Unpaid', 'kc-pill-red');
+      + docCardHTML('inv', story.inv, `Invoice · ${fmtMoney(story.total)} · due ${fmtDate(story.due)}`, 'Unpaid', 'kc-pill-red');
     const cards = Array.from(box.children) as HTMLElement[];
     docsEl.replaceChildren(...cards);
     showStep('converted');

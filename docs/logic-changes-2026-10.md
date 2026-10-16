@@ -169,6 +169,7 @@ What changed in the real app between the build the site was made from and the on
 24. **`_nvCityHit` checks only the first occurrence of a town.** "1 Jeanette Rd Jean NV" (no commas) finds no town, because the first "jean" sits inside "jeanette". *Checked in code.*
 25. **An Approved card still offers "→ Lost".** It moves the lead with no confirm (`advanceLead`). Unchanged since August.
 26. **Dashboard invoice rows mix two statuses.** The badge text is the stored status while the colour comes from `_invDisplayStatus`, so a row can read "unpaid" in green. *Reported.*
+27. **The builder's Grand Total leaves out optional sections the customer approved.** `qbFastRecalc` (L13531) skips every `optional` section, even after approval. QT-330 approved with its stairs shows $7,860.02, while IN-330 bills $8,624.70. The site counts the approved options. *Checked in code and in the film.*
 
 **Fixed since August:** the phantom carton on exact multiples. The cancelled-PO bill that August ignored now counts.
 

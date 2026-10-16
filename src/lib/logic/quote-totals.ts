@@ -493,6 +493,39 @@ export function approveQuoteGuard(state: { dataLoaded: boolean; hasWorkOrder: bo
 }
 
 /**
+ * The quote header's button once a customer has approved online and there is
+ * no work order or invoice yet (main L12784): nothing converts on its own.
+ */
+export const CREATE_WO_INVOICE = {
+  label: '🔨 Create WO & Invoice',
+  title: 'The customer approved this quote. Nothing is created automatically — this makes its work order and invoice.',
+} as const;
+
+/** q.html's toast when the customer taps "✓ Approve Quote" (q L783). */
+export const CUSTOMER_APPROVED_TOAST = 'Quote approved! Thank you.';
+
+/**
+ * The confirm "🔨 Create WO & Invoice" opens (`confirmConvertApprovedQuote`,
+ * main L12337): "🔨 Create the work order and invoice for QT-330?" /
+ * "<b>Dev & Anjali Prasad</b> approved this quote but it has no work order or
+ * invoice yet. This creates WO-330 and IN-330 from it[, and turns the lead
+ * into a customer]." `who` is the part the app bolds; `rest` follows it.
+ */
+export function convertApprovedQuoteDialog(quoteNumber: string, who: string, fromLead: boolean): { title: string; strong: string; rest: string; body: string; button: string; cancel: string } {
+  const sfx = String(quoteNumber || '').replace(/^QT-/, '');
+  const tail = ` but it has no work order or invoice yet. This creates WO-${sfx} and IN-${sfx} from it${fromLead ? ', and turns the lead into a customer' : ''}.`;
+  const rest = who ? ' approved this quote' + tail : 'This quote is approved' + tail;
+  return {
+    title: `🔨 Create the work order and invoice for ${quoteNumber}?`,
+    strong: who || '',
+    rest,
+    body: (who || '') + rest,
+    button: '🔨 Create Work Order & Invoice',
+    cancel: 'Cancel',
+  };
+}
+
+/**
  * The confirm every Approve button opens (`confirmApproveQuote`, main L12333):
  * "✅ Approve QT-330?" / "This wins the job for Dev & Anjali Prasad and creates
  * the work order and invoice, and turns the lead into a customer."

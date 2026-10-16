@@ -24,6 +24,9 @@ const repName = (id: string | null | undefined) => reps.find((r) => r.id === id)
 const story = {
   leadId: thread.lead.id, quote: QUOTE.number, customer: QUOTE.customerName, total: QUOTE.totals.total,
   wo: thread.workOrder.number, inv: thread.invoice.number, toast: thread.approval.toast,
+  // The dataset's IN-330 (made the day the Prasads approve), so the hero, the modules and the video
+  // all show the same due date.
+  due: thread.invoice.dueDate,
 };
 const state = JSON.stringify({ leads: onBoard, incoming: incomingLeads, reps, counters, today: DEMO_TODAY, story });
 const laneGroups = (st: (typeof lanes)[number]) => {
