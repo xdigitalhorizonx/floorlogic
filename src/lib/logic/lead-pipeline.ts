@@ -56,7 +56,8 @@ export const LEAD_COLORS: Readonly<Record<LeadStatus, string>> = Object.fromEntr
   LEAD_STATUSES.map((s) => [s, siteHex(LEAD_STATUS_COLOR_NAMES[s])]),
 ) as Record<LeadStatus, string>;
 
-export type LeadType = 'Retail' | 'Commercial' | 'Property Management' | 'Builder' | 'Designer' | 'Realtor';
+/** The app's default customer types (`getCustomerTypes`, main L10153). */
+export type LeadType = 'Retail' | 'Commercial' | 'Property Management' | 'Contractor' | 'Builder' | 'Designer' | 'Realtor';
 
 export interface Lead {
   id: string;

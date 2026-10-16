@@ -16,3 +16,5 @@ export * from './lead-pipeline';
 export * from './wo-stages';
 export * from './job-costing';
 export * from './status-colors';
+export * from './lead-list';
+export * from './lead-phone';

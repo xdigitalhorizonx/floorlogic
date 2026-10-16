@@ -5,8 +5,9 @@
  * Source of truth: the FloorLogic demo `main` branch as deployed at
  * floorlogicdemo.vercel.app — demo commit 80be9ee, synced from
  * landmark-flooring-app dd609d2 on 2026-10-14 — exported to
- *   demo-main-index.html (34,159 lines), demo-main-q.html (1,987 lines) and
- *   document-dates.js (the DocumentDates helper both pages load).
+ *   demo-main-index.html (34,159 lines), demo-main-q.html (1,987 lines),
+ *   document-dates.js (the DocumentDates helper both pages load) and
+ *   mobile.js (the phone app's screens, which /mobile loads beside index.html).
  * Set FLOORLOGIC_APP_EXPORT_DIR to the folder holding them (default: the
  * repo's tools/video/app-export). When the exports are present they are
  * extracted live AND checked against the committed snapshot
@@ -27,12 +28,12 @@ export const SNAPSHOT_PATH = path.join(HERE, 'fixtures', 'app-source.json');
 /** Where tools/video keeps the export of the live demo build. */
 const DEFAULT_EXPORT_DIR = 'C:/dev/floorlogic/tools/video/app-export';
 export const EXPORT_DIR = process.env.FLOORLOGIC_APP_EXPORT_DIR || DEFAULT_EXPORT_DIR;
-export const EXPORT_FILES = { index: 'demo-main-index.html', q: 'demo-main-q.html', docDates: 'document-dates.js' } as const;
+export const EXPORT_FILES = { index: 'demo-main-index.html', q: 'demo-main-q.html', docDates: 'document-dates.js', mobile: 'mobile.js' } as const;
 export type SourceName = keyof typeof EXPORT_FILES;
 const SOURCE_NAMES = Object.keys(EXPORT_FILES) as SourceName[];
 
 /** What the snapshot was taken from. */
-export const SNAPSHOT_LABEL = 'demo main export (80be9ee = landmark-flooring-app dd609d2), 2026-10-15';
+export const SNAPSHOT_LABEL = 'demo main export (80be9ee = landmark-flooring-app dd609d2), 2026-10-15; List View + mobile.js added 2026-10-16';
 
 // ------------------------------------------------------------ tokenizer ---
 
@@ -247,6 +248,32 @@ export const MANIFEST: Item[] = [
     'JOB_BUCKETS', 'PIPELINE_CLOSED', 'JC_KINDS', 'CARD_FEE_PCT_DEFAULT', 'ROLL_DEFAULT_WIDTH_FT', 'JOB_MAX_INSTALL_DAYS', 'PL_STALL_DAYS',
     'PL_LATE_GRACE_DAYS', '_JC_STAGE_DONE', '_CARD_BRANDS',
   ),
+  // The Leads screen's List View (live 2026-10-14) and the helpers it calls.
+  ...fn(
+    'index',
+    '_lcFilterState', '_lcFiltersOn', '_lcLocalDay', '_lcLastTouch', '_lcAgo', '_lcLatestQuote', '_lcInitials', '_lcAvatarHTML', '_lcMatchesSearch',
+    '_lcSortKey', '_lcFilterLeads', '_lcPickSelected', '_lcStatsHTML', 'getPipelineStats', '_lcQuickAddHTML', '_lcQuickType', '_lcQuickVals', '_lcQuickAdd',
+    '_createLeadRecord', '_lcSortTh', '_lcFiltersHTML', '_lcTableHTML', '_lcPanelHTML', '_lcStageCardsHTML', '_lcKeyNav', 'sortLeadsBy', '_lcOpenBucket',
+    'clearLeadListFilters', 'setLeadListFilter', 'formatPhoneInput', '_findDuplicates', '_dupPhone', '_dupEmail', '_dupText', '_commsPhoneNorm',
+    'updateLeadFollowUp', 'addLeadNote', '_lcAddNote', '_lcMoveStage', 'getCustomerTypes', '_fesc',
+  ),
+  ...cst('index', 'LC_QUICK_SOURCES'),
+  // ---------------------------------------------------------- mobile.js (the phone app)
+  ...fn(
+    'mobile',
+    'esc', 'js', 'localISO', 'dayNum', 'todayNum', 'daysSince', 'ago', 'whenDay', 'initials', 'firstName', 'streetOf', 'stage', 'stageChip', 'avatar',
+    'leadRow', 'leadListHtml', 'scrLead', 'nextCard', 'kv', 'section', 'quoteRow', 'quoteChip', 'quoteExpired', 'clientOf', 'quoteTotal', 'notesSection', 'segs',
+  ),
+  { source: 'mobile', text: 'STAGE', re: /var STAGE = \{[\s\S]*?\n {2}\};/ },
+  { source: 'mobile', text: 'PIPE', re: /var PIPE = \[[^\]]*\];/ },
+  { source: 'mobile', text: 'QST', re: /var QST = \{[^\n]*\};/ },
+  { source: 'mobile', text: 'M.leadStage', re: /M\.leadStage = function \(id, s\) \{[\s\S]*?\n {2}\};/ },
+  { source: 'mobile', text: 'M.surveyDate', re: /M\.surveyDate = function \(id\) \{[\s\S]*?\n {2}\};/ },
+  { source: 'mobile', text: 'M.followUpDate', re: /M\.followUpDate = function \(id\) \{[\s\S]*?\n {2}\};/ },
+  { source: 'mobile', text: 'M.leadLost', re: /M\.leadLost = function \(id\) \{[\s\S]*?\n {2}\};/ },
+  { source: 'mobile', text: 'M.newLead', re: /M\.newLead = function \(prefill\) \{[\s\S]*?\n {2}\};/ },
+  { source: 'mobile', text: 'SOURCES', re: /var SOURCES = \[[^\]]*\];/ },
+  { source: 'mobile', text: 'PROJECT_TYPES', re: /var PROJECT_TYPES = \[[^\]]*\];/ },
   { source: 'index', text: 'root-css', re: /:root\{[^}]*\}/ },
   { source: 'index', text: 'badge-css', re: /\.badge-blue\{[^\n]*\n(?:\.badge-[a-z]+\{[^\n]*\n){8}/ },
   { source: 'index', text: 'default-payment-terms', re: /systemPaymentTerms:\[[^\]]*\]/ },

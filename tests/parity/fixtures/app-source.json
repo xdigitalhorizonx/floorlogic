@@ -1,5 +1,5 @@
 {
- "generated": "demo main export (80be9ee = landmark-flooring-app dd609d2), 2026-10-15",
+ "generated": "demo main export (80be9ee = landmark-flooring-app dd609d2), 2026-10-15; List View + mobile.js added 2026-10-16",
  "sources": {
   "index": {
    "file": "demo-main-index.html",
@@ -15,6 +15,11 @@
    "file": "document-dates.js",
    "lines": 45,
    "sha256": "2bff603bd798ab933a4b49347523c73bca94a76ca9d5e9412a41fd9c66121f90"
+  },
+  "mobile": {
+   "file": "mobile.js",
+   "lines": 2062,
+   "sha256": "75769bbd32beca92d981f3f3c4fa726f041e0163041de8858411459798680c84"
   }
  },
  "items": {
@@ -657,6 +662,322 @@
   "index:const:_CARD_BRANDS": {
    "line": 29192,
    "code": "const _CARD_BRANDS={visa:'Visa',mastercard:'Mastercard',amex:'Amex',discover:'Discover',diners:'Diners Club',jcb:'JCB',unionpay:'UnionPay',eftpos_au:'Eftpos',link:'Link'};"
+  },
+  "index:fn:_lcFilterState": {
+   "line": 9249,
+   "code": "function _lcFilterState(){\n  const v=viewState||{};\n  return {\n    q:String(v.leadQ||'').trim().toLowerCase(),\n    status:v.leadStatus||'all',\n    type:v.leadCustType||'all',\n    source:v.leadSource||'all',\n    // '' is a real choice here (Unassigned), so only a missing value means all.\n    rep:v.leadSalesRep==null?'all':String(v.leadSalesRep),\n    age:v.leadAgeBucket||'all',\n    bucket:v.leadBucket||'all',\n    // Newest leads first unless a column header says otherwise.\n    sort:v.leadSort||'age',\n    dir:v.leadSortDir||(v.leadSort&&v.leadSort!=='age'?'desc':'asc')\n  };\n}"
+  },
+  "index:fn:_lcFiltersOn": {
+   "line": 9265,
+   "code": "function _lcFiltersOn(st){return !!(st.q||st.status!=='all'||st.type!=='all'||st.source!=='all'||st.rep!=='all'||st.age!=='all'||st.bucket!=='all');}"
+  },
+  "index:fn:_lcLocalDay": {
+   "line": 9273,
+   "code": "function _lcLocalDay(v){\n  const s=String(v||'');if(!s)return '';\n  if(s.length<=10)return s.slice(0,10);\n  const d=new Date(s);if(isNaN(d.getTime()))return s.slice(0,10);\n  return d.getFullYear()+'-'+String(d.getMonth()+1).padStart(2,'0')+'-'+String(d.getDate()).padStart(2,'0');\n}"
+  },
+  "index:fn:_lcLastTouch": {
+   "line": 9297,
+   "code": "function _lcLastTouch(l,ctx){\n  let day=_lcLocalDay(l.createdAt),what='Created';\n  const take=(d,w)=>{d=_lcLocalDay(d);if(d&&(!day||d>day)){day=d;what=w;}};\n  take(l.stageChangedAt,'Stage changed');\n  (Array.isArray(l.notes)?l.notes:[]).forEach(n=>take(n&&n.date,'Note logged'));\n  if(ctx&&ctx.callTouch[l.id])take(ctx.callTouch[l.id],'Call');\n  return {day,what};\n}"
+  },
+  "index:fn:_lcAgo": {
+   "line": 9305,
+   "code": "function _lcAgo(day,today){\n  if(!day)return '—';\n  const d=daysBetween(day,today);\n  if(isNaN(d))return '—';\n  if(d<=0)return 'Today';\n  if(d===1)return 'Yesterday';\n  if(d<7)return d+'d ago';\n  if(d<60)return Math.round(d/7)+'w ago';\n  if(d<365)return Math.round(d/30)+'mo ago';\n  return Math.floor(d/365)+'y ago';\n}"
+  },
+  "index:fn:_lcLatestQuote": {
+   "line": 9316,
+   "code": "function _lcLatestQuote(l,ctx){\n  const qs=ctx.quotesByLead[l.id]||[];if(!qs.length)return null;\n  return qs.slice().sort((a,b)=>String(b.createdAt||'').localeCompare(String(a.createdAt||'')))[0];\n}"
+  },
+  "index:fn:_lcInitials": {
+   "line": 9320,
+   "code": "function _lcInitials(name){\n  const s=String(name||'').trim();\n  if(!/[A-Za-z]/.test(s))return '#';\n  const w=s.split(/\\s+/).map(x=>x.replace(/[^A-Za-z0-9]/g,'')).filter(Boolean);\n  return ((w[0]||'').charAt(0)+(w.length>1?w[w.length-1].charAt(0):'')).toUpperCase()||'#';\n}"
+  },
+  "index:fn:_lcAvatarHTML": {
+   "line": 9326,
+   "code": "function _lcAvatarHTML(l,big){const biz=isCustomerCompany(l.type||'Retail');return `<span class=\"lc-av${biz?' biz':''}${big?' lg':''}\" aria-hidden=\"true\">${_fesc(_lcInitials(l.name))}</span>`;}"
+  },
+  "index:fn:_lcMatchesSearch": {
+   "line": 9327,
+   "code": "function _lcMatchesSearch(l,q,ctx){\n  if(!q)return true;\n  const rep=l.salesRepId&&ctx.repById[l.salesRepId];\n  const notes=Array.isArray(l.notes)?l.notes:[];\n  const contacts=Array.isArray(l.contacts)?l.contacts:[];\n  const hay=[l.name,l.phone,l.email,l.address,l.address2,l.projectType,l.source,l.number,l.type,l.sqFt,rep&&rep.name]\n    .concat(notes.map(n=>n&&n.text))\n    .concat(contacts.map(c=>c&&[c.name,c.title,c.phone,c.email].join(' ')));\n  if(hay.some(v=>v&&String(v).toLowerCase().includes(q)))return true;\n  // Digits find a number however it was typed: \"7755550134\" finds \"(775) 555-0134\".\n  const qd=q.replace(/\\D/g,'');\n  if(qd.length>=3&&/^[\\d\\s().+-]+$/.test(q))return [l.phone].concat(contacts.map(c=>c&&c.phone)).some(p=>String(p||'').replace(/\\D/g,'').includes(qd));\n  return false;\n}"
+  },
+  "index:fn:_lcSortKey": {
+   "line": 9341,
+   "code": "function _lcSortKey(l,col,ctx){\n  switch(col){\n    case 'number':return String(l.number||'').toLowerCase();\n    case 'name':return String(l.name||'').toLowerCase();\n    case 'phone':return String(l.phone||'').toLowerCase();\n    case 'email':return String(l.email||'').toLowerCase();\n    case 'status':{const i=LEAD_STATUSES.indexOf(l.status);return i<0?999:i;}\n    case 'project':return String(l.projectType||'').toLowerCase();\n    case 'source':return String(l.source||'').toLowerCase();\n    case 'custType':return String(l.type||'').toLowerCase();\n    case 'rep':{const r=l.salesRepId&&ctx.repById[l.salesRepId];return r?String(r.name||'').toLowerCase():'~';}\n    case 'touch':return _lcLastTouch(l,ctx).day||'';\n    case 'quoted':{const q=_lcLatestQuote(l,ctx);return q?(Number(q.total)||0):-1;}\n    case 'age':return daysBetween(l.createdAt,ctx.today);\n    default:return '';\n  }\n}"
+  },
+  "index:fn:_lcFilterLeads": {
+   "line": 9358,
+   "code": "function _lcFilterLeads(all,st,ctx){\n  const today=ctx.today;\n  const out=all.filter(l=>{\n    if(st.status!=='all'&&l.status!==st.status)return false;\n    if(st.type!=='all'&&(l.type||'')!==st.type)return false;\n    if(st.source!=='all'&&(l.source||'')!==st.source)return false;\n    if(st.rep!=='all'&&(l.salesRepId||'')!==st.rep)return false;\n    if(st.age!=='all'){const d=daysBetween(l.createdAt,today);if(st.age==='week'&&d>7)return false;if(st.age==='month'&&d>30)return false;if(st.age==='old'&&d<=30)return false;}\n    if(st.bucket!=='all'&&_leadAgeBucketKey(l,today)!==st.bucket)return false;\n    return _lcMatchesSearch(l,st.q,ctx);\n  });\n  out.sort((a,b)=>{const av=_lcSortKey(a,st.sort,ctx),bv=_lcSortKey(b,st.sort,ctx);let cmp=0;if(typeof av==='number'&&typeof bv==='number')cmp=av-bv;else if(av<bv)cmp=-1;else if(av>bv)cmp=1;return st.dir==='asc'?cmp:-cmp;});\n  return out;\n}"
+  },
+  "index:fn:_lcPickSelected": {
+   "line": 9374,
+   "code": "function _lcPickSelected(filtered){\n  const id=viewState.leadSel;\n  const l=(id&&filtered.find(x=>x.id===id))||filtered[0]||null;\n  viewState.leadSel=l?l.id:null;\n  if(!l||window._lcEditId!==l.id)window._lcEditId=null;\n  return l;\n}"
+  },
+  "index:fn:_lcStatsHTML": {
+   "line": 9381,
+   "code": "function _lcStatsHTML(allLeads){\n  if(!allLeads.length)return '';\n  const st=getPipelineStats();\n  const ovr=st.overdueFU>0;\n  const wr=st.winRate>=50?'var(--success)':st.winRate>=25?'var(--primary)':'var(--danger)';\n  return `<div class=\"lc-stats\"><span>🗂️ <b>${st.activeCount}</b> Active Leads <span class=\"lc-muted\">· ${st.total} total · ${st.approved} won · ${st.lost} lost</span></span><span ${ovr?`class=\"lc-stat-link\" onclick=\"navigate('leads',{leadView:'list',leadSort:'age',leadSortDir:'desc'})\"`:''}>📅 <b style=\"color:${ovr?'var(--danger)':'inherit'}\">${st.overdueFU}</b> Overdue Follow-ups <span class=\"lc-muted\">· ${st.stale} stale stage</span></span><span>⏱️ Avg Age <b>${st.avgDays}d</b> <span class=\"lc-muted\">in current stage</span></span><span>🎯 Win Rate <b style=\"color:${wr}\">${st.winRate}%</b> <span class=\"lc-muted\">· ${st.approved} of ${st.approved+st.lost} closed</span></span></div>`;\n}"
+  },
+  "index:fn:getPipelineStats": {
+   "line": 8901,
+   "code": "function getPipelineStats(){const leads=data.leads||[];const active=leads.filter(l=>l.status!=='approved'&&l.status!=='lost');const today=_todayISO();const overdueFU=active.filter(l=>l.followUpDate&&l.followUpDate<today).length;const stale=active.filter(isLeadStale).length;const avgDays=active.length?Math.round(active.reduce((s,l)=>s+getLeadStageAgeDays(l),0)/active.length):0;const total=leads.length;const approved=leads.filter(l=>l.status==='approved').length;const lost=leads.filter(l=>l.status==='lost').length;const closed=approved+lost;const winRate=closed>0?Math.round(approved/closed*100):0;return {activeCount:active.length,overdueFU,stale,avgDays,winRate,approved,lost,total};}"
+  },
+  "index:fn:_lcQuickAddHTML": {
+   "line": 9390,
+   "code": "function _lcQuickAddHTML(){\n  const types=getCustomerTypes();\n  const reps=(data.systemSalesReps||[]);\n  return `<div class=\"card lc-quick\"><form class=\"lc-quick-form\" onsubmit=\"event.preventDefault();_lcQuickAdd()\" autocomplete=\"off\">`\n    +`<select id=\"lcq-type\" class=\"lc-q\" aria-label=\"Lead Type\" title=\"Lead Type\" onchange=\"_lcQuickType(this.value)\">${types.map(t=>`<option value=\"${_fesc(t)}\">${isCustomerCompany(t)?'🏢':'👤'} ${_fesc(t)}</option>`).join('')}</select>`\n    +`<input id=\"lcq-name\" class=\"lc-q\" placeholder=\"Name *\" aria-label=\"Name\">`\n    +`<input id=\"lcq-phone\" class=\"lc-q\" placeholder=\"Phone *\" aria-label=\"Phone\" oninput=\"formatPhoneInput(this)\">`\n    +`<input id=\"lcq-email\" class=\"lc-q\" placeholder=\"Email\" aria-label=\"Email\" inputmode=\"email\">`\n    +`<div class=\"lc-q-addr\"><input id=\"lcq-address\" class=\"lc-q\" placeholder=\"Address\" aria-label=\"Address\" autocomplete=\"off\"><div class=\"addr-dd\" id=\"lcq-address-dd\"></div></div>`\n    +`<select id=\"lcq-source\" class=\"lc-q\" aria-label=\"Source\" title=\"Source\"><option value=\"\">Source</option>${LC_QUICK_SOURCES.map(s=>`<option value=\"${s}\">${s}</option>`).join('')}</select>`\n    +`<select id=\"lcq-salesrep\" class=\"lc-q\" aria-label=\"Assigned Sales Rep\" title=\"Assigned Sales Rep\"><option value=\"\">Sales Rep</option>${reps.map(r=>`<option value=\"${_fesc(r.id)}\">${_fesc(r.name||'')}</option>`).join('')}</select>`\n    +`<button type=\"submit\" class=\"btn btn-primary\">+ Add lead</button>`\n    +`<button type=\"button\" class=\"btn btn-outline\" onclick=\"_lcQuickFull()\" title=\"Open the full New Lead form — contacts, site survey date, access details and notes. What you typed here comes with you.\">All fields…</button>`\n    +`</form></div>`;\n}"
+  },
+  "index:fn:_lcQuickType": {
+   "line": 9406,
+   "code": "function _lcQuickType(t){\n  const biz=isCustomerCompany(t);\n  const ph=(id,txt)=>{const el=document.getElementById(id);if(el)el.placeholder=txt;};\n  ph('lcq-name',biz?(t==='Property Management'?'Company / PM Name *':'Company Name *'):'Name *');\n  ph('lcq-phone',biz?'Main Phone *':'Phone *');\n  ph('lcq-email',biz?'Billing Email':'Email');\n  ph('lcq-address',biz?'Billing Address':'Address');\n}"
+  },
+  "index:fn:_lcQuickVals": {
+   "line": 9414,
+   "code": "function _lcQuickVals(){\n  const g=id=>{const el=document.getElementById(id);return el?String(el.value||''):'';};\n  return {type:g('lcq-type')||'Retail',name:g('lcq-name').trim(),phone:g('lcq-phone').trim(),email:g('lcq-email').trim(),address:g('lcq-address').trim(),source:g('lcq-source'),salesRepId:g('lcq-salesrep')};\n}"
+  },
+  "index:fn:_lcQuickAdd": {
+   "line": 9421,
+   "code": "function _lcQuickAdd(){\n  const v=_lcQuickVals();\n  if(!v.name||!v.phone){showToast('Name and phone are required to add a lead.','warning');const f=document.getElementById(v.name?'lcq-phone':'lcq-name');if(f)f.focus();return;}\n  if(window._lcDupBypass){window._lcDupBypass=false;}\n  else{const d=_findDuplicates({name:v.name,phone:v.phone,email:v.email,address:v.address});if(d.length){_dupGuardPrompt('lead',d,function(){window._lcDupBypass=true;_lcQuickAdd();});return;}}\n  const nl=_createLeadRecord(v);\n  // Clear the search and filters so the new lead is on screen, selected.\n  Object.assign(viewState,{leadView:'list',leadQ:'',leadStatus:'all',leadCustType:'all',leadSource:'all',leadSalesRep:'all',leadAgeBucket:'all',leadBucket:'all',leadSel:nl.id});\n  window._lcEditId=null;\n  showToast(`✓ ${nl.number} added — ${nl.name}`);\n  renderView();\n}"
+  },
+  "index:fn:_createLeadRecord": {
+   "line": 9801,
+   "code": "function _createLeadRecord(v){\nconst name=String(v.name||'').trim(),phone=String(v.phone||'').trim();\ndata.counters.lead++;const num='LD-'+String(data.counters.lead).padStart(3,'0');const today=_todayISO();const salesRepId=v.salesRepId||'';const leadType=v.type||'Retail';const leadContacts=isCustomerCompany(leadType)&&Array.isArray(v.contacts)?JSON.parse(JSON.stringify(v.contacts)):[];const surveyDate=String(v.siteSurveyDate||'').slice(0,10)||null;const status=surveyDate?'site_survey_scheduled':'new';const noteText=String(v.noteText||'').trim();const newLead={id:'l'+Date.now(),number:num,name,phone,email:String(v.email||'').trim(),address:String(v.address||'').trim(),address2:String(v.address2||'').trim(),projectType:v.projectType||'',sqFt:String(v.sqFt||'').trim(),source:v.source||'',status,salesRepId,type:leadType,contacts:leadContacts,siteSurveyDate:surveyDate,notes:noteText?[{text:noteText,date:today}]:[],followUpDate:null,createdAt:today,stageChangedAt:today,convertedCustomerId:null};data.leads.push(newLead);addActivity(`New lead ${num} — ${name}`);\n// Auto-create the right follow-up task based on whether a survey date was set.\nif(typeof createTask==='function'){\n  if(surveyDate){\n    const due=new Date(surveyDate+'T17:00:00').toISOString();\n    createTask({title:`Site survey: ${name}`,description:`Visit ${newLead.address||'(no address)'} to measure and assess the site.`,priority:'high',assignedUserId:salesRepId||'',dueDate:due,linkType:'lead',linkId:newLead.id});\n  } else {\n    const due=new Date(Date.now()+1*864e5).toISOString();\n    createTask({title:`Schedule site survey with ${name}`,description:`No survey date set on this lead. Call to schedule the site visit.`,priority:'high',assignedUserId:salesRepId||'',dueDate:due,linkType:'lead',linkId:newLead.id});\n  }\n}\nsaveData();return newLead;}"
+  },
+  "index:fn:_lcSortTh": {
+   "line": 9442,
+   "code": "function _lcSortTh(st,col,label,cls){\n  const on=st.sort===col;\n  return `<th class=\"lc-th-sort ${cls||''}\" onclick=\"sortLeadsBy('${col}')\" title=\"Sort by ${label}\">${label}<span class=\"lc-sort${on?' on':''}\">${on?(st.dir==='asc'?'▲':'▼'):'⇅'}</span></th>`;\n}"
+  },
+  "index:fn:_lcFiltersHTML": {
+   "line": 9446,
+   "code": "function _lcFiltersHTML(all,st){\n  const sources=Array.from(new Set(all.map(l=>(l.source||'').trim()).filter(Boolean))).sort();\n  const reps=(data.systemSalesReps||[]).slice().sort((a,b)=>(a.name||'').localeCompare(b.name||''));\n  const types=getCustomerTypes();\n  const sel=(name,active,activeLabel,opts)=>`<select onchange=\"setLeadListFilter('${name}',this.value)\" title=\"${_fesc(active?'Filter active — '+activeLabel:'Filter by '+name.replace('lead',''))}\" class=\"lf-filter-sel ${active?'lf-filter-sel-active':''}\">${opts}</select>`;\n  const statusOpts=`<option value=\"all\">Status${st.status==='all'?` (${all.length})`:''}</option>`+LEAD_STATUSES.map(s=>`<option value=\"${s}\" ${st.status===s?'selected':''}>${_fesc(LEAD_STATUS_LABELS[s]||s)} (${all.filter(l=>l.status===s).length})</option>`).join('');\n  const typeOpts=`<option value=\"all\">Type</option>`+types.map(t=>`<option value=\"${_fesc(t)}\" ${st.type===t?'selected':''}>${_fesc(t)}</option>`).join('');\n  const sourceOpts=`<option value=\"all\">Source</option>`+sources.map(s=>`<option value=\"${_fesc(s)}\" ${st.source===s?'selected':''}>${_fesc(s)}</option>`).join('');\n  const repOpts=`<option value=\"all\">Rep</option><option value=\"\" ${st.rep===''?'selected':''}>Unassigned</option>`+reps.map(r=>`<option value=\"${_fesc(r.id)}\" ${st.rep===r.id?'selected':''}>${_fesc(r.name||'')}</option>`).join('');\n  const ageOpts=`<option value=\"all\">Age</option><option value=\"week\" ${st.age==='week'?'selected':''}>≤ 1 week</option><option value=\"month\" ${st.age==='month'?'selected':''}>≤ 1 month</option><option value=\"old\" ${st.age==='old'?'selected':''}>&gt; 1 month</option>`;\n  const repName=st.rep===''?'Unassigned':((reps.find(r=>r.id===st.rep)||{}).name||'');\n  const bucketChip=st.bucket!=='all'?`<span class=\"lc-chip\" title=\"From the stage cards below\">${_fesc(_leadAgeBucketLabel(st.bucket))}<button type=\"button\" onclick=\"setLeadListFilter('leadBucket','all')\" title=\"Remove this filter\" aria-label=\"Remove this filter\">✕</button></span>`:'';\n  return sel('leadStatus',st.status!=='all',LEAD_STATUS_LABELS[st.status]||st.status,statusOpts)\n    +sel('leadCustType',st.type!=='all',st.type,typeOpts)\n    +sel('leadSource',st.source!=='all',st.source,sourceOpts)\n    +sel('leadSalesRep',st.rep!=='all',repName,repOpts)\n    +sel('leadAgeBucket',st.age!=='all',st.age,ageOpts)\n    +bucketChip\n    +(_lcFiltersOn(st)?`<button class=\"lf-clear-btn\" onclick=\"clearLeadListFilters()\" title=\"Clear the search and all filters\">✕ Clear</button>`:'');\n}"
+  },
+  "index:fn:_lcTableHTML": {
+   "line": 9466,
+   "code": "function _lcTableHTML(filtered,st,sel,ctx){\n  if(!filtered.length){\n    const on=_lcFiltersOn(st);\n    return `<div class=\"lc-table-empty\"><div class=\"icon\">📑</div><h3>${on?'No leads match your filters':'No leads yet'}</h3><p>${on?'Try clearing one or more filters.':'Add your first lead in the bar above.'}</p>${on?`<button class=\"btn btn-outline btn-sm\" onclick=\"clearLeadListFilters()\">Clear Filters</button>`:`<button class=\"btn btn-primary btn-sm\" onclick=\"var e=document.getElementById('lcq-name');if(e)e.focus()\">+ Add a lead</button>`}</div>`;\n  }\n  const chosen=viewState.selectedLeads||[];\n  const ids=JSON.stringify(filtered.map(x=>x.id)).replace(/\"/g,'&quot;');\n  const cols=`<colgroup><col style=\"width:34px\"><col style=\"width:20%\"><col style=\"width:11.5%\"><col style=\"width:16%\"><col style=\"width:16%\"><col style=\"width:8%\"><col style=\"width:8.5%\"><col style=\"width:7%\"><col style=\"width:5%\"><col style=\"width:8%\"></colgroup>`;\n  const head=cols+`<thead><tr><th class=\"lc-cb\" onclick=\"event.stopPropagation()\"><input type=\"checkbox\" id=\"select-all-leads\" title=\"Select every lead shown\" ${chosen.length>0&&chosen.length===filtered.length?'checked':''} onclick=\"toggleSelectAllLeads(this.checked,${ids})\"></th>`\n    +_lcSortTh(st,'name','Name')+_lcSortTh(st,'custType','Customer Type','lc-th-wrap')+_lcSortTh(st,'status','Status')+_lcSortTh(st,'phone','Phone · Email')\n    +_lcSortTh(st,'source','Source')+_lcSortTh(st,'rep','Rep')+_lcSortTh(st,'touch','Last Touch','lc-th-wrap')+_lcSortTh(st,'age','Age','lc-num')+_lcSortTh(st,'quoted','Quoted','lc-num')+`</tr></thead>`;\n  const rows=filtered.map(l=>{\n    const ct=l.type||'';const biz=isCustomerCompany(ct||'Retail');\n    const col=LEAD_STATUS_COLORS[l.status]||'gray';\n    const fu=getFollowUpState(l);const stale=isLeadStale(l);\n    const rep=l.salesRepId&&ctx.repById[l.salesRepId];\n    const touch=_lcLastTouch(l,ctx);\n    const q=_lcLatestQuote(l,ctx);\n    const days=daysBetween(l.createdAt,ctx.today);\n    const fuDot=(fu==='overdue'||fu==='today'||fu==='soon')?`<span class=\"lc-fu lc-fu-${fu}\" title=\"${fu==='overdue'?'Follow-up overdue':fu==='today'?'Follow-up today':'Follow-up this week'}\"></span>`:'';\n    return `<tr class=\"lc-row${sel&&sel.id===l.id?' lc-row-sel':''}\" data-id=\"${_fesc(l.id)}\" onclick=\"_lcSelect('${l.id}')\" ondblclick=\"navigate('lead-detail',{id:'${l.id}'})\" title=\"Click to work this lead · double-click to open its page\">`\n      +`<td class=\"lc-cb\" onclick=\"event.stopPropagation()\"><input type=\"checkbox\" ${chosen.includes(l.id)?'checked':''} onchange=\"toggleSelectLead('${l.id}',this.checked)\"></td>`\n      +`<td><div class=\"lc-namecell\">${_lcAvatarHTML(l)}<div class=\"lc-nm\"><div class=\"lc-nm1\" title=\"${_fesc(l.name||'')}\">${fuDot}${_fesc(l.name||'')}</div><div class=\"lc-nm2\">${_fesc(l.number||'—')}</div></div></div></td>`\n      +`<td class=\"lc-muted\"><div class=\"lc-clip\" title=\"${_fesc(ct)}\">${ct?`${biz?'🏢':'👤'} ${_fesc(ct)}`:'—'}</div></td>`\n      +`<td><span class=\"badge-pill badge-${col}\">${_fesc(LEAD_STATUS_LABELS[l.status]||l.status||'')}</span>${stale?`<span class=\"lc-stale\" title=\"Stale — no stage change in ${getLeadStageAgeDays(l)} days\">⚠</span>`:''}</td>`\n      +`<td><div>${l.phone?`<a href=\"tel:${_fesc(l.phone)}\" onclick=\"event.stopPropagation()\">${_fesc(l.phone)}</a>`:'<span class=\"lc-muted\">—</span>'}</div>${l.email?`<div class=\"lc-sub\" title=\"${_fesc(l.email)}\"><a href=\"mailto:${_fesc(l.email)}\" onclick=\"event.stopPropagation()\">${_fesc(l.email)}</a></div>`:''}</td>`\n      +`<td class=\"lc-muted\"><div class=\"lc-clip\" title=\"${_fesc(l.source||'')}\">${_fesc(l.source||'—')}</div></td>`\n      +`<td class=\"lc-muted\"><div class=\"lc-clip\" title=\"${rep?_fesc(rep.name||''):'Unassigned'}\">${rep?_fesc(rep.name||''):'—'}</div></td>`\n      +`<td title=\"${_fesc(touch.what+(touch.day?' · '+fmtDate(touch.day):''))}\">${_lcAgo(touch.day,ctx.today)}</td>`\n      +`<td class=\"lc-num lc-muted\">${isNaN(days)?'—':days+'d'}</td>`\n      +`<td class=\"lc-num\">${q?fmt$(Number(q.total)||0):'<span class=\"lc-muted\">—</span>'}</td></tr>`;\n  }).join('');\n  return `<table class=\"lc-table\">${head}<tbody>${rows}</tbody></table>`;\n}"
+  },
+  "index:fn:_lcPanelHTML": {
+   "line": 9508,
+   "code": "function _lcPanelHTML(l,ctx){\n  if(!l)return `<div class=\"lc-p-empty\"><div class=\"icon\">📋</div><h3>No lead selected</h3><p>Pick a lead in the list to work it here.</p></div>`;\n  const esc=_fesc,id=l.id,today=ctx.today;\n  const ct=l.type||'';const biz=isCustomerCompany(ct||'Retail');\n  const col=LEAD_STATUS_COLORS[l.status]||'gray';\n  const rep=l.salesRepId&&ctx.repById[l.salesRepId];\n  const daysLead=daysBetween(l.createdAt,today);\n  const daysStage=getLeadStageAgeDays(l);\n  const stale=isLeadStale(l);const fu=getFollowUpState(l);\n  const contacts=Array.isArray(l.contacts)?l.contacts:[];\n  const notes=Array.isArray(l.notes)?l.notes:[];\n  const quotes=(ctx.quotesByLead[id]||[]).slice().sort((a,b)=>String(b.createdAt||'').localeCompare(String(a.createdAt||'')));\n  const samples=(data.sampleCheckouts||[]).filter(s=>s.leadId===id).sort((a,b)=>String(b.checkoutDate||'').localeCompare(String(a.checkoutDate||'')));\n  const interactions=quotes.reduce((n,q)=>n+((typeof _quoteInteractionsFor==='function'?_quoteInteractionsFor(q.id):[])||[]).length,0);\n  const tasks=(data.tasks||[]).filter(t=>t.linkType==='lead'&&t.linkId===id&&t.status!=='completed').sort((a,b)=>String(a.dueDate||'9999').localeCompare(String(b.dueDate||'9999')));\n  const callsLoaded=!!(window._callLog&&window._callLog.rows);\n  const calls=callsLoaded?_lcLeadCalls(l):[];\n  const editing=window._lcEditId===id;\n  const dash='<span class=\"lc-muted\">—</span>';\n  const sec=(cls,title,count,action,body)=>`<div class=\"lc-sec ${cls}\"><div class=\"lc-sec-h\"><span>${title}${count!=null?`<span class=\"lc-sec-n\">${count}</span>`:''}</span>${action||''}</div>${body}</div>`;\n  const maps=a=>`https://maps.google.com/?q=${encodeURIComponent(a)}`;\n  const converted=l.status==='approved'&&l.convertedCustomerId;\n\n  const head=`<div class=\"lc-p-head\">${_lcAvatarHTML(l,true)}<div class=\"lc-p-title\"><div class=\"lc-p-name\">${esc(l.name||'')}</div><div class=\"lc-p-sub\">${esc(l.number||'')}${ct?` · ${biz?'🏢':'👤'} ${esc(ct)}`:''}</div></div><button type=\"button\" class=\"btn btn-outline btn-sm\" onclick=\"navigate('lead-detail',{id:'${id}'})\" title=\"Open the full lead page\">Open ↗</button></div>`;\n  const flags=(fu==='overdue'?'<span class=\"badge-pill badge-red\" title=\"A follow-up is overdue on this lead\">📅 Follow-up overdue</span>':'')\n    +(stale?`<span class=\"badge-pill badge-amber\" title=\"No stage change in ${daysStage} days\">⚠ Stale ${daysStage}d</span>`:'');\n  const stageLine=`<div class=\"lc-p-stage\"><span class=\"badge-pill badge-${col}\">${esc(LEAD_STATUS_LABELS[l.status]||l.status||'')}</span><span class=\"lc-muted\">${daysStage}d in stage · ${isNaN(daysLead)?'—':daysLead+'d'} as lead</span>${flags}</div>`;\n  const contactLine=`<div class=\"lc-p-contact\">${l.email?`<a href=\"mailto:${esc(l.email)}\">✉️ ${esc(l.email)}</a>`:'<span class=\"lc-muted\">✉️ No email</span>'}<span class=\"lc-muted\">·</span>${l.phone?`<a href=\"tel:${esc(l.phone)}\">📞 ${esc(l.phone)}</a>`:'<span class=\"lc-muted\">📞 No phone</span>'}</div>`;\n  const actions=`<div class=\"lc-p-actions\">${l.phone?`<a href=\"tel:${esc(l.phone)}\" class=\"btn btn-primary btn-sm\">📞 Call</a>`:''}${l.address?`<a href=\"${maps(l.address)}\" target=\"_blank\" rel=\"noopener\" class=\"btn btn-outline btn-sm\">📍 Directions</a>`:''}<button type=\"button\" class=\"btn btn-outline btn-sm\" onclick=\"window._qb=null;navigate('quote-builder',{leadId:'${id}',_reset:true})\">📝 New Quote</button><button type=\"button\" class=\"btn btn-outline btn-sm\" onclick=\"openLeadShareMenu('${id}',event)\" title=\"Share this lead\">🔗 Share ▾</button>${converted?`<button type=\"button\" class=\"btn btn-outline btn-sm\" onclick=\"navigate('customer-detail',{id:'${l.convertedCustomerId}'})\" title=\"Open the linked customer profile\">👤 Customer</button>`:''}</div>`;\n\n  // Approved is shown in the row but is not a button: a lead is never approved\n  // by hand — it gets there when one of its quotes is approved.\n  const stageBtns=LEAD_STATUSES.map(s=>{\n    const on=l.status===s;\n    const style=`style=\"--c:var(--${LEAD_STATUS_COLORS[s]||'gray'})\"`;\n    const label=esc(LEAD_STATUS_LABELS[s]||s);\n    if(s==='approved')return `<span class=\"lc-stage-btn lc-stage-auto${on?' on':''}\" data-stage=\"${s}\" ${style} title=\"${on?'Current stage — reached when a quote was approved':'Reached automatically when one of this lead’s quotes is approved'}\">${label}</span>`;\n    const tip=on?'Current stage':(s==='site_survey_scheduled'&&!l.siteSurveyDate)?'Set a site-survey date below — that moves it here':'Move to '+(LEAD_STATUS_LABELS[s]||s);\n    return `<button type=\"button\" class=\"lc-stage-btn${on?' on':''}\" data-stage=\"${s}\" ${style} ${on?'aria-pressed=\"true\"':''} title=\"${esc(tip)}\" onclick=\"_lcMoveStage('${id}','${s}')\">${label}</button>`;\n  }).join('');\n  const dates=`<div class=\"lc-dates\"><label class=\"lc-date\"><span>📐 Site Survey Date</span><input type=\"date\" id=\"lc-survey-date\" value=\"${esc(l.siteSurveyDate||'')}\" onchange=\"setLeadSurveyDate('${id}',this.value)\" title=\"Setting a date moves a New lead to Site Survey Scheduled; it moves on to Send Quote once the date passes\"></label><label class=\"lc-date\"><span>📅 Follow-up Date</span><input type=\"date\" id=\"lc-followup-date\" value=\"${esc(l.followUpDate||'')}\" onchange=\"_lcSetFollowUp('${id}',this.value)\" title=\"Surfaces this lead in your Follow-Up Queue on that day\"></label></div>`;\n  const stageSec=sec('lc-sec-stage','Stage',null,'',`<div class=\"lc-stage-btns\">${stageBtns}</div>${dates}`);\n\n  const noteList=notes.length?notes.slice().reverse().map(n=>`<div class=\"lc-note\"><div class=\"lc-note-d\">${n&&n.date?esc(fmtDate(n.date)):''}</div><div class=\"lc-note-t\">${esc((n&&n.text)||'')}</div></div>`).join(''):'<div class=\"lc-empty\">No notes yet — log your first touch.</div>';\n  const notesSec=sec('lc-sec-notes','Notes',notes.length,'',`<textarea id=\"lead-note-input\" class=\"lc-note-in\" rows=\"2\" placeholder=\"Called, emailed, what they said… (Ctrl+Enter to add)\" onkeydown=\"if((event.ctrlKey||event.metaKey)&&event.key==='Enter'){event.preventDefault();_lcAddNote('${id}')}\"></textarea><div class=\"lc-note-btns\"><button type=\"button\" class=\"btn btn-primary btn-sm\" onclick=\"_lcAddNote('${id}')\">Add note</button></div><div class=\"lc-notes\">${noteList}</div>`);\n\n  const access=String(l.sqFt||'');\n  const row=(k,v)=>`<dt>${k}</dt><dd>${v}</dd>`;\n  const detailsBody=editing?_lcEditFormHTML(l):`<dl class=\"lc-dl\">`\n    +row('Lead Type',ct?`${biz?'🏢':'👤'} ${esc(ct)}`:dash)\n    +row('Address',l.address?`<a href=\"${maps(l.address)}\" target=\"_blank\" rel=\"noopener\">${esc(l.address)}</a>`:dash)\n    +row('Suite / Unit / Apt',l.address2?esc(l.address2):dash)\n    +row('Access Details',access?`<div class=\"lc-clamp\">${esc(access)}</div><button type=\"button\" class=\"lc-link lc-more\" onclick=\"_lcToggleMore(this)\">More</button>`:dash)\n    +row('Project Type',l.projectType?esc(l.projectType):dash)\n    +row('Source',l.source?esc(l.source):dash)\n    +row('Assigned Sales Rep',rep?esc(rep.name||''):'<span class=\"lc-muted\">Unassigned</span>')\n    +(l.estimatedValue?row('Samples Taken',esc(l.estimatedValue)):'')\n    +row('Created',l.createdAt?esc(fmtDate(l.createdAt)):dash)\n    +`</dl>`;\n  const detailsSec=sec('lc-sec-details','Details',null,editing?'':`<button type=\"button\" class=\"lc-link\" onclick=\"_lcEditStart('${id}')\">✏️ Edit</button>`,detailsBody);\n\n  const contactsBody=contacts.length?contacts.map(cn=>`<div class=\"lc-contact\"><div class=\"lc-contact-main\"><div class=\"lc-contact-n\">${cn.primary?'<span class=\"lc-star\" title=\"Primary contact\">★</span> ':''}${esc(cn.name||'')}${cn.title?` <span class=\"lc-muted\">— ${esc(cn.title)}</span>`:''}</div><div class=\"lc-sub\">${[cn.phone?`<a href=\"tel:${esc(cn.phone)}\">${esc(cn.phone)}</a>`:'',cn.email?`<a href=\"mailto:${esc(cn.email)}\">${esc(cn.email)}</a>`:''].filter(Boolean).join(' · ')||'<span class=\"lc-muted\">No phone or email</span>'}</div></div><div class=\"lc-contact-act\"><button type=\"button\" class=\"lc-link\" onclick=\"openLeadEditContactModal('${id}','${cn.id}')\">Edit</button><button type=\"button\" class=\"lc-link lc-link-danger\" onclick=\"deleteLeadContact('${id}','${cn.id}')\" title=\"Delete this contact\" aria-label=\"Delete this contact\">✕</button></div></div>`).join('')\n    :`<div class=\"lc-empty\">${biz?'No contacts yet — add the property manager, accountant or decision-maker.':'No other contacts.'}</div>`;\n  const contactsSec=sec('lc-sec-contacts','Contacts',contacts.length,`<button type=\"button\" class=\"lc-link\" onclick=\"openLeadNewContactModal('${id}')\">+ Add</button>`,contactsBody);\n\n  const taskBody=tasks.length?tasks.map(t=>{const due=t.dueDate?String(t.dueDate).slice(0,10):'';const od=!!due&&due<today;return `<div class=\"lc-task\"><button type=\"button\" class=\"lc-task-ck\" title=\"Mark complete\" aria-label=\"Mark complete\" onclick=\"completeTask('${t.id}')\">✓</button><button type=\"button\" class=\"lc-task-t\" onclick=\"openTaskDetailModal('${t.id}')\" title=\"${esc(t.title||'')}\">${esc(t.title||'Task')}</button><span class=\"lc-task-d${od?' od':''}\">${due?esc(fmtDate(due)):'No due date'}</span></div>`;}).join(''):'<div class=\"lc-empty\">No open tasks.</div>';\n  const tasksSec=sec('lc-sec-tasks','Open Tasks',tasks.length,'',taskBody);\n\n  const qDate=q=>q.createdAt?fmtDate((typeof DocumentDates!=='undefined'&&DocumentDates.dateOnly)?DocumentDates.dateOnly(q.createdAt):String(q.createdAt).slice(0,10)):'';\n  const quoteBody=quotes.length?quotes.map(q=>`<button type=\"button\" class=\"lc-qrow\" onclick=\"navigate('quote-detail',{id:'${q.id}'})\"><span class=\"lc-q-n\">${esc(q.number||'—')}</span><span class=\"lc-muted\">${esc(qDate(q))}</span><span class=\"lc-q-t\">${fmt$(Number(q.total)||0)}</span>${statusBadge(q.status,QUOTE_STATUS_COLORS)}</button>`).join(''):'<div class=\"lc-empty\">No quotes yet.</div>';\n  const quotesSec=sec('lc-sec-quotes','Quotes',quotes.length,`<button type=\"button\" class=\"lc-link\" onclick=\"window._qb=null;navigate('quote-builder',{leadId:'${id}',_reset:true})\">+ New Quote</button>`,quoteBody);\n\n  const sampleBody=samples.length?samples.slice(0,3).map(s=>`<div class=\"lc-call\">${getSampleStatusBadge(getSampleStatus(s))}<span>${esc(s.productName||'—')}</span><span class=\"lc-muted\">${s.returnedDate?'returned '+esc(fmtDate(s.returnedDate)):s.expectedReturn?'due '+esc(fmtDate(s.expectedReturn)):''}</span></div>`).join('')+(samples.length>3?`<div class=\"lc-empty\">+ ${samples.length-3} more on the lead page</div>`:''):'<div class=\"lc-empty\">No samples checked out.</div>';\n  const samplesSec=sec('lc-sec-samples','🎨 Samples',samples.length,`<button type=\"button\" class=\"lc-link\" onclick=\"openNewSampleCheckoutPrefilled('lead','${id}')\">+ Check Out</button>`,sampleBody);\n\n  const gist=r=>String(r.caller_summary||'')||((r.summary&&Array.isArray(r.summary.summary))?r.summary.summary.join(' '):'');\n  const callBody=!callsLoaded?`<div class=\"lc-empty\">${window._callLog&&window._callLog.loading?'Loading the call history…':'Open the Call Log above to load the call history.'}</div>`\n    :calls.length?calls.slice(0,3).map(r=>`<div class=\"lc-call\">${_callLogDirBadge(r)}<span class=\"lc-muted\">${esc(_commsFmtDT(r.occurred_at||r.created_at))}</span>${gist(r)?`<div class=\"lc-call-g\">${esc(gist(r).slice(0,160))}</div>`:''}</div>`).join('')\n    :'<div class=\"lc-empty\">No calls on record for this number.</div>';\n  const callsSec=sec('lc-sec-calls','📞 Calls',callsLoaded?calls.length:null,`<button type=\"button\" class=\"lc-link\" onclick=\"navigate('lead-detail',{id:'${id}',tab:'calls'})\">Calls &amp; messages →</button>`,callBody);\n\n  const tabs=[['contacts','Contacts',contacts.length],['quotes','Quotes',quotes.length],['samples','🎨 Samples',samples.length],['interactions','👁 Interactions',interactions],['actions','Actions',null],['calls','📞 Calls',null],['messages','💬 Messages',null],['notes','Notes',notes.length]];\n  const moreSec=sec('lc-sec-more','Lead Page',null,'',`<div class=\"lc-more-links\">${tabs.map(([t,lbl,n])=>`<a href=\"#\" onclick=\"event.preventDefault();navigate('lead-detail',{id:'${id}',tab:'${t}'})\">${lbl}${n!=null?` (${n})`:''}</a>`).join('')}</div>`);\n\n  const foot=`<div class=\"lc-p-foot\"><button type=\"button\" class=\"btn btn-outline btn-sm lc-del\" onclick=\"deleteLead('${id}')\" title=\"Moves to the Recycle Bin — recoverable for 30 days\">🗑️ Delete lead</button></div>`;\n  return head+stageLine+contactLine+actions+stageSec+notesSec+detailsSec+contactsSec+tasksSec+quotesSec+samplesSec+callsSec+moreSec+foot;\n}"
+  },
+  "index:fn:_lcStageCardsHTML": {
+   "line": 9615,
+   "code": "function _lcStageCardsHTML(all,st){\n  const today=_todayISO();\n  return `<div class=\"lc-stages\" id=\"lc-stages\">${LEAD_STATUSES.filter(s=>s!=='lost').map(s=>{\n    const arr=all.filter(l=>l.status===s);\n    const n={};LEAD_AGE_BUCKETS.forEach(b=>{n[b.key]=0;});\n    arr.forEach(l=>{n[_leadAgeBucketKey(l,today)]++;});\n    const rows=LEAD_AGE_BUCKETS.filter(b=>n[b.key]>0).map(b=>{const on=st.status===s&&st.bucket===b.key;return `<button type=\"button\" class=\"lc-bucket${on?' on':''}\" data-bucket=\"${b.key}\" onclick=\"_lcOpenBucket('${s}','${b.key}')\" title=\"Show these leads in the list\"><span class=\"lbl\">${_fesc(b.label)}</span><span class=\"n\">${n[b.key]}</span><span class=\"chev\">›</span></button>`;}).join('');\n    return `<div class=\"card lc-stage-card\" data-stage=\"${s}\" style=\"--c:var(--${LEAD_STATUS_COLORS[s]||'gray'})\"><div class=\"lc-stage-h\"><span class=\"lc-stage-name\">${_fesc(LEAD_STATUS_LABELS[s]||s)}</span><span class=\"lc-stage-n\">${arr.length}</span></div>${rows||'<div class=\"lc-empty\">Empty</div>'}</div>`;\n  }).join('')}</div>`;\n}"
+  },
+  "index:fn:_lcKeyNav": {
+   "line": 9702,
+   "code": "function _lcKeyNav(ev){\n  if(ev.key!=='ArrowDown'&&ev.key!=='ArrowUp')return;\n  const ids=[].slice.call(document.querySelectorAll('#lc-table-wrap tr.lc-row')).map(tr=>tr.getAttribute('data-id'));\n  if(!ids.length)return;\n  ev.preventDefault();\n  const i=ids.indexOf(viewState.leadSel);\n  const n=ev.key==='ArrowDown'?Math.min(ids.length-1,i+1):Math.max(0,i<0?0:i-1);\n  if(ids[n]&&ids[n]!==viewState.leadSel){_lcSelect(ids[n]);_lcRevealSelected();}\n}"
+  },
+  "index:fn:sortLeadsBy": {
+   "line": 9789,
+   "code": "function sortLeadsBy(col){const _st=_lcFilterState();const curCol=_st.sort;const curDir=_st.dir;let newDir;if(curCol===col){newDir=curDir==='asc'?'desc':'asc';}else{const defaultAsc=['name','number','phone','email','project','source','status','custType','rep'];newDir=defaultAsc.includes(col)?'asc':'desc';}navigate('leads',Object.assign({},viewState,{leadView:'list',leadSort:col,leadSortDir:newDir}));}"
+  },
+  "index:fn:_lcOpenBucket": {
+   "line": 9739,
+   "code": "function _lcOpenBucket(stage,bucket){\n  Object.assign(viewState,{leadView:'list',leadQ:'',leadStatus:stage,leadBucket:bucket||'all',leadCustType:'all',leadSource:'all',leadSalesRep:'all',leadAgeBucket:'all',leadSel:null});\n  window._lcEditId=null;\n  renderView();\n  const list=document.querySelector('.lc-list');\n  if(list&&list.scrollIntoView)list.scrollIntoView({behavior:'smooth',block:'start'});\n}"
+  },
+  "index:fn:clearLeadListFilters": {
+   "line": 8980,
+   "code": "function clearLeadListFilters(){viewState.leadQ='';viewState.leadStatus='all';viewState.leadCustType='all';viewState.leadSource='all';viewState.leadSalesRep='all';viewState.leadAgeBucket='all';viewState.leadBucket='all';renderView();}"
+  },
+  "index:fn:setLeadListFilter": {
+   "line": 8949,
+   "code": "function setLeadListFilter(key,val){viewState[key]=val;renderView();}"
+  },
+  "index:fn:formatPhoneInput": {
+   "line": 7699,
+   "code": "function formatPhoneInput(el){let v=el.value.replace(/\\D/g,'').slice(0,10);if(v.length>6)v='('+v.slice(0,3)+') '+v.slice(3,6)+'-'+v.slice(6);else if(v.length>3)v='('+v.slice(0,3)+') '+v.slice(3);else if(v.length)v='('+v;el.value=v;}"
+  },
+  "index:fn:_findDuplicates": {
+   "line": 10169,
+   "code": "function _findDuplicates(vals,skipId){\n  const ph=_dupPhone(vals&&vals.phone), em=_dupEmail(vals&&vals.email);\n  const nm=_dupText(vals&&vals.name), ad=_dupText(vals&&vals.address);\n  const out=[];\n  const scan=(list,kind)=>{(list||[]).forEach(r=>{\n    if(!r||!r.id||r.id===skipId)return;\n    if(kind==='lead'&&r.convertedCustomerId)return;   // already became a customer\n    const reasons=[];\n    if(ph&&_dupPhone(r.phone)===ph)reasons.push('same phone');\n    if(em&&_dupEmail(r.email)===em)reasons.push('same email');\n    const sameName=!!nm&&_dupText(r.name)===nm;\n    if(sameName&&ad&&_dupText(r.address)===ad)reasons.push('same name and address');\n    else if(sameName)reasons.push('same name');\n    if(!reasons.length)return;\n    // A shared name alone is weak — plenty of real people share one. A phone,\n    // an email, or a name AND address together is worth stopping for.\n    out.push({kind:kind,rec:r,reasons:reasons,strong:reasons.some(x=>x!=='same name')});\n  });};\n  scan(data.customers,'customer');\n  scan(data.leads,'lead');\n  return out.sort((a,b)=>(b.strong?1:0)-(a.strong?1:0)).slice(0,6);\n}"
+  },
+  "index:fn:_dupPhone": {
+   "line": 10166,
+   "code": "function _dupPhone(s){return (typeof _commsPhoneNorm==='function')?_commsPhoneNorm(s):String(s||'').replace(/\\D/g,'').slice(-10);}"
+  },
+  "index:fn:_dupEmail": {
+   "line": 10167,
+   "code": "function _dupEmail(s){return String(s||'').trim().toLowerCase();}"
+  },
+  "index:fn:_dupText": {
+   "line": 10168,
+   "code": "function _dupText(s){return String(s||'').toLowerCase().replace(/[^a-z0-9]+/g,' ').trim();}"
+  },
+  "index:fn:_commsPhoneNorm": {
+   "line": 10861,
+   "code": "function _commsPhoneNorm(s){const d=String(s||'').replace(/\\D/g,'');return d.length>10?d.slice(-10):d;}"
+  },
+  "index:fn:updateLeadFollowUp": {
+   "line": 9867,
+   "code": "function updateLeadFollowUp(id,date){const l=getLead(id);if(!l)return;l.followUpDate=date;\n// The Follow-Up Queue is built from lead-linked tasks, so make the helper\n// text true: keep one open \"Follow up with …\" task per lead in sync with\n// this date (create on set, retarget on change, complete on clear).\ntry{\n  const open=(data.tasks||[]).find(t=>t.linkType==='lead'&&t.linkId===l.id&&t.status!=='completed'&&/^follow up with /i.test(t.title||''));\n  if(date){\n    const dueIso=new Date(date+'T17:00:00').toISOString();\n    if(open){open.dueDate=dueIso;open.updatedAt=new Date().toISOString();}\n    else if(typeof createTask==='function')createTask({title:`Follow up with ${l.name||l.number||'lead'}`,description:'Scheduled from the lead’s Follow-up Date field',priority:'medium',assignedUserId:l.salesRepId||'',dueDate:dueIso,linkType:'lead',linkId:l.id});\n  }else if(open){open.status='completed';open.completedAt=new Date().toISOString();open.updatedAt=open.completedAt;}\n  if(typeof _lfRefreshFollowupBadge==='function')_lfRefreshFollowupBadge();\n}catch(e){console.warn('follow-up task sync:',e);}\nsaveData()}"
+  },
+  "index:fn:addLeadNote": {
+   "line": 9881,
+   "code": "function addLeadNote(id){const l=getLead(id);if(!l)return;const input=document.getElementById('lead-note-input');const text=input.value.trim();if(!text)return;if(!Array.isArray(l.notes))l.notes=[];l.notes.push({text,date:_todayISO()});saveData();_leadReturnAfterEdit(id)}"
+  },
+  "index:fn:_lcAddNote": {
+   "line": 9713,
+   "code": "function _lcAddNote(id){\n  const inp=document.getElementById('lead-note-input');\n  if(!inp||!inp.value.trim()){if(inp)inp.focus();return;}\n  addLeadNote(id);\n  setTimeout(()=>{const el=document.getElementById('lead-note-input');if(el&&currentView==='leads')el.focus();},0);\n}"
+  },
+  "index:fn:_lcMoveStage": {
+   "line": 9711,
+   "code": "function _lcMoveStage(id,status){_leadTryMoveStage(id,status,'panel');}"
+  },
+  "index:fn:getCustomerTypes": {
+   "line": 10153,
+   "code": "function getCustomerTypes(){return data.systemCustomerTypes||['Retail','Property Management','Contractor','Builder','Commercial','Designer','Realtor'];}"
+  },
+  "index:fn:_fesc": {
+   "line": 28885,
+   "code": "function _fesc(s){return String(s==null?'':s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/\"/g,'&quot;');}"
+  },
+  "index:const:LC_QUICK_SOURCES": {
+   "line": 9389,
+   "code": "const LC_QUICK_SOURCES=['Google','Referral','Facebook','Website','Other'];"
+  },
+  "mobile:fn:esc": {
+   "line": 19,
+   "code": "function esc(s) { return String(s == null ? '' : s).replace(/[&<>\"']/g, function (c) { return { '&': '&amp;', '<': '&lt;', '>': '&gt;', '\"': '&quot;', \"'\": '&#39;' }[c]; }); }"
+  },
+  "mobile:fn:js": {
+   "line": 21,
+   "code": "function js(s) { return esc(String(s == null ? '' : s).replace(/\\\\/g, '\\\\\\\\').replace(/'/g, \"\\\\'\")); }"
+  },
+  "mobile:fn:localISO": {
+   "line": 30,
+   "code": "function localISO(d) { d = d || new Date(); return d.getFullYear() + '-' + String(d.getMonth() + 1).padStart(2, '0') + '-' + String(d.getDate()).padStart(2, '0'); }"
+  },
+  "mobile:fn:dayNum": {
+   "line": 32,
+   "code": "function dayNum(s) {\n    if (!s) return null;\n    var m = /^(\\d{4})-(\\d{2})-(\\d{2})/.exec(String(s));\n    if (!m) { var d = new Date(s); if (isNaN(d)) return null; return Math.floor(Date.UTC(d.getFullYear(), d.getMonth(), d.getDate()) / 864e5); }\n    return Math.floor(Date.UTC(+m[1], +m[2] - 1, +m[3]) / 864e5);\n  }"
+  },
+  "mobile:fn:todayNum": {
+   "line": 38,
+   "code": "function todayNum() { return dayNum(localISO()); }"
+  },
+  "mobile:fn:daysSince": {
+   "line": 39,
+   "code": "function daysSince(s) { var n = dayNum(s); return n == null ? null : todayNum() - n; }"
+  },
+  "mobile:fn:ago": {
+   "line": 40,
+   "code": "function ago(s) {\n    var d = daysSince(s); if (d == null) return '';\n    if (d <= 0) return 'today'; if (d === 1) return '1d';\n    if (d < 14) return d + 'd'; if (d < 60) return Math.round(d / 7) + 'w';\n    return Math.round(d / 30) + 'mo';\n  }"
+  },
+  "mobile:fn:whenDay": {
+   "line": 46,
+   "code": "function whenDay(s) {\n    var n = dayNum(s); if (n == null) return '';\n    var t = todayNum(), diff = n - t;\n    if (diff === 0) return 'Today'; if (diff === 1) return 'Tomorrow'; if (diff === -1) return 'Yesterday';\n    var d = new Date(n * 864e5);\n    var opts = { weekday: 'short', month: 'short', day: 'numeric', timeZone: 'UTC' };\n    if (Math.abs(diff) > 180) opts.year = 'numeric';\n    return d.toLocaleDateString('en-US', opts);\n  }"
+  },
+  "mobile:fn:initials": {
+   "line": 55,
+   "code": "function initials(name) {\n    var p = String(name || '').trim().split(/\\s+/).filter(Boolean);\n    if (!p.length) return '?';\n    return ((p[0][0] || '') + (p.length > 1 ? p[p.length - 1][0] : '')).toUpperCase();\n  }"
+  },
+  "mobile:fn:firstName": {
+   "line": 60,
+   "code": "function firstName(name) { return String(name || '').trim().split(/[\\s@]+/)[0] || ''; }"
+  },
+  "mobile:fn:streetOf": {
+   "line": 74,
+   "code": "function streetOf(a) { return String(a || '').split(',')[0].trim(); }"
+  },
+  "mobile:fn:stage": {
+   "line": 170,
+   "code": "function stage(s) { return STAGE[s] || { label: s || '—', short: s || '—', color: 'gray' }; }"
+  },
+  "mobile:fn:stageChip": {
+   "line": 171,
+   "code": "function stageChip(s) { var st = stage(s); return '<span class=\"m-chip c-' + st.color + '\">' + esc(st.label) + '</span>'; }"
+  },
+  "mobile:fn:avatar": {
+   "line": 508,
+   "code": "function avatar(name, color) { return '<span class=\"m-av c-' + (color || 'blue') + '\" aria-hidden=\"true\">' + esc(initials(name)) + '</span>'; }"
+  },
+  "mobile:fn:leadRow": {
+   "line": 541,
+   "code": "function leadRow(l, extra, noChip) {\n    var st = stage(l.status);\n    var a = ago(l.createdAt);\n    var bits = [l.projectType, l.source, a && (a === 'today' ? 'today' : a + ' ago')].filter(Boolean);\n    // The date that matters for the stage it is in.\n    if (l.status === 'site_survey_scheduled' && l.siteSurveyDate) bits = ['Survey ' + whenDay(l.siteSurveyDate), streetOf(l.address)].filter(Boolean);\n    else if (l.status === 'follow_up' && l.followUpDate) bits = ['Follow up ' + whenDay(l.followUpDate)].concat(l.projectType ? [l.projectType] : []);\n    var stale = false; try { stale = isLeadStale(l); } catch (_) { }\n    return '<div class=\"m-row\">' +\n      '<button type=\"button\" class=\"m-row-main\" onclick=\"M.go(\\'lead\\',\\'' + js(l.id) + '\\')\">' + avatar(l.name, st.color) +\n      '<span class=\"m-row-txt\"><b>' + esc(l.name || 'Unnamed lead') + (stale ? '<em class=\"m-stale\" title=\"Sitting in this stage too long\">' + ic('flame') + '</em>' : '') + '</b><small>' + esc(extra || bits.join(' · ')) + '</small></span>' + (noChip ? '' : stageChip(l.status)) + '</button>' +\n      (l.phone ? '<a class=\"m-row-call\" href=\"' + esc(telHref(l.phone)) + '\" aria-label=\"Call ' + esc(l.name) + '\">' + ic('phone') + '</a>' : '') +\n      '</div>';\n  }"
+  },
+  "mobile:fn:leadListHtml": {
+   "line": 655,
+   "code": "function leadListHtml() {\n    var q = ui.leadQ.trim().toLowerCase(), f = ui.leadFilter;\n    var list = myLeads().filter(function (l) {\n      var s = l.status === 'quote_sent' ? 'send_quote' : l.status;\n      if (f === 'active') { if (s === 'approved' || s === 'lost') return false; }\n      else if (s !== f) return false;\n      if (!q) return true;\n      return [l.name, l.phone, l.email, l.address, l.number, l.source, l.projectType].join(' ').toLowerCase().indexOf(q) >= 0;\n    }).sort(function (a, b) { return String(b.createdAt || '').localeCompare(String(a.createdAt || '')) || String(b.number || '').localeCompare(String(a.number || ''), 'en', { numeric: true }); });\n    if (!list.length) return q ? empty('search', 'No matches', 'Nothing matches “' + esc(q) + '”.') : empty('inbox', 'No leads here', 'New leads from the website, calls and walk-ins land here.', '<button type=\"button\" class=\"m-btn primary\" onclick=\"M.newLead()\">' + ic('user-plus') + 'Add a lead</button>');\n    return list.map(function (l) { return leadRow(l); }).join('');\n  }"
+  },
+  "mobile:fn:scrLead": {
+   "line": 671,
+   "code": "function scrLead(id) {\n    var l = getLead(id);\n    if (!l) return missing('Lead', 'leads');\n    var st = stage(l.status);\n    var tnum = todayNum();\n    var quotes = (data.quotes || []).filter(function (q) { return q && q.leadId === l.id; });\n    // Pipeline ribbon — tap a step to move the lead there.\n    var curIdx = PIPE.indexOf(l.status === 'quote_sent' ? 'send_quote' : l.status);\n    var ribbon = '<div class=\"m-pipe\" role=\"group\" aria-label=\"Stage\">' + PIPE.map(function (s, i) {\n      var cls = i < curIdx ? 'done' : i === curIdx ? 'on' : '';\n      return '<button type=\"button\" class=\"m-pipe-s ' + cls + ' c-' + stage(s).color + '\" onclick=\"M.leadStage(\\'' + js(l.id) + '\\',\\'' + s + '\\')\"' + (i === curIdx ? ' aria-current=\"step\"' : '') + '><i></i><span>' + esc(stage(s).short) + '</span></button>';\n    }).join('') + '</div>';\n    if (l.status === 'lost' || l.status === 'approved') ribbon = '<div class=\"m-banner c-' + st.color + '\">' + ic(l.status === 'lost' ? 'circle-x' : 'circle-check') + '<span>This lead is <b>' + esc(st.label.toLowerCase()) + '</b>.</span>' + (l.status === 'lost' ? '<button type=\"button\" class=\"m-link\" onclick=\"M.leadStage(\\'' + js(l.id) + '\\',\\'new\\')\">Reopen</button>' : '') + '</div>';\n\n    // The one thing to do next, by stage.\n    var next = '';\n    if (l.status === 'new') {\n      next = nextCard('calendar', 'Schedule the site survey', l.siteSurveyDate ? 'Planned ' + whenDay(l.siteSurveyDate) : 'Call ' + esc(firstName(l.name)) + ' and pick a day to measure.',\n        '<button type=\"button\" class=\"m-btn primary\" onclick=\"M.surveyDate(\\'' + js(l.id) + '\\')\">' + ic('calendar') + 'Pick a date</button>' +\n        (l.phone ? '<a class=\"m-btn ghost\" href=\"' + esc(telHref(l.phone)) + '\">' + ic('phone') + 'Call</a>' : ''));\n    } else if (l.status === 'site_survey_scheduled') {\n      var dd = l.siteSurveyDate ? dayNum(l.siteSurveyDate) - tnum : null;\n      next = nextCard('calendar-check', l.siteSurveyDate ? 'Site survey ' + whenDay(l.siteSurveyDate) : 'Site survey — no date', (dd != null && dd < 0) ? 'That date has passed. Done measuring? Start the quote.' : (l.address ? esc(addr1(l.address, l.address2)) : 'No address on file yet.'),\n        '<button type=\"button\" class=\"m-btn primary\" onclick=\"M.quoteForLead(\\'' + js(l.id) + '\\')\">' + ic('file-plus') + 'Start quote</button>' +\n        '<button type=\"button\" class=\"m-btn ghost\" onclick=\"M.surveyDate(\\'' + js(l.id) + '\\')\">' + ic('calendar') + 'Reschedule</button>');\n    } else if (l.status === 'send_quote' || l.status === 'quote_sent') {\n      var drafts = quotes.filter(function (q) { return q.status === 'draft'; });\n      next = nextCard('ruler', drafts.length ? 'Finish and send the quote' : 'Build the quote', drafts.length ? drafts[0].number + ' is a draft — send it when it is ready.' : 'Survey is done. Put the numbers together.',\n        drafts.length ? '<button type=\"button\" class=\"m-btn primary\" onclick=\"M.go(\\'quote\\',\\'' + js(drafts[0].id) + '\\')\">' + ic('send') + 'Open ' + esc(drafts[0].number) + '</button>' : '<button type=\"button\" class=\"m-btn primary\" onclick=\"M.quoteForLead(\\'' + js(l.id) + '\\')\">' + ic('file-plus') + 'Build quote</button>');\n    } else if (l.status === 'follow_up') {\n      var fu = l.followUpDate;\n      var late = fu && dayNum(fu) <= tnum;\n      next = nextCard('clock', fu ? (late ? 'Follow up — due ' + whenDay(fu) : 'Follow up ' + whenDay(fu)) : 'Follow up', 'Check in on the quote and answer questions.',\n        (l.phone ? '<a class=\"m-btn primary\" href=\"' + esc(telHref(l.phone)) + '\">' + ic('phone') + 'Call now</a>' : '') +\n        '<button type=\"button\" class=\"m-btn ghost\" onclick=\"M.followUpDate(\\'' + js(l.id) + '\\')\">' + ic('calendar') + (fu ? 'Change date' : 'Set date') + '</button>', late ? 'late' : '');\n    }\n\n    var info = '<div class=\"m-card m-kvs\">' +\n      kv('Phone', l.phone) + kv('Email', l.email) + kv('Address', addr1(l.address, l.address2)) +\n      kv('Access details', l.sqFt) + kv('Project', l.projectType) + kv('Type', l.type) +\n      kv('Source', l.source) + kv('Sales rep', repName(l.salesRepId) || 'Unassigned', { always: true }) +\n      kv('Lead #', l.number) + kv('Created', l.createdAt ? whenDay(l.createdAt) + ' (' + ago(l.createdAt) + ')' : '') +\n      '</div>';\n    var contacts = (l.contacts || []).length ? section('Contacts', '<div class=\"m-card m-list-plain\">' + l.contacts.map(contactRow).join('') + '</div>') : '';\n    var qhtml = section('Quotes', quotes.length ? '<div class=\"m-list\">' + quotes.map(function (q) { return quoteRow(q); }).join('') + '</div>' : '<p class=\"m-sub m-pad\">No quotes yet.</p>', {\n      count: quotes.length || null,\n      more: '<button type=\"button\" class=\"m-link\" onclick=\"M.quoteForLead(\\'' + js(l.id) + '\\')\">' + ic('plus') + 'New</button>'\n    });\n    var body =\n      '<div class=\"m-hero\">' + avatar(l.name, st.color) + '<div><h1>' + esc(l.name) + '</h1><p>' + stageChip(l.status) + '<span>' + esc([l.number, l.source].filter(Boolean).join(' · ')) + '</span></p></div></div>' +\n      contactBar({ phone: l.phone, email: l.email, address: addr1(l.address, l.address2), entity: 'lead', id: l.id }) +\n      ribbon + next + info + contacts + qhtml +\n      notesSection('lead', l) +\n      commsSection('lead', l) +\n      '<div class=\"m-danger-zone\">' +\n      (l.status !== 'lost' && l.status !== 'approved' ? '<button type=\"button\" class=\"m-btn ghost\" onclick=\"M.leadLost(\\'' + js(l.id) + '\\')\">' + ic('circle-x') + 'Mark lost</button>' : '') +\n      '<button type=\"button\" class=\"m-btn ghost danger\" onclick=\"M.leadDelete(\\'' + js(l.id) + '\\')\">' + ic('trash-2') + 'Delete lead</button></div>';\n    return {\n      title: l.name || 'Lead', back: true, big: false, body: body,\n      actions: '<button type=\"button\" class=\"m-icbtn\" onclick=\"M.editLead(\\'' + js(l.id) + '\\')\" aria-label=\"Edit lead\">' + ic('pencil') + '</button>',\n      after: function () { loadComms('lead', l); }\n    };\n  }"
+  },
+  "mobile:fn:nextCard": {
+   "line": 734,
+   "code": "function nextCard(icon, title, text, buttons, cls) {\n    return '<div class=\"m-next' + (cls ? ' ' + cls : '') + '\"><div class=\"m-next-hd\">' + ic(icon) + '<div><small>Next step</small><b>' + esc(title) + '</b></div></div><p>' + text + '</p><div class=\"m-btnrow\">' + buttons + '</div></div>';\n  }"
+  },
+  "mobile:fn:kv": {
+   "line": 523,
+   "code": "function kv(label, value, opts) {\n    opts = opts || {};\n    if (!value && !opts.always) return '';\n    return '<div class=\"m-kv\"><span>' + esc(label) + '</span><b>' + (opts.html ? value : esc(value || '—')) + '</b></div>';\n  }"
+  },
+  "mobile:fn:section": {
+   "line": 509,
+   "code": "function section(title, body, opts) {\n    opts = opts || {};\n    if (!body) return '';\n    return '<section class=\"m-sec' + (opts.cls ? ' ' + opts.cls : '') + '\">' + (title ? '<h2 class=\"m-sec-t\">' + title + (opts.count != null ? '<span class=\"m-count\">' + opts.count + '</span>' : '') + (opts.more || '') + '</h2>' : '') + body + '</section>';\n  }"
+  },
+  "mobile:fn:quoteRow": {
+   "line": 569,
+   "code": "function quoteRow(q, extra, inCustomer) {\n    var c = clientOf(q);\n    var site = streetOf(q.siteAddress);\n    if (inCustomer) c = { name: q.docName || site || q.number };\n    var when = extra;\n    if (!when) {\n      if (q.status === 'sent') when = 'Sent ' + (ago(q.sentAt || q.createdAt) === 'today' ? 'today' : ago(q.sentAt || q.createdAt) + ' ago');\n      else if (q.status === 'approved') when = 'Approved ' + (q.approvedAt ? whenDay(q.approvedAt) : '');\n      else when = 'Created ' + whenDay(q.createdAt);\n    }\n    return '<button type=\"button\" class=\"m-qrow\" onclick=\"M.go(\\'quote\\',\\'' + js(q.id) + '\\')\">' +\n      '<span class=\"m-qrow-top\"><b>' + esc(c.name) + '</b><strong>' + money(quoteTotal(q)) + '</strong></span>' +\n      '<span class=\"m-qrow-bot\"><small>' + esc((inCustomer ? [q.number, q.docName ? site : ''] : [q.number, q.docName || site]).filter(Boolean).join(' · ')) + '</small>' + quoteChip(q) + '</span>' +\n      '<span class=\"m-qrow-when\">' + esc(when) + '</span></button>';\n  }"
+  },
+  "mobile:fn:quoteChip": {
+   "line": 173,
+   "code": "function quoteChip(q) {\n    if (quoteExpired(q) && q.status === 'sent') return '<span class=\"m-chip c-red\">Expired</span>';\n    var s = QST[q.status] || [q.status || 'Draft', 'gray']; return '<span class=\"m-chip c-' + s[1] + '\">' + esc(s[0]) + '</span>';\n  }"
+  },
+  "mobile:fn:quoteExpired": {
+   "line": 157,
+   "code": "function quoteExpired(q) { return q.expirationDate && q.status !== 'approved' && q.status !== 'archived' && dayNum(q.expirationDate) < todayNum(); }"
+  },
+  "mobile:fn:clientOf": {
+   "line": 146,
+   "code": "function clientOf(q) {\n    var cu = q.customerId ? getCustomer(q.customerId) : null;\n    if (cu) return { kind: 'customer', rec: cu, name: cu.name };\n    var l = q.leadId ? getLead(q.leadId) : null;\n    if (l) return { kind: 'lead', rec: l, name: l.name };\n    return { kind: '', rec: null, name: q.siteContact || 'No customer' };\n  }"
+  },
+  "mobile:fn:quoteTotal": {
+   "line": 158,
+   "code": "function quoteTotal(q) { return Number(q.total) || 0; }"
+  },
+  "mobile:fn:notesSection": {
+   "line": 791,
+   "code": "function notesSection(kind, r) {\n    var notes = (Array.isArray(r.notes) ? r.notes : []).slice().reverse();\n    var list = notes.length ? '<ul class=\"m-notes\">' + notes.slice(0, 12).map(function (n) { return '<li><p>' + esc(n.text) + '</p><small>' + esc(n.date ? whenDay(n.date) : '') + '</small></li>'; }).join('') + '</ul>' : '';\n    return section('Notes', '<div class=\"m-card\"><div class=\"m-note-add\"><textarea id=\"m-note-in\" rows=\"1\" placeholder=\"Add a note…\" oninput=\"this.style.height=\\'auto\\';this.style.height=this.scrollHeight+\\'px\\'\"></textarea><button type=\"button\" class=\"m-btn primary sm\" onclick=\"M.addNote(\\'' + kind + '\\',\\'' + js(r.id) + '\\')\">Add</button></div>' + list + '</div>', { count: notes.length || null });\n  }"
+  },
+  "mobile:fn:segs": {
+   "line": 531,
+   "code": "function segs(name, current, items) {\n    return '<div class=\"m-segs\" role=\"tablist\">' + items.map(function (it) {\n      var on = it.k === current;\n      return '<button type=\"button\" role=\"tab\" aria-selected=\"' + on + '\" class=\"m-seg' + (on ? ' on' : '') + '\" onclick=\"M.setFilter(\\'' + name + '\\',\\'' + it.k + '\\')\">' + esc(it.label) + (it.n != null ? '<i>' + it.n + '</i>' : '') + '</button>';\n    }).join('') + '</div>';\n  }"
+  },
+  "mobile:text:STAGE": {
+   "line": 160,
+   "code": "var STAGE = {\n    new: { label: 'New', short: 'New', color: 'blue' },\n    site_survey_scheduled: { label: 'Site survey', short: 'Survey', color: 'indigo' },\n    send_quote: { label: 'Send quote', short: 'Quote', color: 'amber' },\n    quote_sent: { label: 'Send quote', short: 'Quote', color: 'amber' },\n    follow_up: { label: 'Follow-up', short: 'Follow-up', color: 'pink' },\n    approved: { label: 'Approved', short: 'Won', color: 'green' },\n    lost: { label: 'Lost', short: 'Lost', color: 'gray' }\n  };"
+  },
+  "mobile:text:PIPE": {
+   "line": 169,
+   "code": "var PIPE = ['new', 'site_survey_scheduled', 'send_quote', 'follow_up'];"
+  },
+  "mobile:text:QST": {
+   "line": 172,
+   "code": "var QST = { draft: ['Draft', 'gray'], sent: ['Sent', 'blue'], approved: ['Approved', 'green'], declined: ['Declined', 'red'], archived: ['Archived', 'purple'] };"
+  },
+  "mobile:text:M.leadStage": {
+   "line": 743,
+   "code": "M.leadStage = function (id, s) {\n    var l = getLead(id); if (!l) return;\n    if (s === 'site_survey_scheduled') { M.surveyDate(id); return; }\n    if (l.status === s) return;\n    // Moving back to New clears a planned survey the same way the desktop does.\n    if (s === 'new' && l.siteSurveyDate && l.status === 'site_survey_scheduled') { setLeadSurveyDate(id, ''); toast('Moved back to New'); return; }\n    changeLeadStatus(id, s);\n    toast(l.name + ' → ' + stage(s).label);\n  };"
+  },
+  "mobile:text:M.surveyDate": {
+   "line": 752,
+   "code": "M.surveyDate = function (id) {\n    var l = getLead(id); if (!l) return;\n    var cur = l.siteSurveyDate ? String(l.siteSurveyDate).slice(0, 10) : '';\n    var t = new Date(), quick = [0, 1, 2, 3, 4, 5, 6].map(function (i) { var d = new Date(t.getFullYear(), t.getMonth(), t.getDate() + i); return localISO(d); });\n    var body = sheet('<p class=\"m-sub\">Pick the day you will measure at ' + esc(streetOf(l.address) || 'the site') + '.</p>' +\n      '<div class=\"m-days\">' + quick.map(function (d) { var dt = new Date(d + 'T12:00:00'); return '<button type=\"button\" class=\"m-day' + (d === cur ? ' on' : '') + '\" data-d=\"' + d + '\"><small>' + (d === quick[0] ? 'Today' : dt.toLocaleDateString('en-US', { weekday: 'short' })) + '</small><b>' + dt.getDate() + '</b></button>'; }).join('') + '</div>' +\n      '<label class=\"m-field\"><span>Or choose a date</span><input type=\"date\" id=\"m-survey-d\" value=\"' + esc(cur) + '\"></label>' +\n      '<div class=\"m-btnrow\">' + (cur ? '<button type=\"button\" class=\"m-btn ghost danger\" data-clear>Clear date</button>' : '') + '<button type=\"button\" class=\"m-btn primary\" data-save>Save</button></div>', { title: 'Site survey' });\n    // setLeadSurveyDate posts its own confirmation.\n    var pick = function (d) { if (!d) return; closeTopSheet(); setLeadSurveyDate(id, d); };\n    body.querySelectorAll('.m-day').forEach(function (b) { b.onclick = function () { pick(b.dataset.d); }; });\n    body.querySelector('[data-save]').onclick = function () { pick(body.querySelector('#m-survey-d').value); };\n    var c = body.querySelector('[data-clear]'); if (c) c.onclick = function () { closeTopSheet(); setLeadSurveyDate(id, ''); toast('Survey date cleared'); };\n  };"
+  },
+  "mobile:text:M.followUpDate": {
+   "line": 766,
+   "code": "M.followUpDate = function (id) {\n    var l = getLead(id); if (!l) return;\n    var cur = l.followUpDate ? String(l.followUpDate).slice(0, 10) : '';\n    var opts = [[1, 'Tomorrow'], [3, 'In 3 days'], [7, 'Next week'], [14, 'In 2 weeks']];\n    var body = sheet('<div class=\"m-chips\">' + opts.map(function (o) { var d = new Date(); d.setDate(d.getDate() + o[0]); return '<button type=\"button\" class=\"m-chipbtn\" data-d=\"' + localISO(d) + '\">' + o[1] + '</button>'; }).join('') + '</div>' +\n      '<label class=\"m-field\"><span>Date</span><input type=\"date\" id=\"m-fu-d\" value=\"' + esc(cur) + '\"></label>' +\n      '<div class=\"m-btnrow\"><button type=\"button\" class=\"m-btn primary\" data-save>Save</button></div>', { title: 'Follow-up date' });\n    var set = function (d) { closeTopSheet(); updateLeadFollowUp(id, d || null); render(); toast(d ? 'Follow up ' + whenDay(d) : 'Follow-up date cleared'); };\n    body.querySelectorAll('[data-d]').forEach(function (b) { b.onclick = function () { set(b.dataset.d); }; });\n    body.querySelector('[data-save]').onclick = function () { set(body.querySelector('#m-fu-d').value); };\n  };"
+  },
+  "mobile:text:M.leadLost": {
+   "line": 777,
+   "code": "M.leadLost = function (id) {\n    var l = getLead(id); if (!l) return;\n    confirmSheet('Mark as lost?', esc(l.name) + ' moves to Lost. You can reopen it later.', 'Mark lost', function () { changeLeadStatus(id, 'lost'); toast(l.name + ' marked lost'); }, { danger: true });\n  };"
+  },
+  "mobile:text:M.newLead": {
+   "line": 904,
+   "code": "M.newLead = function (prefill) {\n    if (!can('leads')) return;\n    prefill = prefill || {};\n    var types = []; try { types = getCustomerTypes(); } catch (_) { types = ['Retail']; }\n    var body = sheet('<form class=\"m-form\" novalidate>' +\n      '<label class=\"m-field\"><span>Name *</span><input name=\"name\" autocomplete=\"name\" autocapitalize=\"words\" required value=\"' + esc(prefill.name || '') + '\" autofocus></label>' +\n      '<label class=\"m-field\"><span>Phone *</span><input name=\"phone\" type=\"tel\" inputmode=\"tel\" autocomplete=\"tel\" required value=\"' + esc(prefill.phone || '') + '\"></label>' +\n      '<label class=\"m-field\"><span>Email</span><input name=\"email\" type=\"email\" inputmode=\"email\" autocomplete=\"email\" autocapitalize=\"off\"></label>' +\n      addrField('m-nl-addr', 'Address', '', '') +\n      chipsField('projectType', 'Project', PROJECT_TYPES, '') +\n      chipsField('source', 'How they found us', SOURCES, prefill.source || '') +\n      '<div class=\"m-2col\"><label class=\"m-field\"><span>Customer type</span><select name=\"type\">' + types.map(function (t) { return opt(t, t, t === 'Retail'); }).join('') + '</select></label>' +\n      '<label class=\"m-field\"><span>Sales rep</span><select name=\"salesRepId\">' + repOptions(myRepId()) + '</select></label></div>' +\n      '<label class=\"m-field\"><span>Site survey date</span><input name=\"siteSurveyDate\" type=\"date\"></label>' +\n      '<label class=\"m-field\"><span>Access details</span><input name=\"sqFt\" placeholder=\"Gate code, parking, pets…\"></label>' +\n      '<label class=\"m-field\"><span>Note</span><textarea name=\"noteText\" rows=\"2\" placeholder=\"What do they need?\"></textarea></label>' +\n      '<button type=\"submit\" class=\"m-btn primary block\">' + ic('check') + 'Save lead</button></form>', { title: 'New lead', full: true });\n    wireChips(body);\n    try { setupAddressAutocomplete('m-nl-addr'); } catch (_) { }\n    var form = body.querySelector('form');\n    form.onsubmit = function (e) {\n      e.preventDefault();\n      if (need(form, 'name', 'Name is required') || need(form, 'phone', 'Phone is required')) return;\n      var v = formVals(form);\n      dupCheck('lead', { name: v.name, phone: v.phone, email: v.email, address: v.address }, null, function () {\n        var l = _createLeadRecord(v);\n        closeAllSheets();\n        toast('Lead ' + l.number + ' added');\n        M.go('lead', l.id);\n      });\n    };\n  };"
+  },
+  "mobile:text:SOURCES": {
+   "line": 860,
+   "code": "var SOURCES = ['Google', 'Referral', 'Facebook', 'Website', 'Other'];"
+  },
+  "mobile:text:PROJECT_TYPES": {
+   "line": 861,
+   "code": "var PROJECT_TYPES = ['LVP', 'Carpet', 'Tile', 'Hardwood'];"
   },
   "index:text:root-css": {
    "line": 13,

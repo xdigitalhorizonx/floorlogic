@@ -41,7 +41,7 @@ export const TIERS: Tier[] = [
     id: 'crew', name: 'Crew', monthly: 149, yearly: 1490, seats: 'Up to 3 users',
     blurb: 'For a small shop that quotes, installs and bills.',
     includes: [
-      'Lead board and follow-ups',
+      'Lead pipeline and follow-ups',
       'Quote builder with cartons and roll goods',
       'Live quote link with online approval',
       'Work orders with start and end dates',
