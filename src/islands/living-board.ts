@@ -1,15 +1,24 @@
-// The hero's living lead board. Same rules as the real app (via src/lib/logic/lead-pipeline):
-// survey date moves New → Site Survey Scheduled, "→ Next" advances, dropping on Approved asks the
-// app's own confirm, and approval creates the work order + invoice. Sample data only; no network.
+// The hero's living lead board, run on the same rules as the real app (src/lib/logic/lead-pipeline,
+// October build): a survey date moves New → Site Survey Scheduled, the survey day moves it on to Send
+// Quote, sending a quote moves it to Follow-up, and a lead is never approved by hand — dropping one on
+// Approved gets the app's refusal. Approval comes from the customer: approve QT-330 on the phone card,
+// then "Create WO & Invoice" makes the work order and invoice, as the office does. Sample data only.
 import {
-  BOARD_STATUSES, LEAD_LABELS, nextStatus, canDrop, approveLead, setSurveyDate, changeStatus, type Lead,
+  BOARD_STATUSES, LEAD_LABELS, LEAD_AGE_BUCKETS, advanceLead, canDrop, changeStatus, leadAgeBucketKey,
+  leadAgeBucketDefaultOpen, quoteSentToLead, setSurveyDate, statusChangeActivity, surveyDayReached,
+  type ColumnBucket, type Lead,
 } from '../lib/logic/lead-pipeline';
-import { leadCardHTML, docCardHTML } from '../lib/board/card-html';
+import { fmtDate } from '../lib/logic/dates';
+import { fmtMoney } from '../lib/logic/money';
+import { invoiceDueDate } from '../lib/logic/document-dates';
+import { bucketHTML, docCardHTML, icon, leadCardHTML } from '../lib/board/card-html';
 import { track } from '../lib/analytics';
 
 type Status = Lead['status'];
 type Counters = { lead: number; job: number; invoice: number; quote: number };
 type Rep = { id: string; name: string };
+/** The quote the visitor approves (the dataset's thread), passed in by HeroBoard.astro. */
+type Story = { leadId: string; quote: string; customer: string; total: number; wo: string; inv: string; toast: string };
 
 const STEP_MS = 2800;
 const IDLE_AFTER_USER_MS = 9000;
@@ -19,7 +28,6 @@ function addDays(iso: string, n: number) {
   d.setDate(d.getDate() + n);
   return d.toISOString().slice(0, 10);
 }
-const money = (n: number) => n.toLocaleString('en-US', { style: 'currency', currency: 'USD' });
 const EASE_OUT = 'cubic-bezier(0.22, 1, 0.36, 1)';
 // Small beats use the Web Animations API, so phones never download an animation library.
 // GSAP only arrives on desktop, after first paint, for the scroll scene.
@@ -27,6 +35,7 @@ function anim(el: Element, frames: Keyframe[], opts: KeyframeAnimationOptions): 
   if (matchMedia('(prefers-reduced-motion: reduce)').matches || typeof el.animate !== 'function') return null;
   return el.animate(frames, { easing: EASE_OUT, ...opts });
 }
+const BUCKET_ORDER = LEAD_AGE_BUCKETS.map((b) => b.key);
 
 export function initLivingBoard() {
   const rootEl = document.querySelector<HTMLElement>('[data-board]');
@@ -36,9 +45,13 @@ export function initLivingBoard() {
   const plane = root.querySelector<HTMLElement>('[data-plane]')!;
   const pivot = root.querySelector<HTMLElement>('[data-pivot]')!;
   const stage = root.querySelector<HTMLElement>('[data-stage]')!;
+  const feedEl = hero.querySelector<HTMLElement>('[data-feed]')!;
   const toastEl = hero.querySelector<HTMLElement>('[data-toast]')!;
   const docsEl = hero.querySelector<HTMLElement>('[data-docs]')!;
+  const storyEl = hero.querySelector<HTMLElement>('[data-story]')!;
+  const stepEl = (k: 'sent' | 'approved' | 'converted') => storyEl.querySelector<HTMLElement>(`[data-step="${k}"]`)!;
   const confirmEl = root.querySelector<HTMLElement>('[data-confirm]')!;
+  const endMsg = root.querySelector<HTMLElement>('[data-end-msg]');
   const pauseBtns = Array.from(hero.querySelectorAll<HTMLButtonElement>('[data-pause]'));
   const hintEl = hero.querySelector<HTMLElement>('[data-hint]')!;
   const live = document.createElement('div');
@@ -47,10 +60,11 @@ export function initLivingBoard() {
   root.appendChild(live);
 
   const state = JSON.parse(root.querySelector('[data-board-state]')!.textContent || '{}') as {
-    leads: Lead[]; incoming: Lead[]; reps: Rep[]; counters: Counters; today: string;
+    leads: Lead[]; incoming: Lead[]; reps: Rep[]; counters: Counters; today: string; story: Story;
   };
   // The demo's fixed "today" travels with the board state, so this script never loads the sample dataset.
   const DEMO_TODAY = state.today;
+  const story = state.story;
   const leads = new Map(state.leads.map((l) => [l.id, { ...l }]));
   const incoming = state.incoming.map((l) => ({ ...l }));
   let counters = { ...state.counters };
@@ -62,21 +76,26 @@ export function initLivingBoard() {
   const cardEl = (id: string) => plane.querySelector<HTMLElement>(`.kc[data-id="${CSS.escape(id)}"]`);
 
   // ---------- helpers ----------
-  // Activity feed: the app's own toast wording, newest first, last three kept.
-  function toast(msg: string) {
+  // While the scroll scene has the feed faded out, the latest line also shows in the end pill.
+  const endDefault = endMsg?.innerHTML ?? '';
+  let endTimer = 0;
+  function feedHidden() { return parseFloat(getComputedStyle(feedEl).opacity || '1') < 0.3; }
+  // Activity feed: the app's own toast and activity-log wording, newest first, last three kept.
+  function toast(msg: string, kind: 'info' | 'warning' = 'info') {
     const li = document.createElement('p');
     li.textContent = msg;
+    if (kind === 'warning') li.className = 'is-warn';
     toastEl.prepend(li);
     while (toastEl.children.length > 3) toastEl.lastElementChild!.remove();
     anim(li, [{ transform: 'translateY(-10px)', opacity: 0 }, { transform: 'none', opacity: 1 }], { duration: 350 });
-  }
-  function announce(msg: string) { live.textContent = msg; }
-  function counts() {
-    for (const s of BOARD_STATUSES) {
-      const el = laneEl(s);
-      el.querySelector('[data-count]')!.textContent = String(el.querySelectorAll('.kc').length);
+    announce(msg);
+    if (endMsg && feedHidden()) {
+      endMsg.textContent = msg;
+      clearTimeout(endTimer);
+      endTimer = window.setTimeout(() => { endMsg.innerHTML = endDefault; }, 4200);
     }
   }
+  function announce(msg: string) { live.textContent = msg; }
   function prepCard(el: HTMLElement) {
     el.tabIndex = 0;
     el.setAttribute('aria-label', `${el.querySelector('.kc-name')?.textContent}, ${LEAD_LABELS[el.dataset.status as Status]}. Left and right arrows move it.`);
@@ -88,83 +107,168 @@ export function initLivingBoard() {
     prepCard(el);
     return el;
   }
+  /** Counts per lane and bucket, empty buckets removed, and the lane's empty line shown when needed. */
+  function tidy() {
+    for (const s of BOARD_STATUSES) {
+      const lane = laneEl(s);
+      lane.querySelectorAll<HTMLElement>('.kb-bucket').forEach((b) => {
+        const n = b.querySelectorAll('.kc').length;
+        if (!n) { b.remove(); return; }
+        b.querySelector('[data-bucket-count]')!.textContent = String(n);
+      });
+      const total = lane.querySelectorAll('.kc').length;
+      lane.querySelector('[data-count]')!.textContent = String(total);
+      const empty = lane.querySelector<HTMLElement>('[data-empty]');
+      if (empty) empty.hidden = total > 0;
+    }
+  }
+  /** The age group a lead sits in inside its column, created in order when it doesn't exist yet. */
+  function bucketFor(lane: HTMLElement, key: ColumnBucket): HTMLElement {
+    const existing = lane.querySelector<HTMLElement>(`.kb-bucket[data-bucket="${key}"] [data-bucket-cards]`);
+    if (existing) return existing;
+    const tpl = document.createElement('template');
+    tpl.innerHTML = bucketHTML(key, '', 0, leadAgeBucketDefaultOpen(key, lane.querySelectorAll('.kc').length + 1, 0)).trim();
+    const el = tpl.content.firstElementChild as HTMLElement;
+    const host = lane.querySelector<HTMLElement>('[data-cards]')!;
+    const after = Array.from(host.querySelectorAll<HTMLElement>('.kb-bucket')).find((b) => BUCKET_ORDER.indexOf(b.dataset.bucket as ColumnBucket) > BUCKET_ORDER.indexOf(key));
+    host.insertBefore(el, after ?? host.querySelector('[data-empty]'));
+    return el.querySelector<HTMLElement>('[data-bucket-cards]')!;
+  }
   function placeCard(lead: Lead, opts: { animate?: boolean; focus?: boolean } = {}) {
     const old = cardEl(lead.id);
     const fresh = renderCard(lead);
-    const target = laneEl(lead.status).querySelector<HTMLElement>('[data-cards]')!;
+    const target = bucketFor(laneEl(lead.status), leadAgeBucketKey(lead.createdAt, DEMO_TODAY));
     const animate = opts.animate !== false && !reduce.matches;
-    if (old) old.replaceWith(fresh);
+    old?.remove();
     target.prepend(fresh);
     // Local entrance: the card settles into its lane.
-    if (animate) anim(fresh, [{ transform: 'translateY(-18px) scale(0.97)', opacity: 0 }, { transform: 'none', opacity: 1 }], { duration: 500 });
-    counts();
+    if (animate) anim(fresh, [{ transform: 'translateY(-18px)', opacity: 0 }, { transform: 'none', opacity: 1 }], { duration: 500 });
+    tidy();
     if (opts.focus) fresh.focus({ preventScroll: true });
     return fresh;
   }
-  function popDocs(wo: { number: string; total?: number }, inv: { number: string; total: number }) {
-    const box = document.createElement('div');
-    box.innerHTML = docCardHTML('wo', wo.number, 'Work order · Order Materials', 'Order Materials', 'kc-pill-purple')
-      + docCardHTML('inv', inv.number, `Invoice · ${money(inv.total)} · due in 30 days`, 'Unpaid', 'kc-pill-red');
-    const cards = Array.from(box.children) as HTMLElement[];
-    docsEl.replaceChildren(...cards);
-    cards.forEach((c, i) => anim(c, [{ transform: 'translateY(26px) scale(0.94)', opacity: 0 }, { transform: 'none', opacity: 1 }], { duration: 550, delay: i * 120, fill: 'backwards', easing: 'cubic-bezier(0.34, 1.56, 0.64, 1)' }));
+  function removeCard(id: string) {
+    const el = cardEl(id);
+    const finish = () => { el?.remove(); tidy(); };
+    const out = el ? anim(el, [{ transform: 'none', opacity: 1 }, { transform: 'translateY(-10px)', opacity: 0 }], { duration: 450, easing: 'ease-in', fill: 'forwards' }) : null;
+    if (out) out.onfinish = finish; else finish();
   }
 
   // ---------- the app's moves ----------
-  function doApprove(id: string, byUser: boolean) {
-    const lead = leads.get(id);
-    if (!lead) return;
-    const res = approveLead(lead, counters, DEMO_TODAY);
-    counters = res.counters;
-    leads.delete(id);
-    const el = cardEl(id);
-    const finish = () => { el?.remove(); counts(); };
-    const out = el ? anim(el, [{ transform: 'none', opacity: 1 }, { transform: 'translateY(-10px) scale(0.9)', opacity: 0 }], { duration: 450, easing: 'ease-in', fill: 'forwards' }) : null;
-    if (out) out.onfinish = finish; else finish();
-    popDocs(res.workOrder, res.invoice);
-    toast(res.toast);
-    announce(res.toast);
-    if (byUser) { track('board_approve', { by: 'user' }); celebrate(); }
-  }
   function moveTo(id: string, to: Status, byUser: boolean): boolean {
     const lead = leads.get(id);
     if (!lead || lead.status === to) return false;
     const check = canDrop(lead, to);
-    if (!check.ok) { if (check.toast) { toast(check.toast); announce(check.toast); } return false; }
-    if (check.approves) {
-      if (byUser && check.confirm) { askConfirm(check.confirm, () => doApprove(id, true)); return true; }
-      doApprove(id, false);
-      return true;
+    if (!check.ok) {
+      if (check.toast) toast(check.toast, 'warning');
+      // Approved only comes from the customer's approval: point at it while it's still waiting.
+      if (check.reason === 'approve-via-quote' && byUser && phase === 'sent') nudgeApprove();
+      return false;
     }
+    // Lost is not a column on the board, so a confirm never comes up here.
     Object.assign(lead, changeStatus(lead, to, DEMO_TODAY));
     placeCard(lead, { focus: byUser && document.activeElement?.classList.contains('kc') });
-    announce(`${lead.name} moved to ${LEAD_LABELS[to]}.`);
+    toast(statusChangeActivity(lead, to));
     return true;
   }
-  function survey(id: string, byUser: boolean) {
+  function survey(id: string, iso: string, byUser: boolean) {
     const lead = leads.get(id);
     if (!lead) return;
-    const res = setSurveyDate(lead, addDays(DEMO_TODAY, 2), DEMO_TODAY);
+    const res = setSurveyDate(lead, iso, DEMO_TODAY);
     Object.assign(lead, res.lead);
     placeCard(lead, { focus: byUser });
-    if (res.toast) { toast(res.toast); announce(res.toast); }
+    if (res.toast) toast(res.toast);
   }
   function advance(id: string, byUser: boolean) {
     const lead = leads.get(id);
     if (!lead) return;
-    const nx = nextStatus(lead.status);
-    if (!nx) return;
-    if (nx === 'approved') { doApprove(id, byUser); return; } // the app's advance button skips the confirm
-    moveTo(id, nx, byUser);
+    const res = advanceLead(lead);
+    if (res.kind === 'refuse') { toast(res.toast, 'warning'); if (byUser && phase === 'sent') nudgeApprove(); return; }
+    if (res.kind === 'move') moveTo(id, res.to, byUser);
+  }
+  /** Auto-flow: the survey day comes round (the board runs a little faster than a real week). */
+  function surveyDone(id: string) {
+    const lead = leads.get(id);
+    if (!lead) return;
+    const move = surveyDayReached({ ...lead, siteSurveyDate: DEMO_TODAY }, DEMO_TODAY);
+    if (!move) return;
+    Object.assign(lead, move.lead);
+    placeCard(lead);
+    toast(move.activity);
+  }
+  /** Auto-flow: a quote goes out by email, so the app moves the lead to Follow-up. */
+  function quoteSent(id: string) {
+    const lead = leads.get(id);
+    if (!lead) return;
+    counters = { ...counters, quote: counters.quote + 1 };
+    const move = quoteSentToLead({ ...lead, quoteCount: lead.quoteCount + 1 }, `QT-${counters.quote}`, 'email', DEMO_TODAY);
+    if (!move) return;
+    Object.assign(lead, move.lead);
+    placeCard(lead);
+    if (move.activity) toast(move.activity);
   }
 
-  // ---------- confirm (the app uses window.confirm with this exact text) ----------
+  // ---------- the customer's approval, then the office's one click ----------
+  let phase: 'sent' | 'approved' | 'converted' = 'sent';
+  const approveBtn = storyEl.querySelector<HTMLButtonElement>('[data-approve]')!;
+  const convertBtn = storyEl.querySelector<HTMLButtonElement>('[data-convert]')!;
+  /** The story card shows one step at a time: the customer's phone → the office → what got created. */
+  function showStep(k: 'sent' | 'approved' | 'converted', focus?: HTMLElement) {
+    for (const x of ['sent', 'approved', 'converted'] as const) stepEl(x).hidden = x !== k;
+    anim(stepEl(k), [{ transform: 'translateY(8px)', opacity: 0 }, { transform: 'none', opacity: 1 }], { duration: 380 });
+    focus?.focus({ preventScroll: true });
+  }
+  function nudgeApprove() {
+    anim(approveBtn, [{ boxShadow: '0 0 0 0 rgba(16,185,129,.55)' }, { boxShadow: '0 0 0 12px rgba(16,185,129,0)' }], { duration: 900, iterations: 2 });
+  }
+  approveBtn.addEventListener('click', () => {
+    if (phase !== 'sent') return;
+    userTouched();
+    phase = 'approved';
+    // As q.html: one tap, no confirm. The quote is approved; nothing else is created yet, so the
+    // office sees it waiting (the app's banner wording).
+    showStep('approved', convertBtn);
+    toast('Quote approved! Thank you.');
+    track('board_customer_approve', {});
+  });
+  convertBtn.addEventListener('click', () => {
+    if (phase !== 'approved') return;
+    userTouched();
+    // The app's confirm (`confirmConvertApprovedQuote`), word for word.
+    askConfirm(
+      `🔨 Create the work order and invoice for ${story.quote}?`,
+      `${story.customer} approved this quote but it has no work order or invoice yet. This creates ${story.wo} and ${story.inv} from it, and turns the lead into a customer.`,
+      '🔨 Create Work Order & Invoice',
+      convert,
+    );
+  });
+  function convert() {
+    phase = 'converted';
+    // The lead becomes a customer and leaves the board; the work order and invoice exist now.
+    leads.delete(story.leadId);
+    removeCard(story.leadId);
+    const due = invoiceDueDate(DEMO_TODAY);
+    const box = document.createElement('div');
+    box.innerHTML = docCardHTML('wo', story.wo, 'Work order · Order Materials', 'Order Materials', 'kc-pill-purple')
+      + docCardHTML('inv', story.inv, `Invoice · ${fmtMoney(story.total)} · due ${fmtDate(due)}`, 'Unpaid', 'kc-pill-red');
+    const cards = Array.from(box.children) as HTMLElement[];
+    docsEl.replaceChildren(...cards);
+    showStep('converted');
+    cards.forEach((c, i) => anim(c, [{ transform: 'translateY(22px)', opacity: 0 }, { transform: 'none', opacity: 1 }], { duration: 550, delay: i * 120, fill: 'backwards', easing: 'cubic-bezier(0.34, 1.56, 0.64, 1)' }));
+    toast(story.toast);
+    track('board_convert', {});
+    celebrate();
+  }
+
+  // ---------- confirm (the app's modal: title, body, Cancel + the action) ----------
   let confirmCb: (() => void) | null = null;
   let confirmReturn: HTMLElement | null = null;
-  function askConfirm(msg: string, yes: () => void) {
-    confirmCb = yes;
+  function askConfirm(title: string, body: string, yes: string, cb: () => void) {
+    confirmCb = cb;
     confirmReturn = document.activeElement as HTMLElement;
-    confirmEl.querySelector('[data-confirm-msg]')!.textContent = msg;
+    confirmEl.querySelector('[data-confirm-h]')!.textContent = title;
+    confirmEl.querySelector('[data-confirm-msg]')!.textContent = body;
+    confirmEl.querySelector('[data-confirm-yes]')!.textContent = yes;
     confirmEl.hidden = false;
     confirmEl.querySelector<HTMLButtonElement>('[data-confirm-yes]')!.focus();
   }
@@ -173,32 +277,56 @@ export function initLivingBoard() {
     const cb = confirmCb;
     confirmCb = null;
     if (ok && cb) cb();
-    confirmReturn?.focus?.({ preventScroll: true });
+    (ok && phase === 'converted' ? docsEl : confirmReturn)?.focus?.({ preventScroll: true });
   }
   confirmEl.querySelector('[data-confirm-yes]')!.addEventListener('click', () => closeConfirm(true));
   confirmEl.querySelector('[data-confirm-no]')!.addEventListener('click', () => closeConfirm(false));
   confirmEl.addEventListener('keydown', (e) => { if ((e as KeyboardEvent).key === 'Escape') closeConfirm(false); });
 
-  // ---------- small celebration on a user approval (one beat) ----------
+  // ---------- small celebration after the conversion (one beat) ----------
   function celebrate() {
     hintEl.innerHTML = '<span class="lb-hint-dot" aria-hidden="true"></span><span>That\'s the real flow. <a href="/start">Run your shop on it free for 14 days →</a></span>';
   }
 
   // ---------- user input ----------
   let lastUser = 0;
-  const userTouched = () => { lastUser = Date.now(); };
+  function userTouched() { lastUser = Date.now(); }
 
   plane.addEventListener('click', (e) => {
-    const btn = (e.target as HTMLElement).closest<HTMLButtonElement>('[data-act]');
+    const t = e.target as HTMLElement;
+    const toggle = t.closest<HTMLButtonElement>('[data-bucket-toggle]');
+    if (toggle) {
+      // Collapse / open an age group; the chevron swaps (down / right) instead of rotating.
+      const b = toggle.closest<HTMLElement>('.kb-bucket')!;
+      const open = b.classList.toggle('is-closed') === false;
+      toggle.setAttribute('aria-expanded', String(open));
+      toggle.querySelector('.kb-bucket-arrow')!.innerHTML = icon(open ? 'chevron' : 'chevronRight');
+      userTouched();
+      return;
+    }
+    const btn = t.closest<HTMLButtonElement>('button[data-act]');
     if (!btn) return;
     const card = btn.closest<HTMLElement>('.kc')!;
     userTouched();
-    if (btn.dataset.act === 'survey') survey(card.dataset.id!, true);
     if (btn.dataset.act === 'advance') advance(card.dataset.id!, true);
     track('board_button', { act: btn.dataset.act! });
   });
+  // The New card's survey box is a real date input, like the app's.
+  plane.addEventListener('change', (e) => {
+    const input = (e.target as HTMLElement).closest<HTMLInputElement>('input[data-act="survey"]');
+    if (!input || !input.value) return;
+    const card = input.closest<HTMLElement>('.kc')!;
+    userTouched();
+    survey(card.dataset.id!, input.value, true);
+    track('board_button', { act: 'survey' });
+  });
+  plane.addEventListener('click', (e) => {
+    const input = (e.target as HTMLElement).closest<HTMLInputElement>('input[data-act="survey"]');
+    try { (input as HTMLInputElement & { showPicker?: () => void })?.showPicker?.(); } catch { /* not allowed here */ }
+  });
 
   plane.addEventListener('keydown', (e) => {
+    if ((e.target as HTMLElement).closest('input')) return;
     const card = (e.target as HTMLElement).closest<HTMLElement>('.kc');
     if (!card) return;
     const id = card.dataset.id!;
@@ -214,8 +342,9 @@ export function initLivingBoard() {
     } else if (e.key === 'Enter' || e.key === ' ') {
       e.preventDefault();
       userTouched();
-      if (lead.status === 'new') survey(id, true);
-      else if (lead.status !== 'site_survey_scheduled') advance(id, true);
+      // New: pick a survey two days out (the date box takes any date too); Send Quote: "→ Follow-up".
+      if (lead.status === 'new') survey(id, addDays(DEMO_TODAY, 2), true);
+      else advance(id, true);
     }
   });
 
@@ -224,7 +353,7 @@ export function initLivingBoard() {
   plane.addEventListener('pointerdown', (e) => {
     if (!desktop.matches || e.button !== 0) return;
     const el = (e.target as HTMLElement).closest<HTMLElement>('.kc');
-    if (!el || (e.target as HTMLElement).closest('button')) return;
+    if (!el || (e.target as HTMLElement).closest('button, input, label')) return;
     userTouched();
     drag = { id: el.dataset.id!, el, ghost: el, gw: 260, sx: e.clientX, sy: e.clientY, started: false, over: null, pid: e.pointerId };
   });
@@ -278,20 +407,20 @@ export function initLivingBoard() {
   window.addEventListener('pointercancel', endDrag);
 
   // ---------- auto-flow: one real transition every few seconds ----------
+  // The story lead (QT-330) is the visitor's to approve, so the auto-flow never touches it.
   let paused = false;
   let visible = true;
   let step = 0;
-  const firstIn = (s: Status) => [...leads.values()].filter((l) => l.status === s).sort((a, b) => b.stageAgeDays - a.stageAgeDays)[0];
+  const firstIn = (s: Status) => [...leads.values()].filter((l) => l.status === s && l.id !== story.leadId).sort((a, b) => b.stageAgeDays - a.stageAgeDays)[0];
   function tick() {
     if (paused || !visible || document.hidden || reduce.matches || drag || !confirmEl.hidden) return;
     if (Date.now() - lastUser < IDLE_AFTER_USER_MS) return;
-    for (let tries = 0; tries < 5; tries++) {
-      const k = step++ % 5;
-      if (k === 0) { const l = firstIn('new'); if (l) { survey(l.id, false); return; } }
-      if (k === 1) { const l = firstIn('site_survey_scheduled'); if (l) { moveTo(l.id, 'send_quote', false); return; } }
-      if (k === 2) { const l = firstIn('send_quote'); if (l) { advance(l.id, false); return; } }
-      if (k === 3) { const l = firstIn('follow_up'); if (l) { advance(l.id, false); return; } }
-      if (k === 4) {
+    for (let tries = 0; tries < 4; tries++) {
+      const k = step++ % 4;
+      if (k === 0) { const l = firstIn('new'); if (l) { survey(l.id, addDays(DEMO_TODAY, 2), false); return; } }
+      if (k === 1) { const l = firstIn('site_survey_scheduled'); if (l) { surveyDone(l.id); return; } }
+      if (k === 2) { const l = firstIn('send_quote'); if (l) { quoteSent(l.id); return; } }
+      if (k === 3) {
         const nl = incoming.shift();
         if (nl) {
           counters = { ...counters, lead: counters.lead + 1 };

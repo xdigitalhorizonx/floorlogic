@@ -1,6 +1,7 @@
 // Visible FAQ text — the same strings feed the FAQPage schema (must match what's on the page).
-// Every answer is checked against the demo build's real features (brand.md §2) — no promises
-// about anything that isn't built.
+// Every answer is checked against the current app (docs/app-inventory-2026-10.md, demo 80be9ee)
+// — no promises about anything that isn't built. Owner, 2026-10-15: market Caspar by name, never
+// as AI; say today's approval flow (one click makes the work order and invoice).
 
 export type Faq = { q: string; a: string };
 
@@ -15,15 +16,15 @@ export const HOME_FAQ: Faq[] = [
   },
   {
     q: 'Can my installers and reps use it on their phones?',
-    a: 'Yes. FloorLogic runs in any web browser on a phone, tablet or computer. There is nothing to install.',
+    a: 'Yes. Reps get a phone version of FloorLogic: leads, customers and quotes with the full quote builder, plus work orders and invoices to look up. Add it to your home screen from the browser. There is nothing to download from an app store.',
   },
   {
     q: 'Does it handle carpet and roll goods?',
-    a: 'Yes. Enter the roll width and the cut length and FloorLogic works out the square yards. Cut cost and roll cost per square yard are kept on every roll product.',
+    a: 'Yes. Type the square yards and FloorLogic fills in the cut length from the roll width, or type a length and it works out the square yards. Cut and roll prices per square yard sit on every carpet product.',
   },
   {
     q: 'Can customers approve quotes and pay online?',
-    a: 'Yes. Each quote has a live link where the customer picks options and taps Approve. That creates the work order and the invoice. Invoices have their own link with card payment through Stripe at Stripe’s standard rate. FloorLogic adds nothing on top.',
+    a: 'Yes. Each quote has a live link where the customer picks options and taps Approve. You see it in FloorLogic right away, and one click on the quote creates the work order and the invoice. Invoices have their own link with card payment through Stripe at Stripe’s standard rate. FloorLogic adds nothing on top.',
   },
   {
     q: 'Does it sync with QuickBooks?',
@@ -31,7 +32,15 @@ export const HOME_FAQ: Faq[] = [
   },
   {
     q: 'Can I hide my costs from customers and crews?',
-    a: 'Yes. Privacy Mode hides cost, margin and profit with one click, and the finance screens can be locked behind a PIN. Roles control what each person sees.',
+    a: 'Yes. Privacy Mode blurs cost, margin and profit with one click. Accounting can be locked behind a PIN, and roles control which screens each person can open. Sales reps only see their own customers and jobs.',
+  },
+  {
+    q: 'What is Caspar?',
+    a: 'Caspar builds a quote with you. Talk the job through, or snap a photo of your paper quote sheet, and Caspar fills in the quote builder. You check it, save it and send it.',
+  },
+  {
+    q: 'Does it work with Google Calendar and our phone system?',
+    a: 'Yes, if you use them. Installs and site surveys sync both ways with Google Calendar on Google Workspace. Shops on Dialpad get every call and text on the lead, with recordings and call summaries.',
   },
   {
     q: 'Who makes FloorLogic?',
@@ -42,7 +51,7 @@ export const HOME_FAQ: Faq[] = [
 export const PRICING_FAQ: Faq[] = [
   {
     q: 'Which plan should I pick?',
-    a: 'Crew if up to three people quote, install and bill. Shop if you have reps, crews and stock to track: it adds job costing, purchase orders, inventory and samples. Ledger if you want the books in FloorLogic too.',
+    a: 'Crew if up to three people quote, install and bill. Shop if you have reps, crews and stock to track: it adds Caspar, job costing, purchase orders, inventory and samples. Ledger if you want the books in FloorLogic too.',
   },
   {
     q: 'Is there a setup fee?',

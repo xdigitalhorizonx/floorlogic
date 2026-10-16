@@ -1,11 +1,13 @@
 ---
-// The app's real sidebar (demo main): Company / Clients / Documents / Finances / Inventory groups.
+// The app's real sidebar (October build, main L4166-4196): Company / Clients / Documents /
+// Finances / Inventory groups. Product List is folded into Inventory now; Caspar sits under
+// Documents (shown by name, as the owner markets it).
 const groups = [
   { h: 'Company', items: ['Dashboard', 'People'] },
   { h: 'Clients', items: ['Leads', 'Customers', 'Samples'] },
-  { h: 'Documents', items: ['Projects', 'Quotes', 'Work Orders', 'Invoices'] },
+  { h: 'Documents', items: ['Projects', 'Quotes', 'Caspar', 'Work Orders', 'Invoices'] },
   { h: 'Finances', items: ['Accounting', 'Job Costing'] },
-  { h: 'Inventory', items: ['Inventory', 'Orders', 'Product List'] },
+  { h: 'Inventory', items: ['Inventory', 'Orders'] },
 ];
 ---
 <section class="section band-sky origin" id="story" aria-labelledby="origin-title">

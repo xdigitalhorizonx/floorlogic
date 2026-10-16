@@ -1,0 +1,78 @@
+---
+// The phone app, Caspar, Google Calendar and Dialpad (owner, 2026-10-15: advertise all four;
+// market Caspar by name, never as AI). Each line is checked against the current app
+// (docs/app-inventory-2026-10.md §2.9-2.12). The phone in the middle is a real screenshot of the
+// app's /mobile Today screen, filmed offline with the fictional Pinyon Flooring data.
+import { icon } from '../../lib/board/card-html';
+
+const left = [
+  { ic: 'mobile' as const, title: 'FloorLogic on your phone', body: 'Leads, customers and the full quote builder, with work orders and invoices to look up. Add it to your home screen.', note: 'For every rep, no app store' },
+  { ic: 'sparkles' as const, title: 'Caspar', body: 'Talk the job through, or snap a photo of your paper quote sheet. Caspar fills in the quote builder for you to check and send.', note: 'On the phone and in the office' },
+];
+const right = [
+  { ic: 'calendar' as const, title: 'Your calendar, both ways', body: 'Installs and site surveys sync with Google Calendar, plus one company calendar the whole crew can see.', note: 'With Google Workspace' },
+  { ic: 'phone' as const, title: 'Every call on the lead', body: 'Calls, texts and recordings land on the right lead and customer, with a short summary of each call.', note: 'For shops on Dialpad' },
+];
+---
+<section class="section band-sky road" id="on-the-road" aria-labelledby="road-title">
+  <div class="container">
+    <div class="road-head reveal">
+      <p class="eyebrow">On the road</p>
+      <h2 id="road-title">The whole shop, in your pocket.</h2>
+      <p class="lead">Reps quote from the truck, Caspar does the typing, and every install and every call lands in the right place.</p>
+    </div>
+    <div class="road-grid">
+      <ul class="road-col">
+        {left.map((f, i) => (
+          <li class="road-tile reveal" style={`--d:${i * 70}ms`}>
+            <span class="road-ic" aria-hidden="true"><Fragment set:html={icon(f.ic)} /></span>
+            <h3>{f.title}</h3>
+            <p>{f.body}</p>
+            <p class="road-note">{f.note}</p>
+          </li>
+        ))}
+      </ul>
+      <figure class="road-phone reveal">
+        <div class="road-device">
+          <img src="/img/app-phone-today-780.webp" srcset="/img/app-phone-today-780.webp 780w, /img/app-phone-today-1170.webp 1170w" sizes="(max-width: 700px) 70vw, 300px" width="780" height="1688" alt="The FloorLogic phone app's Today screen: open leads, quotes out, surveys coming up and new leads to call, with sample data." loading="lazy" decoding="async" />
+        </div>
+        <figcaption>The phone app’s Today screen, with sample data.</figcaption>
+      </figure>
+      <ul class="road-col">
+        {right.map((f, i) => (
+          <li class="road-tile reveal" style={`--d:${(i + 2) * 70}ms`}>
+            <span class="road-ic" aria-hidden="true"><Fragment set:html={icon(f.ic)} /></span>
+            <h3>{f.title}</h3>
+            <p>{f.body}</p>
+            <p class="road-note">{f.note}</p>
+          </li>
+        ))}
+      </ul>
+    </div>
+  </div>
+</section>
+
+<style>
+  .road-head { max-width: 720px; margin: 0 auto clamp(36px, 4.5vw, 60px); text-align: center; }
+  .road-head .eyebrow { justify-content: center; }
+  .road-head h2 { margin: 14px 0 14px; text-wrap: balance; }
+  .road-head .lead { margin-inline: auto; }
+  /* Symmetric: two tiles, the phone, two tiles. */
+  .road-grid { display: grid; grid-template-columns: 1fr minmax(240px, 300px) 1fr; gap: clamp(24px, 4vw, 56px); align-items: center; }
+  .road-col { list-style: none; margin: 0; padding: 0; display: grid; gap: 20px; }
+  .road-tile { background: #fff; border-radius: var(--r-card); padding: 22px 22px 20px; box-shadow: 0 0 0 1px rgba(2,49,91,.07), var(--shadow-1); transition-delay: var(--d); }
+  .road-ic { display: grid; place-items: center; width: 40px; height: 40px; border-radius: 10px; background: var(--ice-200); color: var(--navy-700); font-size: 20px; margin-bottom: 14px; }
+  .road-tile h3 { font-size: var(--fs-h3); margin-bottom: 8px; }
+  .road-tile p { color: var(--grey-700); line-height: 1.55; }
+  .road-tile .road-note { margin-top: 10px; font-size: var(--fs-micro); font-weight: 700; letter-spacing: .04em; color: var(--navy-700); }
+  .road-phone { margin: 0; display: grid; justify-items: center; gap: 14px; }
+  .road-device { width: 100%; max-width: 300px; padding: 10px; border-radius: 46px; background: linear-gradient(180deg, #2c3441, #121821); box-shadow: 0 40px 80px -36px rgba(2,49,91,.55), 0 0 0 1px rgba(255,255,255,.06) inset; }
+  .road-device img { display: block; width: 100%; height: auto; border-radius: 37px; }
+  .road-phone figcaption { font-size: var(--fs-small); color: var(--grey-600); text-align: center; }
+  @media (max-width: 980px) {
+    .road-grid { grid-template-columns: 1fr 1fr; }
+    .road-phone { grid-column: 1 / -1; order: -1; }
+    .road-device { max-width: 260px; }
+  }
+  @media (max-width: 600px) { .road-grid { grid-template-columns: 1fr; } }
+</style>

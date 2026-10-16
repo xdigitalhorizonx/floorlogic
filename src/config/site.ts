@@ -33,7 +33,9 @@ export type Tier = {
   includes: string[];
 };
 
-// Approved by the owner 2026-08-16. Yearly = two months free.
+// Prices approved by the owner 2026-08-16. Yearly = two months free. Feature lines re-checked
+// against the current app 2026-10-15 (phone app, Caspar, calendar sync and Dialpad added at the
+// owner's request; seats are packaging — the app does not enforce them).
 export const TIERS: Tier[] = [
   {
     id: 'crew', name: 'Crew', monthly: 149, yearly: 1490, seats: 'Up to 3 users',
@@ -42,9 +44,10 @@ export const TIERS: Tier[] = [
       'Lead board and follow-ups',
       'Quote builder with cartons and roll goods',
       'Live quote link with online approval',
-      'Work orders, scheduling and calendar',
+      'Work orders with start and end dates',
       'Invoices with card payment',
-      'Email and text delivery',
+      'Email quotes and invoices, text quote links',
+      'Phone app for your reps',
     ],
   },
   {
@@ -52,12 +55,12 @@ export const TIERS: Tier[] = [
     blurb: 'For a showroom with reps, crews and stock.',
     includes: [
       'Everything in Crew',
+      'Caspar: quotes by voice or from a photo',
       'Job costing: estimate vs actual',
-      'Purchase orders',
-      'Inventory and sample checkouts',
-      'Projects and change orders',
+      'Purchase orders and inventory',
+      'Samples, projects and change orders',
       'Two reps per job and commissions',
-      'Call logging with transcripts',
+      'Google Calendar sync and Dialpad call log',
     ],
   },
   {
@@ -68,7 +71,7 @@ export const TIERS: Tier[] = [
       'Accounting: receivables and payables',
       'Bank statement import and reconciliation',
       'Auto-categorization rules',
-      'Card payout reports',
+      'Profit & loss and contractor payment reports',
       'PIN-locked finance screens',
       'Priority onboarding and data migration',
     ],
