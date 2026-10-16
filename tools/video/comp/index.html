@@ -29,14 +29,15 @@ html,body{width:1920px;height:1080px;overflow:hidden;background:var(--ice)}
   box-shadow:0 2px 6px rgba(2,49,91,.06),0 28px 70px -22px rgba(2,49,91,.38),0 0 0 1px rgba(2,49,91,.08)}
 .win{z-index:0;isolation:isolate}   /* stills stack inside the window only */
 .win .vp{position:absolute;left:0;top:0;transform-origin:0 0}
-.cam > .vp{position:absolute;left:0;top:0;z-index:50}
+.cam > .vp{position:absolute;left:0;top:0;z-index:50;pointer-events:none}
 .win img.still{position:absolute;left:0;top:0;display:block}
-.ghost{position:absolute;pointer-events:none;border-radius:10px;overflow:hidden;opacity:0;
-  box-shadow:0 18px 40px -10px rgba(2,49,91,.45),0 0 0 2px rgba(20,112,210,.55);background-repeat:no-repeat}
 /* cursor + click ripple */
 .cursor{position:absolute;left:0;top:0;width:34px;height:40px;pointer-events:none;transform-origin:0 0;filter:drop-shadow(0 3px 4px rgba(0,0,0,.28))}
 .ripple{position:absolute;left:0;top:0;width:60px;height:60px;margin:-30px 0 0 -30px;border-radius:50%;border:4px solid var(--blue);opacity:0;pointer-events:none}
 .tap{position:absolute;left:0;top:0;width:74px;height:74px;margin:-37px 0 0 -37px;border-radius:50%;background:rgba(20,112,210,.28);border:3px solid rgba(255,255,255,.95);box-shadow:0 0 0 2px rgba(20,112,210,.5);opacity:0;pointer-events:none}
+/* highlight ring: level, drawn in camera space so it zooms with the shot */
+.ring{position:absolute;border-radius:12px;pointer-events:none;transform-origin:50% 50%;z-index:57;
+  box-shadow:0 0 0 3px rgba(20,112,210,.92),0 0 0 9px rgba(20,112,210,.16),0 12px 30px -10px rgba(2,49,91,.35)}
 /* phone */
 .phone{position:absolute;width:438px;height:922px;border-radius:66px;background:#0d1724;
   box-shadow:0 0 0 2px #2a3443 inset,0 40px 90px -30px rgba(2,49,91,.55),0 10px 30px -10px rgba(2,49,91,.35)}
@@ -47,20 +48,12 @@ html,body{width:1920px;height:1080px;overflow:hidden;background:var(--ice)}
 /* cursor wrapper (counter-scaled against camera zoom) */
 .curwrap{position:absolute;left:0;top:0;pointer-events:none;z-index:60}
 .curwrap .cursor{position:absolute;left:0;top:0;width:34px;height:40px}
-.ghost{z-index:55}
 .ripple{z-index:58}
 /* phone status bar */
 .statusbar{position:absolute;left:0;top:0;width:410px;display:flex;align-items:flex-end;justify-content:space-between;box-sizing:border-box;padding:0 26px 9px 40px;background:#fff;z-index:30;
   font:600 16px/1 -apple-system,'SF Pro Text','Segoe UI',system-ui,sans-serif;color:#111;letter-spacing:-.01em}
 .statusbar .sb-icons{display:flex;gap:6px;align-items:center}
 .statusbar svg{fill:#111}
-/* Chrome-style native confirm() — drawn because headless Chrome never paints JS dialogs */
-.jsdlg{position:absolute;width:448px;background:#fff;border-radius:10px;box-shadow:0 6px 24px rgba(0,0,0,.28),0 0 0 1px rgba(0,0,0,.06);padding:22px 24px 18px;
-  font:400 14.5px/1.5 'Segoe UI',system-ui,sans-serif;color:#1f1f1f;opacity:0;transform-origin:50% 0}
-.jsdlg .btns{display:flex;justify-content:flex-end;gap:8px;margin-top:20px}
-.jsdlg .b{border-radius:999px;padding:8px 20px;font-weight:600;font-size:14px}
-.jsdlg .ok{background:#0b57d0;color:#fff}
-.jsdlg .cancel{box-shadow:inset 0 0 0 1px #c4c7c5;color:#0b57d0}
 /* caption card */
 .cap{position:absolute;left:72px;bottom:64px;min-width:560px;max-width:980px;padding:24px 30px 26px 30px;border-radius:20px;
   background:var(--navy);color:#fff;box-shadow:0 30px 60px -24px rgba(0,34,79,.6),0 2px 6px rgba(0,34,79,.2)}

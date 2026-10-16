@@ -19,6 +19,7 @@ import { startServer, NEVER_ON_CAMERA_INDEX, NEVER_ON_CAMERA_Q, BANNED_ON_CAMERA
 import { launchIsolated } from '../harness/browser.mjs';
 import { stubSource } from '../harness/stub-source.mjs';
 import { settle, byText, mustText } from './lib.mjs';
+import { loadStoryExtras } from './dataset.mjs';
 
 const HERE = path.dirname(fileURLToPath(import.meta.url));
 const ROOT = path.resolve(HERE, '..');
@@ -34,6 +35,8 @@ const DESK = { width: 1920, height: 1080, dpr: 1.5 };
 const PHONE = { width: 390, height: 844, dpr: 3, mobile: true };
 const PT = (iso, hm) => Date.parse(`${iso}T${hm}:00-07:00`);
 const DAY = FX.story.days;
+// two facts the fixture's story does not carry: the install end date and each PO's freight
+const XS = await loadStoryExtras();
 const log = (...a) => console.log('[screens]', ...a);
 const money = (n) => '$' + Number(n).toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
 const failures = [];
@@ -360,7 +363,7 @@ try {
   check('WO-330 out of Materials (all lines ordered → Ready to Schedule)', j.status === 'ready_to_schedule', j.status);
   const pos = (await db(page, 'job_pos')).filter((x) => x.job_id === job.id);
   check('Order Materials made 4 POs', pos.length === 4, pos.map((x) => `${x.number} ${x.mat_num} ${x.qty}`).join(', '));
-  note(`The app numbers WO-330's purchase orders ${pos.map((x) => x.number).join(', ')}; the site dataset calls them PO-1193…PO-1196.`);
+  { const app = pos.map((x) => x.number).sort().join(', '), ds = XS.poNumbers.slice().sort().join(', '); check('WO-330 POs numbered like the dataset', app === ds, `app ${app} · dataset ${ds}`); }
 
   // Off camera, Oct 19: everything arrives (base as 12 × 16 ft sticks); freight paid. Receiving
   // a PO also marks its work-order line in (matReceivedAt), as the app's own receive does.
@@ -370,7 +373,7 @@ try {
     await dbWrite(p, 'job_pos', all.map((x) => {
       if (x.job_id !== job.id) return x;
       const qty = FX.story.poQty[x.mat_num] != null ? FX.story.poQty[x.mat_num] : x.qty;
-      return { ...x, qty, total_cost: Math.round(qty * x.cost * 100) / 100, status: 'received', received_at: FX.story.poReceivedAt };
+      return { ...x, qty, total_cost: Math.round(qty * x.cost * 100) / 100, freight: XS.poFreight[x.mat_num] || 0, status: 'received', received_at: FX.story.poReceivedAt };
     }));
     const jobs = await db(p, 'jobs');
     await dbWrite(p, 'jobs', jobs.map((x) => (x.id !== job.id ? x : { ...x, materials: (x.materials || []).map((m) => ({ ...m, matReceivedAt: FX.story.poReceivedAt })) })));
@@ -385,16 +388,18 @@ try {
     await clickSel(page, 'button[onclick^="openScheduleJobModal"]', 'Schedule Install');
     await page.waitForSelector('#modal-overlay.active', { timeout: 5000 });
     if (await page.$('#sched-installer')) await page.select('#sched-installer', FX.story.installer.id);
-    if (await page.$('#sched-date')) await page.$eval('#sched-date', (el, v) => { el.value = v; el.dispatchEvent(new Event('input', { bubbles: true })); el.dispatchEvent(new Event('change', { bubbles: true })); }, FX.story.installDate);
+    const setDate = (sel, v) => page.$eval(sel, (el, v) => { el.value = v; el.dispatchEvent(new Event('input', { bubbles: true })); el.dispatchEvent(new Event('change', { bubbles: true })); }, v);
+    if (await page.$('#sched-date')) await setDate('#sched-date', FX.story.installDate);
+    if (await page.$('#sched-end')) await setDate('#sched-end', XS.installEnd);
     await settle(page, 200);
-    if (i === 0) await shot(page, '05d', 'schedule-install', { what: 'WO-330 → Schedule Install: installer Ruben Ortiz, install date Oct 21', route: `#job-detail/${job.id} → "Schedule Install"`, when: 'Mon Oct 19 2026, 08:40' });
+    if (i === 0) await shot(page, '05d', 'schedule-install', { what: 'WO-330 → Schedule Install: start Oct 21, end Oct 22 (2-day install), installer Ruben Ortiz', route: `#job-detail/${job.id} → "Schedule Install"`, when: 'Mon Oct 19 2026, 08:40' });
     await clickSel(page, '#modal .modal-footer .btn-primary', 'Schedule');
     await page.waitForFunction(() => !document.querySelector('#modal-overlay.active'), { timeout: 5000 });
     await settle(page, 300);
     await flush(page);
     j = (await db(page, 'jobs')).find((x) => x.id === job.id);
   }
-  check('WO-330 scheduled for the install date with Ruben', j.status === 'scheduled' && j.scheduled_date === FX.story.installDate && j.crew === FX.story.installer.id, `${j.status} ${j.scheduled_date} crew=${j.crew}`);
+  check('WO-330 scheduled for the install dates with Ruben', j.status === 'scheduled' && j.scheduled_date === FX.story.installDate && Number(j.duration_days) === Math.round((Date.parse(XS.installEnd) - Date.parse(XS.installStart)) / 864e5) + 1 && j.crew === FX.story.installer.id, `${j.status} ${j.scheduled_date} ${j.duration_days}d crew=${j.crew}`);
 
   // Off camera, Oct 21: install supplies bought.
   await story('install supplies', async (p) => { const jc = await db(p, 'job_costs'); await dbWrite(p, 'job_costs', jc.concat(costs.filter((c) => c.kind === 'supply'))); });

@@ -1,6 +1,7 @@
-// Demo video chapters. Times must match the rendered cut (the video track updates these).
-// Cut of 2026-10-14 (45.4 s): each scene's cross-fade starts at x.75–x.85 s and has settled by
-// the whole second used below.
+// Demo video chapters. Times must match the rendered cut: tools/video/comp/publish-meta.mjs
+// writes this file from the compositor timeline (tools/video/comp/timeline.js).
+// Cut of 2026-10-16 (45.4 s): each scene's cross-fade starts 0.38 s before its
+// chapter's whole second and has settled by it.
 export const VIDEO = {
   mp4: '/video/floorlogic-demo.mp4',
   webm: '/video/floorlogic-demo.webm',
@@ -8,11 +9,11 @@ export const VIDEO = {
   vtt: '/video/floorlogic-demo.vtt',
   seconds: 45,
   chapters: [
-    { at: 0, label: 'A lead is won', detail: 'Drag it to Approved' },
-    { at: 5, label: 'Quote the job', detail: 'Cartons counted for you' },
-    { at: 15, label: 'Customer approves', detail: 'On their phone' },
-    { at: 24, label: 'Run the install', detail: 'One button, start to finish' },
+    { at: 0, label: 'Leads move themselves', detail: 'Pick a survey date' },
+    { at: 6, label: 'Quote the job', detail: 'Cartons counted for you' },
+    { at: 16, label: 'Customer approves', detail: 'On their phone' },
+    { at: 24, label: 'Work order & invoice', detail: 'One click, then schedule' },
     { at: 34, label: 'Get paid', detail: 'Balance hits $0' },
-    { at: 40, label: 'Know the profit', detail: 'Estimate vs actual' },
+    { at: 39, label: 'Know the profit', detail: 'Before and after commission' },
   ],
 } as const;

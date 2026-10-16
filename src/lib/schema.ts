@@ -84,7 +84,7 @@ export function videoNode(path: string) {
     description: 'A lead, a quote, a customer approval, a work order and a payment — done in the real FloorLogic app with sample data.',
     thumbnailUrl: abs('/video/floorlogic-demo-poster.jpg'),
     contentUrl: abs('/video/floorlogic-demo.mp4'),
-    uploadDate: '2026-10-14',
+    uploadDate: '2026-10-16',
     duration: 'PT45S',
     publisher: { '@id': ORG_ID },
   };

@@ -124,9 +124,17 @@ export function transformIndex(html) {
     ['</head>\n<body>\n<div class="app" id="app">', HIDE_INDEX + '</head>\n<body>\n<div class="app" id="app">'],
   ], 'index.html');
 }
+// q.html's APPROVED rubber stamp is turned −8° (−4° under 760 px). Nothing tilted on camera
+// (owner, 2026-10-14): the harness levels it; size, colour and double border stay the app's.
+const STAMP_TILT_WIDE = 'transform:translateX(-50%) rotate(-8deg)';
+const STAMP_TILT_PHONE = '{.approved-stamp{position:static;display:block;width:max-content;max-width:100%;margin:0 auto 16px;transform:rotate(-4deg)}}';
 export function transformQ(html) {
   html = html.replace(/\r\n/g, '\n');
-  return swapAll(html, [['</head>', HIDE_Q + '</head>']], 'q.html');
+  return swapAll(html, [
+    ['</head>', HIDE_Q + '</head>'],
+    [STAMP_TILT_WIDE, 'transform:translateX(-50%)'],
+    [STAMP_TILT_PHONE, STAMP_TILT_PHONE.replace('transform:rotate(-4deg)', 'transform:none')],
+  ], 'q.html');
 }
 
 export function startServer({ port = 0, log = () => {} } = {}) {
@@ -148,13 +156,19 @@ export function startServer({ port = 0, log = () => {} } = {}) {
     '/__harness/fixture.json': path.join(HERE, 'fixture.json'),
     '/__harness/inter.woff2': INTER,
   };
-  const server = http.createServer((req, res) => {
+  // One-shot response delays, set by a film script (GET /__harness/delay-next?path=/q.html&ms=1500).
+  // q.html reloads 600 ms after "Approve Quote"; over a real network that reload takes a moment,
+  // and the film needs that moment to photograph the app's own "Quote approved!" toast.
+  const delays = new Map();
+  const server = http.createServer(async (req, res) => {
     const url = new URL(req.url, 'http://127.0.0.1');
     let p = decodeURIComponent(url.pathname);
     const send = (code, type, body, extra = {}) => {
       res.writeHead(code, { 'Content-Type': type, 'Cache-Control': 'no-store', ...extra });
       res.end(body);
     };
+    if (p === '/__harness/delay-next') { delays.set(url.searchParams.get('path'), Math.min(5000, +url.searchParams.get('ms') || 0)); log({ kind: 'delay-next', path: url.searchParams.get('path'), ms: delays.get(url.searchParams.get('path')) }); return send(200, 'text/plain', 'ok'); }
+    if (delays.has(p)) { const ms = delays.get(p); delays.delete(p); await new Promise((r) => setTimeout(r, ms)); }
     if (p.startsWith('/api/')) { log({ kind: 'api-503', path: p, method: req.method }); return send(503, 'application/json', JSON.stringify({ error: 'offline film harness: /api is disabled' })); }
     if (p.startsWith(SB_PREFIX + '/')) { log({ kind: 'edge-fn-503', path: p.slice(SB_PREFIX.length), method: req.method }); return send(503, 'application/json', JSON.stringify({ error: 'offline film harness: edge functions are disabled' }), { 'Access-Control-Allow-Origin': '*' }); }
     if (p === '/config.js') return send(200, MIME['.js'], CONFIG_JS);
