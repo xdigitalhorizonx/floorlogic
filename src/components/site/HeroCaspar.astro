@@ -135,9 +135,16 @@ const tabs = [
   @font-face { font-family: 'Caveat Hero'; font-style: normal; font-weight: 600; font-display: swap; src: url(/fonts/caveat-hero-600.woff2) format('woff2'); }
   @font-face { font-family: 'Caveat Hero'; font-style: normal; font-weight: 700; font-display: swap; src: url(/fonts/caveat-hero-700.woff2) format('woff2'); }
 
-  /* ---------------- Ground: plain white into ice blue, one soft glow, centred. No photo. ---------------- */
+  /* ---------------- Ground: a living room as a faint watermark, edge to edge (owner, 2026-10-20). ----------------
+     The room is pre-washed into the page's ice blue (tools/hero-living, about 12% of the photo), mirrored to exact
+     symmetry, so it never fights the type. One soft centred glow on top; the bottom fades into the page. */
   .hc { position: relative; isolation: isolate; overflow: clip;
-    background: radial-gradient(ellipse 70% 60% at 50% 72%, var(--ice-200) 0%, rgba(226,237,250,0) 70%), linear-gradient(180deg, #fff 0%, var(--ice-50) 100%); }
+    /* The whole room spans the width (its height is 45.5% of the width); it fades out before the stage. */
+    background:
+      radial-gradient(ellipse 70% 60% at 50% 72%, rgba(226,237,250,.6) 0%, rgba(226,237,250,0) 70%),
+      linear-gradient(180deg, rgba(244,248,254,0) 0, rgba(244,248,254,0) 30vw, var(--ice-50) 45.5vw),
+      url(/img/hero-living-2400.webp) 50% 0 / 100% auto no-repeat,
+      var(--ice-50); }
   .hc-in { max-width: 1360px; margin: 0 auto; padding: 26px 24px 44px; text-align: center; container-type: inline-size; }
   /* Owner: crisp, level, true size. Everything that centres the phone is rounded to whole pixels
      (an odd window width or a 17px scrollbar would put it on a half pixel otherwise). */
@@ -364,6 +371,11 @@ const tabs = [
 
   /* ---------------- Stacked (below 900px): phone, then the draft it fills in, then the paper ---------------- */
   @media (max-width: 899px) {
+    /* Phones: the room's centred slice behind the headline, fading out before the stacked cards. */
+    .hc { background:
+      linear-gradient(180deg, rgba(244,248,254,0) 0, rgba(244,248,254,0) 460px, var(--ice-50) 900px),
+      url(/img/hero-living-m.webp) 50% 0 / 100% auto no-repeat,
+      var(--ice-50); }
     .hc-in { padding: 28px var(--gutter) 36px; }
     .hc-stage { grid-template-columns: min(100%, 420px); row-gap: 18px; margin-top: 28px; }
     .hc-phone { order: -1; justify-self: center; }
