@@ -18,9 +18,6 @@ const title = 'FloorLogic — Flooring Business Software with a Free Trial';
 const description = 'Flooring business management software for dealers and installers: quotes in cartons and roll goods, online approval, work orders, invoices and job costing. Prices on the page. 14-day free trial, no credit card.';
 ---
 <BaseLayout title={title} description={description} path="/" schema={[faqNode('/', HOME_FAQ), videoNode('/')]}>
-  <!-- The hero's living-room watermark (15 KB / 5 KB), fetched with the HTML so it never pops in late. -->
-  <link slot="head" rel="preload" as="image" href="/img/hero-living-2400.webp" media="(min-width: 900px)" type="image/webp" fetchpriority="high" />
-  <link slot="head" rel="preload" as="image" href="/img/hero-living-m.webp" media="(max-width: 899px)" type="image/webp" fetchpriority="high" />
   <HeroCaspar />
   <ProofStrip />
   <VideoSection />

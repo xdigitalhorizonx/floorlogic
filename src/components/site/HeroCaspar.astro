@@ -135,16 +135,18 @@ const tabs = [
   @font-face { font-family: 'Caveat Hero'; font-style: normal; font-weight: 600; font-display: swap; src: url(/fonts/caveat-hero-600.woff2) format('woff2'); }
   @font-face { font-family: 'Caveat Hero'; font-style: normal; font-weight: 700; font-display: swap; src: url(/fonts/caveat-hero-700.woff2) format('woff2'); }
 
-  /* ---------------- Ground: a living room as a faint watermark, edge to edge (owner, 2026-10-20). ----------------
-     The room is pre-washed into the page's ice blue (tools/hero-living, about 12% of the photo), mirrored to exact
-     symmetry, so it never fights the type. One soft centred glow on top; the bottom fades into the page. */
+  /* ---------------- Ground: a tiled floor drawn from the logo (owner, 2026-10-20: "we need something there"). ----------------
+     The mark's floor tiles are 2:1 diamonds; here they repeat edge to edge as a two-tone harlequin floor in the page's
+     ice blues, with light grout. Crisp vector at any size, no photo (a washed photo read as a mistake). One diamond sits
+     on the page's centre line, so the floor is mirror-symmetric. It clears behind the headline and form, frames the
+     stage, and fades out at the bottom. */
   .hc { position: relative; isolation: isolate; overflow: clip;
-    /* The whole room spans the width (its height is 45.5% of the width); it fades out before the stage. */
-    background:
-      radial-gradient(ellipse 70% 60% at 50% 72%, rgba(226,237,250,.6) 0%, rgba(226,237,250,0) 70%),
-      linear-gradient(180deg, rgba(244,248,254,0) 0, rgba(244,248,254,0) 30vw, var(--ice-50) 45.5vw),
-      url(/img/hero-living-2400.webp) 50% 0 / 100% auto no-repeat,
-      var(--ice-50); }
+    background: radial-gradient(ellipse 70% 60% at 50% 72%, var(--ice-200) 0%, rgba(226,237,250,0) 70%), var(--ice-50); }
+  .hc::before { content: ''; position: absolute; inset: 0; z-index: -1; pointer-events: none;
+    background: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='240' height='120' viewBox='0 0 240 120'%3E%3Crect width='240' height='120' fill='%23f6f9fe'/%3E%3Cpath fill='%23eaf1fb' d='M120 1.5 237 60 120 118.5 3 60z'/%3E%3Cpath fill='%23e0eaf7' d='M0-58.5 117 0 0 58.5-117 0zM240-58.5 357 0 240 58.5 123 0zM0 61.5 117 120 0 178.5-117 120zM240 61.5 357 120 240 178.5 123 120z'/%3E%3C/svg%3E") 50% 0 / 240px 120px repeat;
+    --hc-floor-mask: radial-gradient(ellipse 46% 40% at 50% 26%, transparent 0 55%, #000 100%), linear-gradient(180deg, #000 0 84%, transparent 100%);
+    -webkit-mask-image: var(--hc-floor-mask); mask-image: var(--hc-floor-mask);
+    -webkit-mask-composite: source-in; mask-composite: intersect; }
   .hc-in { max-width: 1360px; margin: 0 auto; padding: 26px 24px 44px; text-align: center; container-type: inline-size; }
   /* Owner: crisp, level, true size. Everything that centres the phone is rounded to whole pixels
      (an odd window width or a 17px scrollbar would put it on a half pixel otherwise). */
@@ -371,11 +373,8 @@ const tabs = [
 
   /* ---------------- Stacked (below 900px): phone, then the draft it fills in, then the paper ---------------- */
   @media (max-width: 899px) {
-    /* Phones: the room's centred slice behind the headline, fading out before the stacked cards. */
-    .hc { background:
-      linear-gradient(180deg, rgba(244,248,254,0) 0, rgba(244,248,254,0) 460px, var(--ice-50) 900px),
-      url(/img/hero-living-m.webp) 50% 0 / 100% auto no-repeat,
-      var(--ice-50); }
+    /* Phones: the copy runs edge to edge, so the floor sits lighter all the way down and fades out at the end. */
+    .hc::before { --hc-floor-mask: linear-gradient(180deg, rgba(0,0,0,.55) 0, rgba(0,0,0,.55) 88%, transparent 100%); }
     .hc-in { padding: 28px var(--gutter) 36px; }
     .hc-stage { grid-template-columns: min(100%, 420px); row-gap: 18px; margin-top: 28px; }
     .hc-phone { order: -1; justify-self: center; }
