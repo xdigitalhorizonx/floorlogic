@@ -10,6 +10,7 @@ export function initVideoDialogs() {
       const at = Number(btn.dataset.videoAt || 0);
       if (typeof dlg.showModal === 'function') dlg.showModal(); else dlg.setAttribute('open', '');
       if (video) {
+        if (!video.getAttribute('poster') && video.dataset.poster) video.poster = video.dataset.poster;
         try { video.currentTime = at; } catch { /* metadata not loaded yet */ }
         video.play().catch(() => { /* autoplay with sound blocked — controls are visible */ });
       }

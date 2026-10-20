@@ -4,34 +4,29 @@ import {
   lastTouch, listCtx, nextSort, noteByline, phoneLeadSub, phoneNextStep, phoneStageTap, pickSelected, pipelineStats, quickAddMissing, quickAddToast,
   quickAddValues, surveyQuickDays, whenDay, withNote, type ListLead,
 } from '../../src/lib/logic';
-import { heroIncoming, heroLeads, heroQuotes, heroState } from '../../src/data/hero-leads';
+import { listCounters, listLeads, listQuotes, listReps } from '../fixtures/sample-leads';
 
 const TODAY = '2026-10-14';
-const ctx = listCtx(TODAY, heroState.reps, heroQuotes);
-const byNum = (n: string) => heroLeads.find((l) => l.number === n)!;
+const ctx = listCtx(TODAY, listReps, listQuotes);
+const byNum = (n: string) => listLeads.find((l) => l.number === n)!;
 
-describe('the hero\'s Leads screen, as it opens', () => {
+describe('the Leads list as it opens, on the sample data', () => {
   it('the dataset\'s leads less the approved one (it became a customer); newest first', () => {
-    expect(filterLeads(heroLeads, DEFAULT_LIST_FILTER, ctx).map((l) => l.number)).toEqual(['LD-051', 'LD-052', 'LD-053', 'LD-054', 'LD-055', 'LD-057', 'LD-056', 'LD-059', 'LD-058']);
-    expect(heroLeads.some((l) => l.number === 'LD-060')).toBe(false);
-    expect(pickSelected(filterLeads(heroLeads, DEFAULT_LIST_FILTER, ctx), null)?.name).toBe('Hannah Brooks');
+    expect(filterLeads(listLeads, DEFAULT_LIST_FILTER, ctx).map((l) => l.number)).toEqual(['LD-051', 'LD-052', 'LD-053', 'LD-054', 'LD-055', 'LD-057', 'LD-056', 'LD-059', 'LD-058']);
+    expect(listLeads.some((l) => l.number === 'LD-060')).toBe(false);
+    expect(pickSelected(filterLeads(listLeads, DEFAULT_LIST_FILTER, ctx), null)?.name).toBe('Hannah Brooks');
   });
   it('QT-330 was emailed today: the Prasads sit in Follow-up, Quoted shows the stored total as sent', () => {
     const p = byNum('LD-056');
     expect([p.status, p.stageChangedAt]).toEqual(['follow_up', TODAY]);
-    expect(heroQuotes).toEqual([{ id: 'qt-330', leadId: 'ld-16', number: 'QT-330', total: 7571.93, status: 'sent', createdAt: TODAY }]);
+    expect(listQuotes).toEqual([{ id: 'qt-330', leadId: 'ld-16', number: 'QT-330', total: 7571.93, status: 'sent', createdAt: TODAY }]);
   });
   it('Meadowbrook\'s follow-up is two days late; the stats line', () => {
     expect(byNum('LD-059').followUpDate).toBe('2026-10-12');
-    expect(pipelineStats(heroLeads, TODAY)).toEqual({ activeCount: 9, overdueFU: 1, stale: 0, avgDays: 1, winRate: 0, approved: 0, lost: 0, total: 9 });
+    expect(pipelineStats(listLeads, TODAY)).toEqual({ activeCount: 9, overdueFU: 1, stale: 0, avgDays: 1, winRate: 0, approved: 0, lost: 0, total: 9 });
   });
-  it('the idle demo only types leads whose source the quick add bar offers; addresses are cities', () => {
-    expect(heroIncoming.map((v) => [v.name, v.source])).toEqual([
-      ['Priya & Sam Natarajan', 'Website'], ['Kestrel Ridge Physical Therapy', 'Referral'], ['Gary & Lynn Halvorsen', 'Google'],
-      ['Lantern Peak Builders', 'Referral'], ['Marcus Bell', 'Facebook'], ['Basalt & Pine Café', 'Google'],
-    ]);
-    expect(heroLeads.every((l) => /^[A-Z][a-z]+( City)?, NV$/.test(l.address))).toBe(true);
-    expect(heroState.user.name).toBe('Dale Whitaker');
+  it('addresses are cities: the site never shows a street', () => {
+    expect(listLeads.every((l) => /^[A-Z][a-z]+( City)?, NV$/.test(l.address))).toBe(true);
   });
 });
 
@@ -43,10 +38,10 @@ describe('quick add', () => {
     expect(quickAddMissing(quickAddValues({ name: 'Rosa', phone: '1' }))).toBeNull();
   });
   it('the next number, New, today; it lands under Hannah (both 0 days old — the sort keeps the older record first)', () => {
-    const r = createLeadRecord(quickAddValues({ name: ' Rosa Delgado ', phone: '(775) 555-0199', source: 'Referral' }), heroState.counters, TODAY, 'hl-1');
+    const r = createLeadRecord(quickAddValues({ name: ' Rosa Delgado ', phone: '(775) 555-0199', source: 'Referral' }), listCounters, TODAY, 'hl-1');
     expect([r.lead.number, r.lead.status, r.lead.createdAt, r.lead.type, r.counters.lead, r.activity]).toEqual(['LD-061', 'new', TODAY, 'Retail', 61, 'New lead LD-061 — Rosa Delgado']);
     expect(quickAddToast(r.lead)).toBe('✓ LD-061 added — Rosa Delgado');
-    const list = filterLeads([...heroLeads, r.lead], DEFAULT_LIST_FILTER, ctx).map((l) => l.number);
+    const list = filterLeads([...listLeads, r.lead], DEFAULT_LIST_FILTER, ctx).map((l) => l.number);
     expect(list.slice(0, 3)).toEqual(['LD-051', 'LD-061', 'LD-052']);
   });
   it('a survey date on the way in makes it Site Survey Scheduled', () => {
@@ -57,22 +52,22 @@ describe('quick add', () => {
     expect(['7', '7755', '7755550', '7755550199', '+1 775 555 0199 9'].map(formatPhone)).toEqual(['(7', '(775) 5', '(775) 555-0', '(775) 555-0199', '(177) 555-5019']);
   });
   it('who is already on file', () => {
-    const d = findDuplicates({ name: 'hannah brooks', phone: '', email: '', address: 'Sparks, NV' }, heroLeads, []);
+    const d = findDuplicates({ name: 'hannah brooks', phone: '', email: '', address: 'Sparks, NV' }, listLeads, []);
     expect(d.map((m) => [m.rec.id, m.reasons, m.strong])).toEqual([['ld-11', ['same name and address'], true]]);
-    expect(findDuplicates({ name: 'Somebody', phone: '775.555.0506', email: '', address: '' }, heroLeads, [{ id: 'cu-ld-16', name: 'Dev & Anjali Prasad', phone: '(775) 555-0506', email: '', address: '' }]).map((m) => m.kind)).toEqual(['customer', 'lead']);
+    expect(findDuplicates({ name: 'Somebody', phone: '775.555.0506', email: '', address: '' }, listLeads, [{ id: 'cu-ld-16', name: 'Dev & Anjali Prasad', phone: '(775) 555-0506', email: '', address: '' }]).map((m) => m.kind)).toEqual(['customer', 'lead']);
   });
 });
 
 describe('the list', () => {
   it('search by name, phone digits or note; filters; the bucket on a stage card', () => {
-    const f = (patch: Partial<typeof DEFAULT_LIST_FILTER>) => filterLeads(heroLeads, { ...DEFAULT_LIST_FILTER, ...patch }, ctx).map((l) => l.number);
+    const f = (patch: Partial<typeof DEFAULT_LIST_FILTER>) => filterLeads(listLeads, { ...DEFAULT_LIST_FILTER, ...patch }, ctx).map((l) => l.number);
     expect(f({ q: 'VISTA' })).toEqual(['LD-053']);
     expect(f({ q: '775 555 0508' })).toEqual(['LD-058']);
     expect(f({ q: 'marisol' })).toEqual(['LD-051', 'LD-054', 'LD-056', 'LD-058']);
     expect(f({ status: 'follow_up' })).toEqual(['LD-056', 'LD-059', 'LD-058']);
     expect(f({ type: 'Commercial', rep: 'ct-rep-1' })).toEqual(['LD-053', 'LD-055', 'LD-057']);
     expect(f({ age: 'week' })).toEqual(['LD-051', 'LD-052', 'LD-053', 'LD-054', 'LD-055', 'LD-057']);
-    expect(filterLeads(heroLeads, bucketFilter(DEFAULT_LIST_FILTER, 'new', 'today'), ctx).map((l) => l.number)).toEqual(['LD-051', 'LD-052']);
+    expect(filterLeads(listLeads, bucketFilter(DEFAULT_LIST_FILTER, 'new', 'today'), ctx).map((l) => l.number)).toEqual(['LD-051', 'LD-052']);
     const withNoteLead: ListLead = withNote(byNum('LD-052'), 'Wants a Saturday survey', '2026-10-14T19:00:00.000Z', 'Dale Whitaker');
     expect(filterLeads([withNoteLead], { ...DEFAULT_LIST_FILTER, q: 'saturday' }, ctx)).toHaveLength(1);
   });
@@ -80,7 +75,7 @@ describe('the list', () => {
     expect(nextSort(DEFAULT_LIST_FILTER, 'age')).toEqual({ sort: 'age', dir: 'desc' });
     expect(nextSort(DEFAULT_LIST_FILTER, 'name')).toEqual({ sort: 'name', dir: 'asc' });
     expect(nextSort({ sort: 'name', dir: 'asc' }, 'quoted')).toEqual({ sort: 'quoted', dir: 'desc' });
-    const quoted = filterLeads(heroLeads, { ...DEFAULT_LIST_FILTER, sort: 'quoted', dir: 'desc' }, ctx);
+    const quoted = filterLeads(listLeads, { ...DEFAULT_LIST_FILTER, sort: 'quoted', dir: 'desc' }, ctx);
     expect(quoted[0]!.number).toBe('LD-056');
   });
   it('clear keeps the sort; ↑ / ↓ stop at the ends', () => {

@@ -33,7 +33,9 @@ const mmss = (s: number) => `0:${String(s).padStart(2, '0')}`;
 <dialog class="vdlg" id="video-dialog" aria-label="FloorLogic demo video">
   <div class="vdlg-in">
     <button type="button" class="vdlg-x" data-video-close aria-label="Close video">×</button>
-    <video controls playsinline preload="none" poster={VIDEO.poster} width="1920" height="1080">
+    {/* The poster is set when the dialog first opens (video-dialog.ts): a poster attribute here would
+         fetch the 159 KB image on every page load, before anyone asks for the video. */}
+    <video controls playsinline preload="none" data-poster={VIDEO.poster} width="1920" height="1080">
       <source src={VIDEO.webm} type="video/webm" />
       <source src={VIDEO.mp4} type="video/mp4" />
       <track kind="descriptions" src={VIDEO.vtt} srclang="en" label="Descriptions" />

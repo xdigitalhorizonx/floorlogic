@@ -7,3 +7,10 @@
 2026-10-14  Google Fonts: Inter:wght@400..800
   css: https://fonts.googleapis.com/css2?family=Inter%3Awght%40400..800&display=swap
   licence: see https://fonts.google.com/specimen/Inter
+2026-10-20  Google Fonts: Caveat:wght@500;700 (OFL, copyright + licence URL kept in the name table)
+  css: https://fonts.googleapis.com/css2?family=Caveat%3Awght%40500%3B700&display=swap
+  licence: see https://fonts.google.com/specimen/Caveat
+  fetched with the fonts skill (selfhost-font.mjs --subsets latin), then cut to the hero's paper
+  quote sheet by tools/fonts/caveat-hero.py: static wght 600 (the sheet's rows, + digits 0-9) and
+  700 (its title), only the glyphs those lines shape to (calt kept), plus a ≈ built from two of
+  Caveat's tildes. caveat-hero-600.woff2 11.7 KB, caveat-hero-700.woff2 3.2 KB.

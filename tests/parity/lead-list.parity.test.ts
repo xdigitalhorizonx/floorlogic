@@ -2,9 +2,11 @@
  * The Leads screen's List View and the phone app's Leads screens, run side by
  * side with the site's ports: the app's real functions (demo main 80be9ee =
  * landmark-flooring-app dd609d2, and mobile.js from the same build) in a
- * sandbox, the site's src/lib/logic/lead-list + lead-phone and the hero's
- * renderers on the same records. Note bylines are checked against the
- * 2026-10-15 build's `_noteByline` (ad6cbeb), copied below verbatim.
+ * sandbox, and the site's src/lib/logic/lead-list + lead-phone on the same
+ * records. Note bylines are checked against the 2026-10-15 build's
+ * `_noteByline` (ad6cbeb), copied below verbatim. (The home hero's List View
+ * and phone renderers were compared here too until the Caspar hero replaced
+ * them on 2026-10-20.)
  */
 import { describe, expect, it } from 'vitest';
 import {
@@ -15,9 +17,7 @@ import {
   QUICK_ADD_REQUIRED_TOAST, quickAddMissing, quickAddPlaceholders, quickAddToast, quickAddValues, sortKey, streetOf, firstName, surveyQuickDays, whenDay, addDays,
   type AgeFilter, type ListCustomer, type ListFilter, type ListLead, type ListQuote, type LeadStatus, type PhoneSeg, type SortCol,
 } from '../../src/lib/logic';
-import { filtersHTML, panelHTML, rowHTML, stageCardsHTML, statsHTML } from '../../src/lib/board/list-html';
-import { phoneLeadHTML } from '../../src/lib/board/phone-html';
-import { heroLeads, heroQuotes } from '../../src/data/hero-leads';
+import { listLeads, listQuotes } from '../fixtures/sample-leads';
 import { incomingLeads, leads, reps } from '../../src/data/sample-data';
 import { code, sandbox } from './app-source';
 import { fixedDate, pick, rng, stripTags } from './helpers';
@@ -29,16 +29,16 @@ const isoOffset = (days: number) => addDays(TODAY, days);
 const REPS = reps.map((r) => ({ id: r.id, name: r.name }));
 const repById = Object.fromEntries(REPS.map((r) => [r.id, r]));
 
-/** Every sample lead the hero can show, plus the incoming ones, a lost one and some notes. */
+/** Every sample lead on the Leads list, plus the incoming ones, a lost one and some notes. */
 const toList = (l: (typeof leads)[number]): ListLead => ({ ...l, address: l.city, notes: [] });
 const ALL: ListLead[] = [
-  ...heroLeads,
+  ...listLeads,
   ...incomingLeads.map(toList),
   { ...toList(leads[9]!), id: 'ld-x1', number: 'LD-070', status: 'lost', name: 'Pat O’Neil-Hayes', type: 'Builder', source: '', salesRepId: '' },
   { ...toList(leads[2]!), id: 'ld-x2', number: 'LD-071', createdAt: isoOffset(-45), stageChangedAt: isoOffset(-20), notes: [{ text: 'Called, left a voicemail about Saturday', date: isoOffset(-3) }, { text: 'Wants walnut', date: '2026-10-13T22:40:00.000Z', userName: 'Dale Whitaker' }] },
   { ...toList(leads[4]!), id: 'ld-x3', number: 'LD-072', status: 'approved', createdAt: isoOffset(-400), stageChangedAt: isoOffset(-90), email: '' },
 ];
-const QUOTES: ListQuote[] = [...heroQuotes, { id: 'q-x', leadId: 'ld-x2', number: 'QT-331', total: 1234.5, status: 'draft', createdAt: isoOffset(-1) }, { id: 'q-y', leadId: 'ld-x2', number: 'QT-320', total: 99, status: 'sent', createdAt: isoOffset(-9) }];
+const QUOTES: ListQuote[] = [...listQuotes, { id: 'q-x', leadId: 'ld-x2', number: 'QT-331', total: 1234.5, status: 'draft', createdAt: isoOffset(-1) }, { id: 'q-y', leadId: 'ld-x2', number: 'QT-320', total: 99, status: 'sent', createdAt: isoOffset(-9) }];
 const CTX = listCtx(TODAY, REPS, QUOTES);
 /** A site lead as the app keeps it (address = the city, which is all the site has). */
 const toApp = (l: ListLead) => ({ ...l, contacts: [] as unknown[] });
@@ -47,7 +47,6 @@ const appCtx = () => {
   for (const q of QUOTES) (quotesByLead[q.leadId] ||= []).push(q);
   return { today: TODAY, repById, quotesByLead, callTouch: {} };
 };
-const visible = (html: string) => stripTags(html.replace(/<span class="sr-only">[\s\S]*?<\/span>/g, '')).replace(/[\u{1F300}-\u{1FAFF}\u{2300}-\u{23FF}\u{2600}-\u{27BF}\u{FE0F}]/gu, '').replace(/\s+/g, ' ').trim();
 
 // The app's helpers the List View calls, extracted once.
 const LC_FNS = ['_lcLocalDay', '_lcLastTouch', '_lcAgo', '_lcLatestQuote', '_lcInitials', '_lcMatchesSearch', '_lcSortKey', '_lcFilterLeads', 'daysBetween', '_leadAgeBucketKey', 'fmtDate', 'fmt$', '_fesc'];
@@ -174,92 +173,10 @@ describe('List View: search, filters, sort, selection', () => {
   });
 });
 
-describe('List View: the stats line, the stage cards, the filter bar, a row, the panel (text as drawn)', () => {
-  const app = sandbox<Record<string, (...a: unknown[]) => string>>('index', {
-    fns: [...LC_FNS, '_lcStatsHTML', 'getPipelineStats', 'isLeadStale', 'getLeadStageAgeDays', '_lcStageCardsHTML', '_lcFiltersHTML', '_lcFiltersOn', '_leadAgeBucketLabel', 'getCustomerTypes',
-      '_lcTableHTML', '_lcSortTh', '_lcAvatarHTML', 'isCustomerCompany', 'getFollowUpState', '_lcPanelHTML', 'statusBadge'],
-    consts: LC_CONSTS,
-  }, {
-    _todayISO: () => TODAY, data: { leads: ALL.map(toApp), systemSalesReps: REPS, sampleCheckouts: [], tasks: [] }, viewState: { selectedLeads: [] },
-    window: { _callLog: null, _lcEditId: null }, _lcEditFormHTML: () => '',
-  });
-
-  it('stats line (getPipelineStats)', () => {
-    for (const set of [heroLeads, ALL, ALL.filter((l) => l.status !== 'lost'), [ALL[17]!], []]) {
-      const local = sandbox<Record<string, (...a: unknown[]) => string>>('index', { fns: ['_lcStatsHTML', 'getPipelineStats', 'isLeadStale', 'getLeadStageAgeDays', 'daysBetween'], consts: ['LEAD_STALE_DAYS'] }, {
-        _todayISO: () => TODAY, data: { leads: set.map(toApp) },
-      });
-      expect(visible(statsHTML(set, TODAY))).toBe(visible(local._lcStatsHTML!(set.map(toApp))));
+describe('List View: the stats line (getPipelineStats)', () => {
+  it('the same numbers as the app for every set of leads', () => {
+    for (const set of [listLeads, ALL, ALL.filter((l) => l.status !== 'lost'), [ALL[17]!], []]) {
       expect(pipelineStats(set, TODAY)).toEqual(JSON.parse(JSON.stringify(sandbox<{ getPipelineStats: () => unknown }>('index', { fns: ['getPipelineStats', 'isLeadStale', 'getLeadStageAgeDays', 'daysBetween'], consts: ['LEAD_STALE_DAYS'] }, { _todayISO: () => TODAY, data: { leads: set.map(toApp) } }).getPipelineStats())));
-    }
-  });
-
-  it('stage cards: counts by stage and age bucket, the open bucket marked', () => {
-    for (const st of [DEFAULT_LIST_FILTER, { ...DEFAULT_LIST_FILTER, status: 'new' as const, bucket: 'today' as const }, { ...DEFAULT_LIST_FILTER, status: 'send_quote' as const, bucket: 'month' as const }]) {
-      const a = app._lcStageCardsHTML!(ALL.map(toApp), st);
-      const s = stageCardsHTML(ALL, st, TODAY);
-      expect(visible(s)).toBe(visible(a));
-      expect((s.match(/lc-bucket on/g) || []).length).toBe((a.match(/lc-bucket on/g) || []).length);
-    }
-  });
-
-  it('filter bar: the same choices, counts and active filters', () => {
-    // Each select's options (value, words) and which one shows (the one marked selected, else the first).
-    const opts = (html: string) => [...html.matchAll(/<select[^>]*>([\s\S]*?)<\/select>/g)].map((sel) => {
-      const o = [...sel[1]!.matchAll(/<option value="([^"]*)"\s*(selected)?\s*>([^<]*)<\/option>/g)].map((m) => ({ v: m[1], on: !!m[2], t: m[3]!.replace(/&gt;/g, '>').replace(/&amp;/g, '&') }));
-      return { options: o.map((x) => [x.v, x.t]), shown: (o.find((x) => x.on) ?? o[0])?.v };
-    });
-    for (const st of [DEFAULT_LIST_FILTER, { ...DEFAULT_LIST_FILTER, status: 'follow_up' as const, rep: '', type: 'Builder', source: 'Google', age: 'old' as const }, { ...DEFAULT_LIST_FILTER, bucket: 'week' as const, status: 'new' as const }]) {
-      const a = app._lcFiltersHTML!(ALL.map(toApp), st);
-      const s = filtersHTML(ALL, st, REPS);
-      expect(opts(s)).toEqual(opts(a));
-      expect(s.includes('lf-clear-btn')).toBe(a.includes('lf-clear-btn'));
-      expect((s.match(/lf-filter-sel-active/g) || []).length).toBe((a.match(/lf-filter-sel-active/g) || []).length);
-      expect(s.includes('lc-chip')).toBe(a.includes('lc-chip'));
-    }
-  });
-
-  it('each row reads the same (less the checkbox; phone and email are plain text here)', () => {
-    const appTable = app._lcTableHTML!(ALL.map(toApp), DEFAULT_LIST_FILTER, toApp(ALL[0]!), appCtx());
-    const appRows = [...appTable.matchAll(/<tr class="lc-row[^"]*" data-id="([^"]*)"[\s\S]*?<\/tr>/g)];
-    expect(appRows.length).toBe(ALL.length);
-    for (const m of appRows) {
-      const l = ALL.find((x) => x.id === m[1])!;
-      expect(visible(rowHTML(l, l.id === ALL[0]!.id, CTX)), l.number).toBe(visible(m[0]));
-      expect(rowHTML(l, false, CTX).includes('lc-stale')).toBe(m[0].includes('lc-stale'));
-      for (const fu of ['lc-fu-overdue', 'lc-fu-today', 'lc-fu-soon']) expect(rowHTML(l, false, CTX).includes(fu), `${l.number} ${fu}`).toBe(m[0].includes(fu));
-      expect(/class="lc-row lc-row-sel"/.test(m[0])).toBe(l.id === ALL[0]!.id);
-    }
-    // The app's column headers, in order.
-    const heads = [...appTable.matchAll(/<th class="lc-th-sort[^"]*" onclick="sortLeadsBy\('([a-zA-Z]+)'\)" title="Sort by ([^"]+)">/g)].map((x) => [x[1], x[2]]);
-    expect(heads).toEqual([['name', 'Name'], ['custType', 'Customer Type'], ['status', 'Status'], ['phone', 'Phone · Email'], ['source', 'Source'], ['rep', 'Rep'], ['touch', 'Last Touch'], ['age', 'Age'], ['quoted', 'Quoted']]);
-  });
-
-  it('the panel: who, the stage line and flags, the stage buttons, the dates, the notes and the details', () => {
-    const part = (html: string, cls: string) => { const m = new RegExp(`<div class="${cls}">([\\s\\S]*?)</div>`).exec(html); return m ? visible(m[1]!) : null; };
-    for (const l of ALL) {
-      const a = app._lcPanelHTML!(toApp(l), appCtx());
-      const s = panelHTML(l, CTX);
-      expect(part(s, 'lc-p-sub'), l.number).toBe(part(a, 'lc-p-sub'));
-      expect(visible(/<div class="lc-p-stage">[\s\S]*?<\/div>/.exec(s)![0]), l.number).toBe(visible(/<div class="lc-p-stage">[\s\S]*?<\/div>/.exec(a)![0]));
-      // Stage buttons: the same order, the same current one, Approved never a button, the same tooltips.
-      const btns = (html: string) => [...html.matchAll(/<(button|span)(?: type="button")? class="lc-stage-btn([^"]*)" data-stage="([a-z_]+)"[^>]*?title="([^"]*)"/g)].map((m) => [m[1], m[2]!.includes('on'), m[3], m[4]]);
-      expect(btns(a).length).toBe(6);
-      expect(btns(a).find((b) => b[2] === 'approved')![0]).toBe('span');
-      expect(btns(s), l.number).toEqual(btns(a));
-      for (const id of ['lc-survey-date', 'lc-followup-date']) {
-        const val = (html: string) => new RegExp(`id="${id}"[^>]*value="([^"]*)"`).exec(html)?.[1] ?? new RegExp(`value="([^"]*)"[^>]*id="${id}"`).exec(html)?.[1];
-        expect(val(s), `${l.number} ${id}`).toBe(val(a));
-      }
-      // Details: the rows the site shows (the app's "Samples Taken" carries the seed's dollar figure — not shown).
-      const dl = (html: string) => Object.fromEntries([...(/<dl class="lc-dl">([\s\S]*?)<\/dl>/.exec(html)?.[1] ?? '').matchAll(/<dt>([^<]*)<\/dt><dd>([\s\S]*?)<\/dd>/g)].map((m) => [m[1], visible(m[2]!)]));
-      const ad = dl(a);
-      delete ad['Samples Taken'];
-      expect(dl(s), l.number).toEqual(ad);
-      // Notes: the same, newest first; since 2026-10-15 a stamped note also shows its time and author.
-      expect(visible(/<div class="lc-notes">[\s\S]*$/.exec(s)![0].split('<div class="lc-sec')[0]!).replace(/ · \d{1,2}:\d{2} [AP]M · Dale Whitaker/g, '')).toBe(
-        visible(/<div class="lc-notes">[\s\S]*$/.exec(a)![0].split('<div class="lc-sec')[0]!),
-      );
     }
   });
 });
@@ -469,7 +386,7 @@ describe('phone app: the stage ribbon, the next step, the sheets', () => {
     }
   });
 
-  it('the lead page: its next-step card and details (scrLead)', () => {
+  it('the lead page: its next-step card (scrLead)', () => {
     const vars = new Function(`${code('mobile:text:STAGE')}\n${code('mobile:text:PIPE')}\nreturn { STAGE, PIPE };`)() as { STAGE: unknown; PIPE: string[] };
     for (const l of [...ALL, { ...ALL[3]!, siteSurveyDate: isoOffset(-1) }, { ...ALL[7]!, followUpDate: TODAY }, { ...ALL[7]!, followUpDate: null }, { ...ALL[5]!, address: '' }]) {
       const quotes = QUOTES.filter((q) => q.leadId === l.id);
@@ -491,14 +408,6 @@ describe('phone app: the stage ribbon, the next step, the sheets', () => {
       // The app's buttons less "Call" (a phone call leaves the page).
       const appBtns = [...card![2]!.matchAll(/<(?:button|a) [^>]*class="m-btn (primary|ghost)"[^>]*>\[([a-z-]+)\]([^<]*)<\/(?:button|a)>/g)].filter((b) => !/^Call/.test(b[3]!)).map((b) => [b[3], b[2], b[1] === 'primary']);
       expect(ns.buttons.map((b) => [b.label, b.icon, b.primary]), l.number).toEqual(appBtns);
-      // The details card: the same rows, the same values.
-      const kvs = (html: string) => [...html.matchAll(/<div class="m-kv"><span>([^<]*)<\/span><b>([^<]*)<\/b><\/div>/g)].map((x) => [x[1], x[2]]);
-      const mine = phoneLeadHTML(l, listCtx(TODAY, REPS, QUOTES));
-      expect(kvs(mine).length).toBeGreaterThan(4);
-      expect(kvs(mine), l.number).toEqual(kvs(body));
-      // The hero: name, stage chip, "LD-… · source".
-      const hero = (html: string) => visible(/<div class="m-hero">[\s\S]*?<\/p><\/div><\/div>/.exec(html)![0]);
-      expect(hero(mine), l.number).toBe(hero(body));
     }
   });
 

@@ -1,0 +1,390 @@
+---
+// The home hero (owner pick 2026-10-20, concept "Caspar"): the phone in the middle with the app's
+// real Caspar tab mid-conversation, the handwritten paper quote it can read on the left, the quote
+// draft it fills in on the right. Mirror-symmetric, level, no photo. On load it replays a short,
+// scripted sample (src/islands/hero-caspar.ts) and stops on the final state; "Hold to talk"
+// replays it. Sample data only: nothing listens, nothing is sent, no network.
+// Every figure comes from the one dataset through the logic library (src/data/hero-caspar.ts).
+import TrialCapture from './TrialCapture.astro';
+import { HERO_CASPAR as H, heroCasparSummary as SR, type Part } from '../../data/hero-caspar';
+import { lucide } from '../../lib/lucide';
+
+const parts = (p: Part[]) => p.map((x) => (typeof x === 'string' ? { t: x, b: false } : { t: x.b, b: true }));
+// What Dale says firms up word by word during the replay, like the app's live transcript.
+const words = (p: Part[]) => p.map((x) => (typeof x === 'string' ? x : x.b)).join('').split(' ');
+const steps = JSON.stringify(H.steps);
+const tabs = [
+  { icon: 'sun', label: 'Today' },
+  { icon: 'inbox', label: 'Leads', badge: H.newLeads },
+  { icon: 'plus', label: '' },
+  { icon: 'users', label: 'Customers' },
+  { icon: 'folder', label: 'Projects' },
+  { icon: 'sparkles', label: 'Caspar', on: true },
+] as const;
+---
+<section class="hc" aria-labelledby="hero-title">
+  <div class="hc-in">
+    <div class="hc-copy">
+      <h1 id="hero-title"><span class="eyebrow hc-eyebrow">Flooring business software</span> <span class="hc-l">Talk the job through.</span> <span class="hc-l hl">Caspar writes the quote.</span></h1>
+      <p class="hc-sub">Say the rooms and floors, or snap your paper quote. Caspar fills in the cartons, rolls and labor.</p>
+      <TrialCapture id="hero" source="home-hero" />
+      <div class="hc-alt">
+        <button type="button" class="btn btn-text" data-video-open data-video-at="0"><span class="play" aria-hidden="true"><svg viewBox="0 0 12 12" width="12" height="12"><path d="M3 1.8v8.4L10 6z" fill="currentColor"/></svg></span>Watch the 45-second demo</button>
+        <a class="btn btn-text" href="#product">Take the tour <span aria-hidden="true">↓</span></a>
+      </div>
+    </div>
+
+    <div class="hc-stage" data-hc data-steps={steps}>
+      <div class="sr-only">
+        <p>{SR.intro}</p>
+        <ul>{SR.chat.map((line) => <li>{line}</li>)}</ul>
+        <p>{SR.draft}</p>
+        <ul>{SR.rows.map((line) => <li>{line}</li>)}</ul>
+        <p>{SR.total}</p>
+        <p>{SR.paper}</p>
+      </div>
+
+      {/* Left: the paper quote, level, inside the camera's scan frame. */}
+      <div class="hc-side hc-side-paper" aria-hidden="true">
+        <p class="hc-lab"><span>{H.labels.paper[0]}</span><span>{H.labels.paper[1]}</span></p>
+        <div class="hc-scan"><i></i>
+          <div class="hc-paper">
+            <div class="hc-pt">{H.paper.title}</div>
+            {H.paper.rows.map((r) => <div class="hc-pr">{r.map((c) => <span>{c}</span>)}</div>)}
+            <div class="hc-pr hc-ptot">{H.paper.total.map((c) => <span>{c}</span>)}</div>
+          </div>
+          <span class="hc-beam" data-hc-beam></span>
+        </div>
+        <p class="hc-checked" data-hc-x="checked"><i><Fragment set:html={lucide('check', 12, 3)} /></i>{H.paper.checked}</p>
+        <span class="hc-wire" data-hc-wire="snap"><b>{H.labels.snap}</b></span>
+      </div>
+
+      {/* Middle: the phone with the app's Caspar tab (the /mobile app, October 2026). */}
+      <div class="hc-phone" data-hc-phone data-status="listen" data-orb="listen">
+        <div class="hc-screen">
+          <div class="hc-chrome" aria-hidden="true">
+            <span class="hc-island"></span>
+            <div class="hc-sb"><span>9:41</span><span class="hc-sb-r"><svg width="17" height="11" viewBox="0 0 17 11"><rect x="0" y="7" width="3" height="4" rx="1" fill="#111827"/><rect x="4.5" y="5" width="3" height="6" rx="1" fill="#111827"/><rect x="9" y="2.5" width="3" height="8.5" rx="1" fill="#111827"/><rect x="13.5" y="0" width="3" height="11" rx="1" fill="#111827"/></svg><svg width="24" height="12" viewBox="0 0 24 12"><rect x=".5" y=".5" width="20" height="11" rx="3" fill="none" stroke="#111827" opacity=".4"/><rect x="2" y="2" width="16" height="8" rx="1.8" fill="#111827"/><rect x="21.5" y="4" width="1.8" height="4" rx=".9" fill="#111827" opacity=".4"/></svg></span></div>
+            <div class="hc-mtop"><img src="/brand/floorlogic-lockup-horizontal.svg" alt="" width="103" height="18" /><span class="hc-av">{H.user.initials}</span></div>
+            <div class="hc-title"><b>{H.screen.title}</b><small>{H.screen.sub}</small></div>
+            <div class="hc-orbrow">
+              <span class="hc-orb"></span>
+              <span class="hc-status">
+                <span class="hc-st" data-st="listen">{H.status.listening}</span>
+                <span class="hc-st" data-st="think">{H.status.thinking}</span>
+                <span class="hc-st" data-st="talk">{H.status.talking}</span>
+              </span>
+            </div>
+            <div class="hc-log" data-hc-log>
+              {H.chat.map((m, i) => m.who === 'me'
+                ? <p class="hc-msg hc-me" data-hc-x={`msg${i}`}>{words(m.parts).map((w, j) => <><span class="hc-w" style={`--i:${j}`}>{w}</span>{' '}</>)}</p>
+                : <p class="hc-msg hc-cs" data-hc-x={`msg${i}`}>{parts(m.parts).map((p) => (p.b ? <b>{p.t}</b> : p.t))}</p>)}
+            </div>
+          </div>
+          <button type="button" class="hc-pause" data-hc-pause aria-label="Pause the sample" hidden>
+            <span class="hc-pause-i" data-i="pause"><Fragment set:html={lucide('pause', 11, 2.4)} />Pause</span>
+            <span class="hc-pause-i" data-i="play"><Fragment set:html={lucide('play', 11, 2.4)} />Play</span>
+          </button>
+          <button type="button" class="hc-ptt" data-hc-ptt aria-label={`${H.ptt.idle}: replay the sample talk`}>
+            <span class="hc-ptt-l" data-l="idle"><Fragment set:html={lucide('hand', 16)} />{H.ptt.idle}</span>
+            <span class="hc-ptt-l" data-l="holding"><Fragment set:html={lucide('hand', 16)} />{H.ptt.holding}</span>
+          </button>
+          <div class="hc-tabs" aria-hidden="true">
+            {tabs.map((t) => (
+              <span class:list={[t.icon === 'plus' && 'hc-tab-new', 'on' in t && t.on && 'on']}>
+                {t.icon === 'plus'
+                  ? <i><Fragment set:html={lucide('plus', 20, 2.4)} /></i>
+                  : <Fragment set:html={lucide(t.icon, 18, 'on' in t && t.on ? 2.4 : 2)} />}
+                {t.label && <span class="hc-tab-l">{t.label}</span>}
+                {'badge' in t && t.badge ? <em>{t.badge}</em> : null}
+              </span>
+            ))}
+          </div>
+        </div>
+      </div>
+
+      {/* Right: the quote draft it fills in (the app's Caspar draft card). */}
+      <div class="hc-side hc-side-draft" aria-hidden="true">
+        <p class="hc-lab"><span>{H.labels.draft[0]}</span><span>{H.labels.draft[1]}</span></p>
+        <div class="hc-draft">
+          <p class="hc-dh">{H.draft.title}<span class="hc-ok" data-hc-x="ok"><Fragment set:html={lucide('check', 11, 3)} />{H.draft.ok}</span></p>
+          <p class="hc-who" data-hc-x="who">{H.draft.who}</p>
+          <div class="hc-lines">
+            {H.draft.rows.map((r, i) => <div class="hc-ln" data-hc-x={`row${i}`}><span>{r.name}</span><small>{r.detail}</small><b>{r.amount}</b></div>)}
+            <p class="hc-sum" data-hc-x="sum"><span>{H.draft.totalLabel}<small>{H.draft.taxNote}</small></span><b data-hc-total>{H.draft.total}</b></p>
+            <p class="hc-empty" data-hc-empty>{H.draft.empty}</p>
+          </div>
+        </div>
+        <span class="hc-wire" data-hc-wire="fills"><b>{H.labels.fills}</b></span>
+      </div>
+
+      <p class="sr-only" aria-live="polite" data-hc-live data-done={SR.done}></p>
+    </div>
+    <p class="hc-beta">{H.beta}</p>
+  </div>
+</section>
+
+<script>
+  import { initHeroCaspar } from '../../islands/hero-caspar';
+  initHeroCaspar();
+</script>
+
+<style is:global>
+  /* Handwriting for the paper sheet only: Caveat (OFL), cut to the sheet's own glyphs
+     (tools/fonts/caveat-hero.py). Decorative, so swap is fine. */
+  @font-face { font-family: 'Caveat Hero'; font-style: normal; font-weight: 600; font-display: swap; src: url(/fonts/caveat-hero-600.woff2) format('woff2'); }
+  @font-face { font-family: 'Caveat Hero'; font-style: normal; font-weight: 700; font-display: swap; src: url(/fonts/caveat-hero-700.woff2) format('woff2'); }
+
+  /* ---------------- Ground: plain white into ice blue, one soft glow, centred. No photo. ---------------- */
+  .hc { position: relative; isolation: isolate; overflow: clip;
+    background: radial-gradient(ellipse 70% 60% at 50% 72%, var(--ice-200) 0%, rgba(226,237,250,0) 70%), linear-gradient(180deg, #fff 0%, var(--ice-50) 100%); }
+  .hc-in { max-width: 1360px; margin: 0 auto; padding: 26px 24px 44px; text-align: center; container-type: inline-size; }
+  /* Owner: crisp, level, true size. Everything that centres the phone is rounded to whole pixels
+     (an odd window width or a 17px scrollbar would put it on a half pixel otherwise). */
+  @supports (width: round(1.5px, 1px)) { .hc-in { margin-left: max(0px, round(down, calc((100% - 1360px) / 2), 1px)); margin-right: auto; } }
+
+  /* ---------------- Copy ---------------- */
+  .hc h1 { margin: 0 auto 12px; font: 800 clamp(2.5rem, 1.6rem + 3.2vw, 3.875rem)/1.02 var(--font-display); letter-spacing: -.01em; color: var(--navy-900); }
+  /* Each sentence on its own line, balanced on its own when it wraps (phones): no orphan words. */
+  .hc h1 .hc-l { display: block; text-wrap: balance; }
+  .hc h1 .hl { color: var(--dot); }
+  .hc h1 .hc-eyebrow { display: flex; justify-content: center; margin: 0 0 12px; line-height: 1; }
+  .hc-sub { max-width: 960px; margin: 0 auto 18px; font-size: var(--fs-lead); line-height: 1.5; color: var(--grey-700); }
+  /* TrialCapture's own (scoped) rules carry an extra attribute, so these overrides name one more class. */
+  .hc .hc-copy .tc { max-width: 506px; margin-inline: auto; }
+  .hc .hc-copy .tc-row { gap: 10px; }
+  .hc .hc-copy .tc .tc-row .input { min-height: 52px; font-size: 17px; }
+  .hc .hc-copy .tc .tc-row .btn { --bh: 52px; padding: 0 22px; font-size: 17px; }
+  .hc .hc-copy .tc-micro { margin-top: 10px; font-size: 14px; }
+  .hc .hc-copy :is(.tc-step2, .tc-result, .field-error) { text-align: left; }
+  .hc-alt { display: flex; flex-wrap: wrap; justify-content: center; gap: 0 18px; margin-top: 2px; }
+  .hc-alt .btn-text { font-weight: 700; }
+
+  /* ---------------- The stage: paper · phone · draft, mirror-symmetric around the phone ----------------
+     The phone is always drawn at its true size. From 900 to 1180px the side cards narrow in
+     proportion (--u is a pixel that shrinks with the width; never more than 1px, so nothing is ever
+     drawn bigger than it is). Below 900px everything stacks at true size. */
+  .hc-stage { --u: 1px; --col: calc(340 * var(--u)); --gap: calc(76 * var(--u)); position: relative; display: grid; grid-template-columns: var(--col) 300px var(--col); column-gap: var(--gap);
+    justify-content: center; align-items: start; margin-top: 12px; text-align: left; }
+  @supports (width: 1cqw) { @media (min-width: 900px) { .hc-stage { --u: min(1px, calc((100cqw - 300px) / 832)); } } }
+  @supports (width: round(1.5px, 1px)) and (width: 1cqw) {
+    @media (min-width: 900px) {
+      .hc-stage { --col: round(down, calc(340 * var(--u)), 1px); --gap: round(down, calc(76 * var(--u)), 1px); justify-content: start;
+        padding-left: max(0px, round(down, calc((100cqw - 2 * var(--col) - 2 * var(--gap) - 300px) / 2), 1px)); }
+    }
+  }
+  .hc-side { position: relative; margin-top: calc(64 * var(--u)); min-width: 0; }
+  .hc-lab { display: flex; justify-content: space-between; gap: 8px; margin: 0 0 calc(10 * var(--u)); font: 700 calc(12 * var(--u))/1 var(--font-body); letter-spacing: .12em; text-transform: uppercase; color: var(--grey-600); }
+  .hc-lab span:last-child { color: var(--blue-ink); letter-spacing: .04em; }
+
+  /* The paper quote: level, no skew, inside a scan frame (four corner brackets). */
+  .hc-scan { position: relative; padding: calc(14 * var(--u)); }
+  .hc-scan::before, .hc-scan::after, .hc-scan > i::before, .hc-scan > i::after { content: ''; position: absolute; width: calc(22 * var(--u)); height: calc(22 * var(--u)); border: 0 solid var(--dot); }
+  .hc-scan::before { left: 0; top: 0; border-width: 3px 0 0 3px; border-radius: 6px 0 0 0; }
+  .hc-scan::after { right: 0; top: 0; border-width: 3px 3px 0 0; border-radius: 0 6px 0 0; }
+  .hc-scan > i::before { left: 0; bottom: 0; border-width: 0 0 3px 3px; border-radius: 0 0 0 6px; }
+  .hc-scan > i::after { right: 0; bottom: 0; border-width: 0 3px 3px 0; border-radius: 0 0 6px 0; }
+  /* The ruled lines sit on whole pixels (round), so they stay sharp when the sheet narrows. */
+  .hc-paper { --lh: calc(28 * var(--u)); position: relative; padding: calc(16 * var(--u)) calc(18 * var(--u)) calc(14 * var(--u)) calc(34 * var(--u)); border-radius: 3px;
+    background: #fffdf6 repeating-linear-gradient(180deg, transparent 0 calc(var(--lh) - 1px), #dbe7f5 calc(var(--lh) - 1px) var(--lh));
+    box-shadow: 0 1px 0 #e9e4d4, 0 18px 34px -20px rgba(54,58,64,.45);
+    font: 600 calc(22 * var(--u))/var(--lh) 'Caveat Hero', 'Segoe Print', 'Bradley Hand', cursive; color: #2b3a55; white-space: nowrap; }
+  @supports (width: round(1.5px, 1px)) { .hc-paper { --lh: round(calc(28 * var(--u)), 1px); } }
+  .hc-paper::before { content: ''; position: absolute; left: calc(24 * var(--u)); top: 0; bottom: 0; width: 1.5px; background: #f2b8b8; }
+  .hc-pt { font-weight: 700; color: #1f2d47; }
+  .hc-pr { display: flex; justify-content: space-between; gap: 10px; }
+  .hc-ptot { margin-top: 2px; border-top: 1.5px solid #2b3a55; }
+  /* The camera's read: a beam passes over the sheet once (motion only, never at rest). */
+  .hc-beam { position: absolute; left: calc(14 * var(--u)); right: calc(14 * var(--u)); top: calc(14 * var(--u)); height: 36px; opacity: 0; pointer-events: none;
+    background: linear-gradient(180deg, rgba(22,121,226,0), rgba(22,121,226,.16)); border-bottom: 2px solid var(--dot); box-shadow: 0 6px 14px -4px rgba(22,121,226,.55); }
+  .hc-checked { display: flex; align-items: center; gap: calc(8 * var(--u)); margin: calc(12 * var(--u)) 0 0; font: 600 calc(13 * var(--u))/1.3 var(--font-app); color: #065f46; }
+  .hc-checked i { flex: none; display: grid; place-items: center; width: calc(20 * var(--u)); height: calc(20 * var(--u)); border-radius: 50%; background: #d1fae5; color: #047857; }
+  .hc-checked i svg { width: calc(12 * var(--u)); height: calc(12 * var(--u)); }
+
+  /* The quote draft (the app's Caspar draft card, caspar.css .csp-draft). */
+  .hc-draft { padding: calc(14 * var(--u)) calc(14 * var(--u)) calc(12 * var(--u)); border-radius: 14px; background: #fff; box-shadow: 0 0 0 1px rgba(2,49,91,.08), 0 22px 44px -26px rgba(2,49,91,.45); font-family: var(--font-app); color: var(--app-text); }
+  .hc-dh { display: flex; justify-content: space-between; align-items: center; gap: 8px; margin: 0; font: 700 calc(15 * var(--u))/1.3 var(--font-app); }
+  .hc-ok { display: inline-flex; align-items: center; gap: calc(4 * var(--u)); height: calc(22 * var(--u)); padding: 0 calc(8 * var(--u)); border-radius: 999px; background: #ecfdf5; box-shadow: inset 0 0 0 1px #a7f3d0; font: 600 calc(11 * var(--u))/1 var(--font-app); color: #047857; white-space: nowrap; }
+  .hc-ok svg { width: calc(11 * var(--u)); height: calc(11 * var(--u)); }
+  .hc-who { margin: calc(4 * var(--u)) 0 0; font: 500 calc(12 * var(--u))/1.35 var(--font-app); color: #5f6672; }
+  .hc-lines { position: relative; }
+  .hc-ln { display: grid; grid-template-columns: 1fr auto; gap: calc(2 * var(--u)) calc(10 * var(--u)); padding: calc(8 * var(--u)) 0; border-bottom: 1px solid var(--app-border); font: 600 calc(12.5 * var(--u))/1.3 var(--font-app); }
+  .hc-ln small { grid-column: 1; font: 500 calc(11 * var(--u))/1.3 var(--font-app); color: #5f6672; }
+  .hc-ln b { grid-row: 1 / span 2; grid-column: 2; align-self: center; font-weight: 700; font-variant-numeric: tabular-nums; }
+  .hc-sum { display: flex; justify-content: space-between; align-items: flex-start; gap: 10px; margin: calc(10 * var(--u)) 0 0; font: 800 calc(16 * var(--u))/1.3 var(--font-app); }
+  .hc-sum small { display: block; font: 500 calc(11 * var(--u))/1.3 var(--font-app); color: #5f6672; }
+  .hc-sum b { font-variant-numeric: tabular-nums; }
+  /* The app's empty draft, until the first line lands (only ever seen during the replay). */
+  .hc-empty { position: absolute; inset: 0; display: grid; place-items: center; margin: 0; padding: 0 calc(18 * var(--u)); text-align: center; font: 500 calc(12.5 * var(--u))/1.45 var(--font-app); color: #5f6672; visibility: hidden; pointer-events: none; }
+
+  /* The dashed level connectors between the cards and the phone. */
+  .hc-wire { position: absolute; top: calc(172 * var(--u)); height: 2px; width: var(--gap); background: repeating-linear-gradient(90deg, var(--sky) 0 6px, transparent 6px 11px); }
+  .hc-side-paper .hc-wire { left: 100%; }
+  .hc-side-draft .hc-wire { right: 100%; }
+  .hc-wire b { position: absolute; bottom: 8px; left: -40px; right: -40px; width: max-content; margin: 0 auto; padding: calc(3 * var(--u)) calc(7 * var(--u)); border-radius: 10px; background: var(--ice-50); box-shadow: 0 0 0 1px var(--ice-300);
+    font: 700 max(9px, calc(11 * var(--u)))/1.2 var(--font-body); letter-spacing: .06em; text-transform: uppercase; color: var(--navy-700); white-space: nowrap; }
+  /* Under 1000px the connectors are too short for a label: the dashes stay, both labels go. */
+  @media (max-width: 999px) { .hc-wire b { display: none; } }
+
+  /* ---------------- The phone (300 × 620, true size everywhere) ---------------- */
+  .hc-phone { position: relative; width: 300px; height: 620px; padding: 10px; border-radius: 46px; background: linear-gradient(180deg, #2c3441, #121821);
+    box-shadow: 0 50px 90px -40px rgba(2,49,91,.6), inset 0 0 0 1px rgba(255,255,255,.06); }
+  .hc-screen { position: relative; height: 100%; border-radius: 37px; background: #f5f7fa; overflow: hidden; display: flex; flex-direction: column; font-family: var(--font-app); color: #111827; -webkit-font-smoothing: antialiased; }
+  .hc-chrome { flex: 1; min-height: 0; display: flex; flex-direction: column; }
+  .hc-island { position: absolute; z-index: 2; top: 9px; left: 0; right: 0; width: 92px; height: 26px; margin: 0 auto; border-radius: 14px; background: #121821; }
+  .hc-sb { flex: none; height: 42px; display: flex; align-items: center; justify-content: space-between; padding: 0 24px; font: 600 13px/1 var(--font-app); }
+  .hc-sb-r { display: inline-flex; align-items: center; gap: 6px; }
+  .hc-sb svg { display: block; }
+  .hc-mtop { flex: none; display: flex; align-items: center; justify-content: space-between; padding: 2px 16px 0; }
+  .hc-mtop img { width: 103px; height: 18px; }
+  .hc-av { display: grid; place-items: center; width: 30px; height: 30px; border-radius: 50%; background: #0074d3; color: #fff; font: 700 11px/1 var(--font-app); }
+  .hc-title { flex: none; padding: 8px 16px 0; }
+  .hc-title b { display: block; font: 800 24px/1.1 var(--font-app); letter-spacing: -.01em; color: #0f172a; }
+  .hc-title small { display: block; margin-top: 3px; font: 500 11px/1.3 var(--font-app); color: #5b6577; }
+  .hc-orbrow { flex: none; display: grid; justify-items: center; gap: 8px; padding: 18px 0 8px; }
+  .hc-orb { position: relative; width: 58px; height: 58px; border-radius: 50%; background: radial-gradient(circle at 34% 28%, #a6d6ff 0%, #2f8df0 32%, #0b5fc4 62%, #063f8a 100%);
+    box-shadow: 0 0 0 9px rgba(22,121,226,.10), 0 0 0 20px rgba(22,121,226,.05), 0 12px 22px -8px rgba(6,63,138,.6); }
+  /* Thinking: the app tints the orb indigo (caspar.js drawOrb, hue 99,102,241). */
+  .hc-orb::after { content: ''; position: absolute; inset: 0; border-radius: inherit; opacity: 0; transition: opacity .3s;
+    background: radial-gradient(circle at 34% 28%, #d4d5ff 0%, #8b8ef6 32%, #5b5fe0 62%, #3c3aa8 100%); }
+  .hc-status { display: grid; }
+  /* One status at a time, switched like the app's status line (no fade, never two at once). */
+  .hc-st { grid-area: 1 / 1; justify-self: center; display: inline-flex; align-items: center; gap: 6px; font: 600 11px/1.2 var(--font-app); color: #047857; visibility: hidden; white-space: nowrap; }
+  .hc-st::before { content: ''; width: 7px; height: 7px; border-radius: 50%; background: #10b981; box-shadow: 0 0 0 3px rgba(16,185,129,.2); }
+  .hc-st[data-st='think'] { color: #4f46e5; }
+  .hc-st[data-st='think']::before { background: #6366f1; box-shadow: 0 0 0 3px rgba(99,102,241,.2); }
+  .hc-st[data-st='talk'] { color: #005aa6; }
+  .hc-st[data-st='talk']::before { background: #0074d3; box-shadow: 0 0 0 3px rgba(0,116,211,.2); }
+  .hc-phone[data-status='listen'] [data-st='listen'], .hc-phone[data-status='think'] [data-st='think'], .hc-phone[data-status='talk'] [data-st='talk'] { visibility: visible; }
+  .hc-log { flex: 1; min-height: 0; display: flex; flex-direction: column; gap: 7px; padding: 6px 12px 8px; overflow: hidden; }
+  .hc-msg { max-width: 86%; margin: 0; padding: 8px 10px; border-radius: 14px; font: 500 11.5px/1.4 var(--font-app); }
+  .hc-me { align-self: flex-end; background: #0074d3; color: #fff; border-bottom-right-radius: 4px; }
+  .hc-cs { align-self: flex-start; background: #fff; color: #111827; border-bottom-left-radius: 4px; box-shadow: 0 0 0 1px #e5e7eb; }
+  .hc-cs b { color: #0074d3; }
+  .hc-ptt { flex: none; display: grid; place-items: center; height: 40px; margin: 0 12px 10px; padding: 0 12px; border: 0; border-radius: 20px;
+    background: #0074d3; color: #fff; font: 700 13px/1 var(--font-app); box-shadow: 0 8px 16px -8px rgba(0,116,211,.8); cursor: pointer; touch-action: manipulation; -webkit-user-select: none; user-select: none; transition: background-color .15s, box-shadow .15s; }
+  .hc-ptt svg { flex: none; }
+  /* The two labels share one cell; each (hand + words) centres on its own. */
+  .hc-ptt-l { grid-area: 1 / 1; display: inline-flex; align-items: center; gap: 8px; white-space: nowrap; }
+  .hc-ptt:hover { background: #0068bd; }
+  .hc-ptt:focus-visible { outline: 3px solid var(--navy-900); outline-offset: 2px; }
+  .hc-ptt [data-l='holding'] { visibility: hidden; }
+  /* Held (by Dale in the sample, or by you): the app's on state. While you hold it, it also says
+     "Listening… let go to send", as the app does; let go and the sample replays. */
+  .hc-ptt[data-holding], .hc-ptt[data-pressed] { background: #005aa6; box-shadow: 0 0 0 4px rgba(0,116,211,.2), 0 8px 16px -8px rgba(0,116,211,.8); }
+  .hc-ptt[data-pressed] [data-l='idle'] { visibility: hidden; }
+  .hc-ptt[data-pressed] [data-l='holding'] { visibility: visible; }
+  /* Pause / Play for the replay (WCAG 2.2.2), only there while the sample moves: in the header row,
+     left of the avatar, where the app puts a screen's header actions. */
+  .hc-pause { position: absolute; z-index: 3; top: 46px; right: 54px; display: grid; height: 26px; padding: 0 10px; border: 1px solid #d5dbe3; border-radius: 13px; background: #fff;
+    color: #3d4654; font: 600 11px/1 var(--font-app); cursor: pointer; box-shadow: 0 1px 2px rgba(15,23,42,.06); }
+  .hc-pause[hidden] { display: none; }
+  .hc-pause:hover { border-color: #0074d3; color: #005aa6; }
+  .hc-pause:focus-visible { outline: 3px solid var(--dot); outline-offset: 2px; }
+  .hc-pause-i { grid-area: 1 / 1; display: inline-flex; align-items: center; justify-content: center; gap: 5px; }
+  .hc-pause:not([data-paused]) [data-i='play'], .hc-pause[data-paused] [data-i='pause'] { visibility: hidden; }
+  .hc-tabs { flex: none; display: grid; grid-template-columns: repeat(6, 1fr); align-items: end; height: 54px; padding: 0 4px 8px; background: #fff; border-top: 1px solid #e5e7eb;
+    font: 600 8.5px/1 var(--font-app); color: #5f6672; text-align: center; }
+  .hc-tabs > span { position: relative; display: grid; justify-items: center; gap: 3px; }
+  .hc-tabs > span.on { color: #0068bd; }
+  .hc-tab-l { white-space: nowrap; }
+  .hc-tab-new i { display: grid; place-items: center; width: 36px; height: 36px; margin-top: -12px; border-radius: 12px; background: linear-gradient(145deg, #0074d3, #005ba8); color: #fff; box-shadow: 0 6px 12px -6px rgba(0,116,211,.9); }
+  .hc-tabs em { position: absolute; top: -6px; left: 50%; margin-left: 3px; min-width: 15px; height: 15px; padding: 0 4px; border-radius: 8px; background: #c02626; color: #fff; font: 700 9px/15px var(--font-app); font-style: normal; box-shadow: 0 0 0 2px #fff; }
+
+  .hc-beta { margin: 18px auto 0; max-width: 62ch; font: 500 13px/1.45 var(--font-body); color: var(--grey-600); }
+
+  /* ---------------- The replay ----------------
+     Without JS, or with reduced motion, none of this applies: the final state shows at once.
+     With JS the island sets data-hc (wait → play ⇄ pause → done); until it does, the parts that
+     appear during the replay wait hidden, and if the island never runs they show after 4s. */
+  @media (prefers-reduced-motion: no-preference) {
+    /* Text is never drawn half-transparent, so it never dips under AA contrast, not even mid-move:
+       bubbles and the pill pop in from hidden, lines write themselves in left to right. */
+    .js .hc-stage:not([data-hc='done']) :is(.hc-msg, .hc-ok)[data-hc-x] { visibility: hidden; transform: translateY(8px) scale(.96); transition: transform .4s var(--ease-out), visibility 0s .4s; }
+    .js .hc-stage:not([data-hc='done']) .hc-me[data-hc-x] { transform-origin: 100% 100%; }
+    .js .hc-stage:not([data-hc='done']) .hc-cs[data-hc-x] { transform-origin: 0 100%; }
+    .js .hc-stage:not([data-hc='done']) .hc-ok[data-hc-x] { transform: scale(.85); transform-origin: 100% 50%; }
+    .js .hc-stage:not([data-hc='done']) :is(.hc-msg, .hc-ok)[data-hc-x][data-on] { visibility: visible; transform: none; transition: transform .4s var(--ease-out), visibility 0s; }
+    .js .hc-stage:not([data-hc='done']) :is(.hc-ln, .hc-who, .hc-sum, .hc-checked)[data-hc-x] { clip-path: inset(0 100% 0 0); transition: clip-path .5s var(--ease-out); }
+    .js .hc-stage:not([data-hc='done']) :is(.hc-ln, .hc-who, .hc-sum, .hc-checked)[data-hc-x][data-on] { clip-path: inset(0 0 0 0); }
+    /* What Dale says, live: a deeper blue while he holds the button, each word light blue until it is
+       heard, then white; he lets go and the bubble eases to the app's blue. Every step passes AA:
+       light blue on the deep blue 4.75:1, white on it 7.4:1, white on the app's blue 4.7:1. */
+    .js .hc-stage:not([data-hc='done']) .hc-me[data-on]:not([data-final]) { background-color: #0056a0; }
+    .js .hc-stage:not([data-hc='done']) .hc-me[data-hc-x][data-on][data-final] { transition: transform .4s var(--ease-out), visibility 0s, background-color .3s; }
+    .js .hc-stage:not([data-hc='done']) .hc-w { color: #b9d2ec; transition: color .16s; }
+    .js .hc-stage:not([data-hc='done']) [data-on] .hc-w { color: #fff; transition-delay: calc(120ms + var(--i) * 58ms); }
+    .js .hc-stage:not([data-hc='done']) [data-hc-empty] { visibility: visible; }
+    .js .hc-stage:not([data-hc='done']) [data-hc-empty][data-off] { visibility: hidden; }
+    .js .hc-stage:not([data-hc]) [data-hc-x] { animation: hc-failsafe .01s 4s both; }
+    .js .hc-stage:not([data-hc]) .hc-w { animation: hc-failsafe-w .01s 4s both; }
+    .js .hc-stage:not([data-hc]) [data-hc-empty] { animation: hc-failsafe-out .01s 4s both; }
+    .hc-stage[data-hc='reset'] *, .hc-stage[data-hc='reset'] *::before, .hc-stage[data-hc='reset'] *::after { transition: none !important; }
+
+    /* A line just filled in: a short blue wash, then plain. */
+    .hc-stage:not([data-hc='done']) .hc-ln[data-on] { animation: hc-fill .9s var(--ease-out); }
+    .hc-stage:not([data-hc='done']) .hc-ok[data-on] { animation: hc-pop .6s var(--ease-out); }
+    .hc-stage[data-hc='play'] .hc-wire[data-flow], .hc-stage[data-hc='pause'] .hc-wire[data-flow] { animation: hc-flow .55s linear infinite; }
+
+    /* The orb, as the app draws it: it breathes while it hears, tints while it thinks, pulses while it talks. */
+    .hc-stage[data-hc='play'] .hc-phone[data-orb='hear'] .hc-orb, .hc-stage[data-hc='pause'] .hc-phone[data-orb='hear'] .hc-orb { animation: hc-hear 1.3s ease-in-out infinite; }
+    .hc-stage[data-hc='play'] .hc-phone[data-orb='talk'] .hc-orb, .hc-stage[data-hc='pause'] .hc-phone[data-orb='talk'] .hc-orb { animation: hc-talk .42s ease-in-out infinite alternate; }
+    .hc-phone[data-orb='think'] .hc-orb::after { opacity: 1; }
+    .hc-stage[data-hc='play'] .hc-phone[data-orb='think'] .hc-orb, .hc-stage[data-hc='pause'] .hc-phone[data-orb='think'] .hc-orb { animation: hc-think 1s ease-in-out infinite; }
+  }
+  @keyframes hc-failsafe { to { visibility: visible; transform: none; clip-path: inset(0 0 0 0); } }
+  @keyframes hc-failsafe-w { to { color: #fff; } }
+  @keyframes hc-failsafe-out { to { visibility: hidden; } }
+  @keyframes hc-fill { from { box-shadow: inset 0 0 0 999px rgba(0,116,211,.08); } to { box-shadow: inset 0 0 0 999px rgba(0,116,211,0); } }
+  @keyframes hc-pop { 50% { box-shadow: inset 0 0 0 1px #a7f3d0, 0 0 0 5px rgba(16,185,129,.18); } 100% { box-shadow: inset 0 0 0 1px #a7f3d0, 0 0 0 0 rgba(16,185,129,0); } }
+  @keyframes hc-flow { to { background-position-x: 11px; } }
+  @keyframes hc-hear {
+    0%, 100% { border-radius: 50%; box-shadow: 0 0 0 9px rgba(14,165,233,.12), 0 0 0 20px rgba(14,165,233,.06), 0 12px 22px -8px rgba(6,63,138,.6); }
+    33% { border-radius: 48% 52% 51% 49% / 52% 48% 52% 48%; box-shadow: 0 0 0 12px rgba(14,165,233,.15), 0 0 0 25px rgba(14,165,233,.07), 0 12px 22px -8px rgba(6,63,138,.6); }
+    66% { border-radius: 52% 48% 49% 51% / 48% 52% 48% 52%; box-shadow: 0 0 0 10px rgba(14,165,233,.13), 0 0 0 22px rgba(14,165,233,.06), 0 12px 22px -8px rgba(6,63,138,.6); }
+  }
+  @keyframes hc-talk {
+    from { box-shadow: 0 0 0 9px rgba(0,116,211,.12), 0 0 0 20px rgba(0,116,211,.05), 0 12px 22px -8px rgba(6,63,138,.6); }
+    to { box-shadow: 0 0 0 14px rgba(0,116,211,.16), 0 0 0 28px rgba(0,116,211,.07), 0 12px 22px -8px rgba(6,63,138,.6); }
+  }
+  @keyframes hc-think {
+    0%, 100% { box-shadow: 0 0 0 9px rgba(99,102,241,.12), 0 0 0 20px rgba(99,102,241,.05), 0 12px 22px -8px rgba(60,58,168,.55); }
+    50% { box-shadow: 0 0 0 11px rgba(99,102,241,.18), 0 0 0 23px rgba(99,102,241,.07), 0 12px 22px -8px rgba(60,58,168,.55); }
+  }
+
+  /* ---------------- Short laptop screens: tighter copy so more of the stage shows ---------------- */
+  @media (min-width: 900px) and (max-height: 820px) {
+    .hc-in { padding-top: 16px; }
+    .hc h1 { font-size: clamp(2.5rem, 1.2rem + 3vw, 3.5rem); margin-bottom: 10px; }
+    .hc h1 .hc-eyebrow { margin-bottom: 10px; }
+    .hc-sub { margin-bottom: 14px; }
+    .hc .hc-copy .tc-micro { margin-top: 8px; }
+    .hc-stage { margin-top: 10px; }
+  }
+
+  /* ---------------- Stacked (below 900px): phone, then the draft it fills in, then the paper ---------------- */
+  @media (max-width: 899px) {
+    .hc-in { padding: 28px var(--gutter) 36px; }
+    .hc-stage { grid-template-columns: min(100%, 420px); row-gap: 18px; margin-top: 28px; }
+    .hc-phone { order: -1; justify-self: center; }
+    .hc-side { margin-top: 0; }
+    .hc-side-paper { order: 1; }
+    .hc-wire { display: none; }
+  }
+  @supports (width: round(1.5px, 1px)) {
+    @media (max-width: 899px) {
+      .hc-in { padding-inline: round(down, var(--gutter), 1px); }
+      .hc-phone { justify-self: start; margin-left: round(down, calc((100% - 300px) / 2), 1px); }
+    }
+    @media (min-width: 700px) and (max-width: 899px) { .hc-stage { justify-content: start; padding-left: round(down, calc((100% - 420px) / 2), 1px); } }
+  }
+  @media (max-width: 699px) {
+    .hc-in { text-align: left; }
+    .hc h1 .hc-eyebrow { justify-content: flex-start; }
+    .hc-sub { margin: 0 0 22px; }
+    .hc .hc-copy .tc { margin-inline: 0; }
+    .hc-alt { justify-content: flex-start; margin-left: -4px; }
+    .hc-stage { justify-content: stretch; grid-template-columns: minmax(0, 1fr); }
+    .hc-beta { margin-left: 0; }
+  }
+</style>
