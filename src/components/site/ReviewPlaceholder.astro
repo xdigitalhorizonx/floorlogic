@@ -1,0 +1,45 @@
+---
+// PLACEHOLDER REVIEW — owner, 2026-10-22: "just do it, I'll replace it before live".
+// The person, shop and words below are made up for layout only. index.astro renders this on preview
+// deployments (and local builds that opt in) and NEVER on production, which keeps the honest proof strip.
+// Before it can go live it needs a real review, with the reviewer's OK to publish their words, and no
+// review markup in the page's structured data. Replace REVIEW with the real one, then drop the guard.
+const REVIEW = {
+  quote: 'We used to quote off a legal pad and chase approvals for days. Now the customer approves on their phone, and the work order and invoice are just there. Caspar does the carton math before I’m out of the driveway.',
+  name: 'Dana Reyes',
+  role: 'Owner',
+  shop: 'Sierra Plank Co.',
+  city: 'Reno, NV',
+  stars: 5,
+};
+const initials = REVIEW.name.split(' ').map((w) => w[0]).join('').slice(0, 2);
+const star = '<svg viewBox="0 0 20 20" width="20" height="20" aria-hidden="true"><path fill="currentColor" d="M10 1.6l2.6 5.3 5.8.8-4.2 4.1 1 5.8L10 14.9l-5.2 2.7 1-5.8L1.6 7.7l5.8-.8z"/></svg>';
+---
+<section class="rv" aria-label="What a flooring shop says">
+  <div class="container rv-in">
+    <figure class="rv-card">
+      <p class="rv-stars" role="img" aria-label={`${REVIEW.stars} out of 5 stars`}><Fragment set:html={star.repeat(REVIEW.stars)} /></p>
+      <blockquote class="rv-quote"><p>“{REVIEW.quote}”</p></blockquote>
+      <figcaption class="rv-who">
+        <span class="rv-av" aria-hidden="true">{initials}</span>
+        <span class="rv-id"><b>{REVIEW.name}</b><span>{REVIEW.role} · {REVIEW.shop} · {REVIEW.city}</span></span>
+      </figcaption>
+    </figure>
+    <p class="rv-flag">Placeholder review: replace before launch. Shown on the preview only.</p>
+  </div>
+</section>
+
+<style>
+  .rv { position: relative; background: linear-gradient(180deg, #fff, var(--ice-50)); border-block: 1px solid var(--grey-200); }
+  .rv-in { display: grid; justify-items: center; padding-block: 44px 30px; text-align: center; }
+  .rv-card { margin: 0; max-width: 860px; display: grid; justify-items: center; gap: 18px; }
+  .rv-stars { display: inline-flex; gap: 4px; color: #f2a516; }
+  .rv-quote { margin: 0; }
+  .rv-quote p { font: 700 clamp(1.25rem, 1.05rem + 0.9vw, 1.7rem)/1.42 var(--font-display); color: var(--navy-900); letter-spacing: -.005em; text-wrap: balance; }
+  .rv-who { display: inline-flex; align-items: center; gap: 12px; text-align: left; }
+  .rv-av { display: grid; place-items: center; width: 44px; height: 44px; border-radius: 50%; background: linear-gradient(160deg, var(--navy-700), var(--navy-900)); color: #fff; font: 700 15px/1 var(--font-body); letter-spacing: .02em; }
+  .rv-id { display: grid; gap: 2px; }
+  .rv-id b { font: 700 16px/1.2 var(--font-body); color: var(--navy-900); }
+  .rv-id span { font: 500 14px/1.3 var(--font-body); color: var(--grey-600); }
+  .rv-flag { margin-top: 22px; padding: 4px 12px; border: 1px dashed #d97706; border-radius: 999px; background: #fffbeb; font: 600 12px/1.4 var(--font-body); color: #92400e; }
+</style>

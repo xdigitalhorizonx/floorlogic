@@ -2,6 +2,7 @@
 import BaseLayout from '../layouts/BaseLayout.astro';
 import HeroCaspar from '../components/site/HeroCaspar.astro';
 import ProofStrip from '../components/site/ProofStrip.astro';
+import ReviewPlaceholder from '../components/site/ReviewPlaceholder.astro';
 import VideoSection from '../components/site/VideoSection.astro';
 import TryIt from '../components/site/TryIt.astro';
 import FeatureCards from '../components/site/FeatureCards.astro';
@@ -14,6 +15,10 @@ import FinalCta from '../components/site/FinalCta.astro';
 import { HOME_FAQ } from '../data/faq';
 import { faqNode, videoNode } from '../lib/schema';
 
+// The placeholder review (owner, 2026-10-22: "I'll replace it before live") renders only on Vercel PREVIEW
+// deployments, or a local build run with FL_PLACEHOLDER_REVIEW=1. Anything else — production, or a build
+// where Vercel's variables are missing — gets the honest proof strip. Fails closed.
+const showPlaceholderReview = process.env.VERCEL_ENV === 'preview' || process.env.FL_PLACEHOLDER_REVIEW === '1';
 const title = 'FloorLogic — Flooring Business Software with a Free Trial';
 const description = 'Flooring business management software for dealers and installers: quotes in cartons and roll goods, online approval, work orders, invoices and job costing. Prices on the page. 14-day free trial, no credit card.';
 ---
@@ -22,7 +27,7 @@ const description = 'Flooring business management software for dealers and insta
   <link slot="head" rel="preload" as="image" href="/img/hero-room-2560.webp" imagesrcset="/img/hero-room-2560.webp 1x, /img/hero-room-3056.webp 2x" media="(min-width: 900px)" type="image/webp" fetchpriority="high" />
   <link slot="head" rel="preload" as="image" href="/img/hero-room-m.webp" media="(max-width: 899px)" type="image/webp" fetchpriority="high" />
   <HeroCaspar />
-  <ProofStrip />
+  {showPlaceholderReview ? <ReviewPlaceholder /> : <ProofStrip />}
   <VideoSection />
   <TryIt />
   <FeatureCards />
